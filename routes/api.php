@@ -14,21 +14,29 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-
 //version 1
 Route::prefix('v1')->namespace('App\Http\Controllers')->group(function () {
 
-    Route::post('/login', 'AuthController@login');
-    Route::post('/register', 'AuthController@register');
+    // auth routs
+    Route::post('/login', 'AuthController@login')->name('login');
+    Route::post('/register', 'AuthController@register')->name('register');
 
-    Route::get('/user', function (Request $request) {
-        return $request->user();
-    })->middleware('App\Http\Middleware\JwtVerify');
+    // routs after auth ( jwt )
+    Route::group(['middleware'=>'App\Http\Middleware\JwtVerify'],function (){
+        Route::get('/user', function (Request $request) {
+            return $request->user();
+        });
 
-
-    Route::prefix('admin')->namespace('App\Http\Controllers\Admin')->group(function () {
+        // admin routs
+        Route::prefix('admin')->namespace('Admin')->group(function () {
+            Route::prefix('product')->group(function(){
+                Route::get('/' , 'ProductController@index');
+                Route::post('/' , 'ProductController@store');
+            });
+        });
 
     });
+
 
 });
 
