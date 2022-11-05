@@ -122,7 +122,7 @@ return [
     */
 
     'key' => env('APP_KEY'),
-
+    
     'cipher' => 'AES-256-CBC',
 
     /*
@@ -182,9 +182,12 @@ return [
         Illuminate\Validation\ValidationServiceProvider::class,
         Illuminate\View\ViewServiceProvider::class,
 
+
         /*
          * Package Service Providers...
          */
+        Spatie\Permission\PermissionServiceProvider::class,
+
 
         /*
          * Application Service Providers...

@@ -14,6 +14,22 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+
+//version 1
+Route::prefix('v1')->namespace('App\Http\Controllers')->group(function () {
+
+    Route::post('/login', 'AuthController@login');
+    Route::post('/register', 'AuthController@register');
+
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    })->middleware('App\Http\Middleware\JwtVerify');
+
+
+    Route::prefix('admin')->namespace('App\Http\Controllers\Admin')->group(function () {
+
+    });
+
 });
+
+
