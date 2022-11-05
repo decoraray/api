@@ -15,13 +15,13 @@ class JwtVerify
      *
      * @param  \Illuminate\Http\Request  $request
      * @param  \Closure(\Illuminate\Http\Request): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse)  $next
-     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     * @return \Illuminate\Http\JsonResponse
      */
     public function handle(Request $request, Closure $next)
     {
         $authorizationHeader = explode(' ',$request->header('Authorization')); // ['Bearer', 'TOKEN']
-        $head = isset($authorizationHeader[0]) ? $authorizationHeader[0]: false;
-        $jwt = isset($authorizationHeader[1]) ? $authorizationHeader[1]: false;
+        $head = $authorizationHeader[0] ?? false;
+        $jwt = $authorizationHeader[1] ?? false;
 
         if(!$head || !$jwt){
             return response()->json([
@@ -38,8 +38,10 @@ class JwtVerify
 
             Auth::loginUsingId($decoded->sub);
 
+
+
             return $next($request);
-            
+
         } catch (ExpiredException $e) {
             return response()->json([
                 'status' => 0,
@@ -51,6 +53,6 @@ class JwtVerify
                 'reply' => 'Invalid User!'
             ], 400);
         }
-    
+
     }
 }

@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 namespace App\Servises;
 
@@ -20,9 +20,9 @@ class AuthService
             'alg' => 'HS256',
             'iss' => config('app.name'), // Issuer of the token
             'sub' => $user->id, // Subject of the token
-            'iat' => time(), // Time when JWT was issued. 
+            'iat' => time(), // Time when JWT was issued.
             'nbf' => time(), // Time before which the JWT must not be accepted for processing
-            'exp' => time() + 60*60*24*7, // Expiration time
+            'exp' => time() + 60*60*24*7, // Expiration time of the token (7 days)
             'role' => $user->role,
         ];
 

@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Validator;
 
 class RegisterRequest extends FormRequest
 {
@@ -14,6 +16,18 @@ class RegisterRequest extends FormRequest
     public function authorize()
     {
         return true;
+    }
+
+    /**
+     * Get the error messages for the defined validation rules.*
+     * @return array
+     */
+    protected function failedValidation(Validator|\Illuminate\Contracts\Validation\Validator $validator)
+    {
+        throw new HttpResponseException(response()->json([
+            'errors' => $validator->errors(),
+            'status' => true
+        ], 422));
     }
 
     /**
