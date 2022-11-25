@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Models\Cart;
 use App\Models\User;
 use App\Servises\AuthService;
 use Illuminate\Http\Request;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    
+
     public function login(LoginRequest $request)
     {
 
@@ -25,6 +26,11 @@ class AuthController extends Controller
         }
 
         $token = AuthService::createToken($user);
+
+        $cart = Cart::firstOrCreate(['user_id' => $user->id]);
+        if ($request->getUuid()) {
+            $cart->merge(Cart::where('uuid', $request->getUuid())->first());
+        }
 
         $response = [
             'user' => $user,
@@ -44,11 +50,12 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        // $user->setRole('user');
-
         $token = AuthService::createToken($user);
 
-        // $token = $user->createToken('my-app-token')->plainTextToken;
+        $cart = Cart::firstOrCreate(['user_id' => $user->id]);
+        if ($request->getUuid()) {
+            $cart->merge(Cart::where('uuid', $request->getUuid())->first());
+        }
 
         $response = [
             'user' => $user,

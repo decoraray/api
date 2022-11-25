@@ -38,8 +38,6 @@ class JwtVerify
 
             Auth::loginUsingId($decoded->sub);
 
-
-
             return $next($request);
 
         } catch (ExpiredException $e) {

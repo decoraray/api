@@ -42,6 +42,12 @@ class RegisterRequest extends FormRequest
             "email" => "required|email|unique:users",
             "phone" => "required|numeric|unique:users",
             "password" => "required|string|min:8",
+            "cart_uuid" => "nullable"
         ];
+    }
+
+    //get uuid from request
+    public function getUuid() {
+        return $this->get('cart_uuid')??null;
     }
 }

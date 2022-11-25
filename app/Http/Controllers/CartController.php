@@ -5,16 +5,22 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CartRequest;
 use App\Http\Requests\ClearCartRequest;
 use App\Models\Cart;
-use Illuminate\Http\Request;
+use App\Models\Order;
 
 class CartController extends Controller
 {
     //add to cart
     function add(CartRequest $request) {
 
-        $cart = Cart::firstOrCreate([
-            'uuid' => $request->getUuid() ?? uniqid(),
-        ]);
+        if (auth()->check()) {
+            $cart = Cart::firstOrCreate([
+                'user_id' => auth()->id()
+            ]);
+        } else {
+            $cart = Cart::firstOrCreate([
+                'uuid' => $request->getUuid() ?? uniqid(),
+            ]);
+        }
 
         $attachedIds = $cart->productsIds();
         if (!in_array($request->getProduct(), $attachedIds)) {
@@ -76,5 +82,21 @@ class CartController extends Controller
         ]);
     }
 
+    function purchase(CartRequest $request) {
+
+        $user = auth()->user();
+        $cart = Cart::find($user->cart->id);
+
+        $order = Order::create([
+            'user_id' => $user->id,
+            'total' => $cart->totalPrice(),
+        ]);
+
+        return response()->json([
+            'message' => 'purchase done',
+            'cart' => $cart,
+            'product' => $cart->products,
+        ]);
+    }
 
 }

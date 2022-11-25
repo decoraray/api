@@ -26,7 +26,7 @@ class LoginRequest extends FormRequest
     {
         throw new HttpResponseException(response()->json([
             'errors' => $validator->errors(),
-            'status' => true
+            'status' => true,
         ], 422));
     }
 
@@ -40,6 +40,13 @@ class LoginRequest extends FormRequest
         return [
             'email' => 'required|email',
             'password' => 'required',
+            'cart_uuid'  => 'nullable',
         ];
     }
+
+    //get uuid from request
+    public function getUuid() {
+        return $this->get('cart_uuid')??null;
+    }
+
 }

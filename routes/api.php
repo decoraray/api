@@ -15,7 +15,9 @@ use Illuminate\Support\Facades\Route;
 */
 
 //version 1
-Route::prefix('v1')->namespace('App\Http\Controllers')->group(function () {
+Route::prefix('v1')
+    ->middleware('App\Http\Middleware\Authenticate')
+    ->namespace('App\Http\Controllers')->group(function () {
 
     // auth routs
     Route::post('/login', 'AuthController@login')->name('login');
@@ -29,21 +31,27 @@ Route::prefix('v1')->namespace('App\Http\Controllers')->group(function () {
 
     // routs after auth ( jwt )
     Route::group(['middleware'=>'App\Http\Middleware\JwtVerify'],function (){
+
         Route::get('/user', function (Request $request) {
             return $request->user();
         });
 
+        Route::post('/purchase', 'CartController@purchase');
+
         // admin routs
         Route::prefix('admin')->namespace('Admin')->group(function () {
-//            Route::prefix('product')->middleware('can:manage_products')->group(function(){
-            Route::prefix('product')->group(function(){
+            Route::prefix('product')
+//                ->middleware('can:manage_products')
+                ->group(function(){
                 Route::get('/' , 'ProductController@index');
                 Route::post('/' , 'ProductController@store');
                 Route::get('/{product}' , 'ProductController@show');
                 Route::patch('/{product}' , 'ProductController@update');
                 Route::delete('/{product}' , 'ProductController@destroy');
             });
-            Route::prefix('category')->group(function(){
+            Route::prefix('category')
+//                ->middleware('can:manage_categories')
+                ->group(function(){
                 Route::get('/' , 'CategoryController@index');
                 Route::post('/' , 'CategoryController@store');
                 Route::get('/{category}' , 'CategoryController@show');
