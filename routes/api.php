@@ -19,6 +19,10 @@ Route::prefix('v1')
     ->middleware('App\Http\Middleware\Authenticate')
     ->namespace('App\Http\Controllers')->group(function () {
 
+    Route::get('/', function () {
+        return 'health';
+    });
+
     // auth routs
     Route::post('/login', 'AuthController@login')->name('login');
     Route::post('/register', 'AuthController@register')->name('register');
@@ -58,10 +62,18 @@ Route::prefix('v1')
                 Route::patch('/{category}' , 'CategoryController@update');
                 Route::delete('/{category}' , 'CategoryController@destroy');
             });
+            Route::prefix('user')
+//                ->middleware('can:manage_categories')
+                ->group(function(){
+                Route::get('/' , 'UserController@index');
+                Route::post('/' , 'UserController@store');
+                Route::get('/{user}' , 'UserController@show');
+                Route::patch('/{user}' , 'UserController@update');
+                Route::delete('/{user}' , 'UserController@destroy');
+            });
         });
 
     });
-
 
 });
 

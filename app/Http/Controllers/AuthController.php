@@ -28,8 +28,12 @@ class AuthController extends Controller
         $token = AuthService::createToken($user);
 
         $cart = Cart::firstOrCreate(['user_id' => $user->id]);
+        
         if ($request->getUuid()) {
-            $cart->merge(Cart::where('uuid', $request->getUuid())->first());
+            if (!empty(Cart::where('uuid', $request->getUuid())->first())) {
+                dd();
+                $cart->merge(Cart::where('uuid', $request->getUuid())->first());
+            }
         }
 
         $response = [
@@ -54,7 +58,9 @@ class AuthController extends Controller
 
         $cart = Cart::firstOrCreate(['user_id' => $user->id]);
         if ($request->getUuid()) {
-            $cart->merge(Cart::where('uuid', $request->getUuid())->first());
+            if (!empty(Cart::where('uuid', $request->getUuid())->first())) {
+                $cart->merge(Cart::where('uuid', $request->getUuid())->first());
+            }
         }
 
         $response = [
