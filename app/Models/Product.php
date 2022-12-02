@@ -15,10 +15,11 @@ class Product extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
+        'title',
         'price',
         'description',
         'category_id',
+        'active',
     ];
 
 
@@ -32,6 +33,24 @@ class Product extends Model
         return $this->belongsToMany(Cart::class)
             ->withPivot('quantity','description')
             ->withTimestamps();
+    }
+
+    /**
+     * Scope a query to only include active users.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return void
+     */
+    public function scopeActive($query)
+    {
+        $query->where('active', 1);
+    }
+
+
+    // rating
+    public function rating()
+    {
+        return $this->hasOne(Rating::class);
     }
 
 }

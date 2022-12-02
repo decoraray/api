@@ -17,6 +17,10 @@ return new class extends Migration
             $table->id();
             $table->string('code');
             $table->float('percent');
+            $table->boolean('active')->default(true);
+            $table->date('start_date')->default(now());
+            $table->date('end_date');
+            $table->date('used_at')->nullable();
             $table->timestamps();
         });
     }

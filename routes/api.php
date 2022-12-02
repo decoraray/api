@@ -27,11 +27,18 @@ Route::prefix('v1')
     Route::post('/login', 'AuthController@login')->name('login');
     Route::post('/register', 'AuthController@register')->name('register');
 
-    // public routs
+    // public shop routs
+    Route::get('/', 'ShopController@initial')->name('initial');
+    Route::get('/products', 'ShopController@list')->name('products');
+    Route::get('/categories', 'ShopController@categories')->name('categories');
+    Route::get('/products/{product}', 'ShopController@show')->name('product');
+    Route::post('/rating/{product}', 'ShopController@rating')->name('rating');
+
     Route::post('/add', 'CartController@add');
     Route::post('/remove', 'CartController@remove');
     Route::post('/delete', 'CartController@delete');
     Route::post('/delete-all', 'CartController@deleteAll');
+
 
     // routs after auth ( jwt )
     Route::group(['middleware'=>'App\Http\Middleware\JwtVerify'],function (){
@@ -44,33 +51,8 @@ Route::prefix('v1')
 
         // admin routs
         Route::prefix('admin')->namespace('Admin')->group(function () {
-            Route::prefix('product')
-//                ->middleware('can:manage_products')
-                ->group(function(){
-                Route::get('/' , 'ProductController@index');
-                Route::post('/' , 'ProductController@store');
-                Route::get('/{product}' , 'ProductController@show');
-                Route::patch('/{product}' , 'ProductController@update');
-                Route::delete('/{product}' , 'ProductController@destroy');
-            });
-            Route::prefix('category')
-//                ->middleware('can:manage_categories')
-                ->group(function(){
-                Route::get('/' , 'CategoryController@index');
-                Route::post('/' , 'CategoryController@store');
-                Route::get('/{category}' , 'CategoryController@show');
-                Route::patch('/{category}' , 'CategoryController@update');
-                Route::delete('/{category}' , 'CategoryController@destroy');
-            });
-            Route::prefix('user')
-//                ->middleware('can:manage_categories')
-                ->group(function(){
-                Route::get('/' , 'UserController@index');
-                Route::post('/' , 'UserController@store');
-                Route::get('/{user}' , 'UserController@show');
-                Route::patch('/{user}' , 'UserController@update');
-                Route::delete('/{user}' , 'UserController@destroy');
-            });
+            Route::resource('products', 'ProductController');
+            Route::resource('category', 'CategoryController');
         });
 
     });
