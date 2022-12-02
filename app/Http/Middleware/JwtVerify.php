@@ -29,7 +29,7 @@ class JwtVerify
                 'reply' => 'Unauthorized'
            ]);
         }
-
+        
         try{
 
             $decoded = AuthService::verifyToken($jwt);
@@ -46,6 +46,7 @@ class JwtVerify
                 'reply' => 'Expired Token!'
             ], 400);
         } catch (\Exception $e) {
+            dd($e->getMessage());
             return response()->json([
                 'status' => 0,
                 'reply' => 'Invalid User!'

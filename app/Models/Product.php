@@ -46,11 +46,14 @@ class Product extends Model
         $query->where('active', 1);
     }
 
-
-    // rating
     public function rating()
     {
         return $this->hasOne(Rating::class);
+    }
+
+    public function images()
+    {
+        return $this->hasMany(Image::class);
     }
 
 }

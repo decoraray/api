@@ -51,7 +51,8 @@ Route::prefix('v1')
 
         // admin routs
         Route::prefix('admin')->namespace('Admin')->group(function () {
-            Route::resource('products', 'ProductController');
+            Route::post('image','ImageController@imageStore');
+            Route::resource('products','ProductController');
             Route::resource('category', 'CategoryController');
         });
 

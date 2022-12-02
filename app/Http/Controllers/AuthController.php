@@ -31,7 +31,6 @@ class AuthController extends Controller
         
         if ($request->getUuid()) {
             if (!empty(Cart::where('uuid', $request->getUuid())->first())) {
-                dd();
                 $cart->merge(Cart::where('uuid', $request->getUuid())->first());
             }
         }
