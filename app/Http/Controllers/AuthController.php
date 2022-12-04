@@ -70,6 +70,16 @@ class AuthController extends Controller
         return response($response, 201);
     }
 
+    public function forgotPassword(Request $request) {
+        $user = User::where('email', $request->email)->first();
+
+        $user->sendPasswordResetNotification($user->createToken('password-reset')->plainTextToken);
+        
+        $response = [
+            'message' => 'Check your email',
+        ];
+        return response($response, 200);
+    }
 
 }
 

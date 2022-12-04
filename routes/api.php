@@ -26,19 +26,20 @@ Route::prefix('v1')
     // auth routs
     Route::post('/login', 'AuthController@login')->name('login');
     Route::post('/register', 'AuthController@register')->name('register');
+    Route::post('/forgot-password', 'AuthController@forgotPassword')->name('forgot-password'); // TODO
 
     // public shop routs
     Route::get('/', 'ShopController@initial')->name('initial');
     Route::get('/products', 'ShopController@list')->name('products');
     Route::get('/categories', 'ShopController@categories')->name('categories');
     Route::get('/products/{product}', 'ShopController@show')->name('product');
-    Route::post('/rating/{product}', 'ShopController@rating')->name('rating');
+    Route::post('/rate/{product}', 'ShopController@rating')->name('rate');
 
+    // cart routs
     Route::post('/add', 'CartController@add');
     Route::post('/remove', 'CartController@remove');
     Route::post('/delete', 'CartController@delete');
     Route::post('/delete-all', 'CartController@deleteAll');
-
 
     // routs after auth ( jwt )
     Route::group(['middleware'=>'App\Http\Middleware\JwtVerify'],function (){

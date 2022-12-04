@@ -53,5 +53,9 @@ class User extends Authenticatable
         return $this->role == 'user';
     }
 
+    public function createToken($name)
+    {
+        return $this->createToken($name)->plainTextToken;
+    }
 
 }

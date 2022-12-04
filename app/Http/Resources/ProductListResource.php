@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Str;
 
 class ProductListResource extends JsonResource
 {
@@ -18,9 +19,11 @@ class ProductListResource extends JsonResource
             'id'=>$this->id,
             'title'=>$this->title,
             'price'=>$this->price,
+            'description'=> Str::limit($this->description, 50),
             'category'=>$this->category ? $this->category->name : null,
-            'image'=>$this->image,
             'rating'=>$this->rating ? new RatingShowResource($this->rating) : null,
+            'image'=>$this->images->isNotEmpty() ? asset('storage/' .$this->cover->image_path) : null,
         ];
     }
 }
+
