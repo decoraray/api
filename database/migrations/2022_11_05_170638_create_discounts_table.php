@@ -16,10 +16,10 @@ return new class extends Migration
         Schema::create('discounts', function (Blueprint $table) {
             $table->id();
             $table->string('code');
-            $table->float('percent');
+            $table->float('percent')->default(0);
             $table->boolean('active')->default(true);
             $table->date('start_date')->default(now());
-            $table->date('end_date');
+            $table->date('end_date')->nullable();
             $table->date('used_at')->nullable();
             $table->timestamps();
         });

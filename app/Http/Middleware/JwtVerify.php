@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use App\Servises\AuthService;
+use App\Services\AuthService;
 use Firebase\JWT\ExpiredException;
 use Illuminate\Support\Facades\Auth;
 

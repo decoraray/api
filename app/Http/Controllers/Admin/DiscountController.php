@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use App\Models\Discount;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\DiscountShowResource;
 
 class DiscountController extends Controller
 {
@@ -15,7 +17,7 @@ class DiscountController extends Controller
      */
     public function index()
     {
-        //
+        return DiscountShowResource::collection(Discount::all());
     }
 
     /**
@@ -36,7 +38,18 @@ class DiscountController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $data = $request->validate([
+            'code' => 'required|string',
+            'percent' => 'required|numeric',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date',
+            'active' => 'required|boolean',
+        ]);
+
+        $data['start_date'] = Carbon::jmktimeDate($request->start_date);
+        $data['end_date']= Carbon::jmktimeDate($request->end_date);
+
+        return (new Discount($data))->save();
     }
 
     /**
@@ -47,7 +60,7 @@ class DiscountController extends Controller
      */
     public function show(Discount $discount)
     {
-        //
+        return new DiscountShowResource($discount);
     }
 
     /**
@@ -70,7 +83,23 @@ class DiscountController extends Controller
      */
     public function update(Request $request, Discount $discount)
     {
-        //
+
+        $data = $request->validate([
+            'code' => 'nullable|string',
+            'percent' => 'nullable|numeric',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'active' => 'nullable|boolean',
+        ]);
+
+        $data['start_date'] = !empty($request->start_date)? Carbon::jmktimeDate($request->start_date) : null;
+        $data['end_date']=  !empty($request->end_date) ? Carbon::jmktimeDate($request->end_date) : null;
+
+        $data = array_filter($data);
+
+        $discount->update($data);
+
+        return new DiscountShowResource($discount);
     }
 
     /**
@@ -81,6 +110,7 @@ class DiscountController extends Controller
      */
     public function destroy(Discount $discount)
     {
-        //
+        $discount->delete();
+        return $discount;
     }
 }

@@ -6,7 +6,7 @@ use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
 use App\Models\Cart;
 use App\Models\User;
-use App\Servises\AuthService;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
