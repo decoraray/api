@@ -34,10 +34,12 @@ Route::prefix('v1')
     Route::get('/categories', 'ShopController@categories')->name('categories');
     Route::get('/products/{product}', 'ShopController@show')->name('product');
     Route::post('/rate/{product}', 'ShopController@rating')->name('rate');
+    Route::get('cities', 'AddressController@cities')->name('cities');
+
 
     // cart routs
-    Route::post('/add', 'CartController@add');
-    Route::post('/remove', 'CartController@remove');
+    Route::post('/add', 'CartController@add')->name('add');
+    Route::post('/remove', 'CartController@remove')->name('remove');
     Route::post('/delete', 'CartController@delete');
     Route::post('/delete-all', 'CartController@deleteAll');
 
@@ -48,7 +50,11 @@ Route::prefix('v1')
             return $request->user()->with('cart')->first();
         });
 
+        // purchase 
         Route::post('/purchase', 'CartController@purchase');
+
+        // address 
+        Route::resource('address','AddressController');
 
         // admin routs
         Route::prefix('admin')->namespace('Admin')->group(function () {
