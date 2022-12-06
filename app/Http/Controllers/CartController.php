@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Cart;
+use Illuminate\Http\Request;
 use App\Http\Requests\CartRequest;
 use App\Http\Requests\ClearCartRequest;
-use App\Models\Cart;
-use App\Models\Order;
 
 class CartController extends Controller
 {
@@ -82,8 +82,7 @@ class CartController extends Controller
         ]);
     }
 
-    private function createOrder($request)
-    {
+    private function createOrder($request) {
 
         $order = auth()->user()->orders->create([
             'address' => $request->address,
@@ -96,9 +95,13 @@ class CartController extends Controller
         return $order;
     }
 
-    function purchase(CartRequest $request) {
+    function purchase(Request $request) {
 
-        $cart = auth()->user()->cart;
+        $cart = Cart::firstOrCreate([
+            'user_id' => auth()->id()
+        ]);
+
+        dd($cart->total);
 
         $order = $this->createOrder($request);
 

@@ -2,11 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Image;
 use App\Models\Rating;
 use App\Models\Product;
 use App\Models\Category;
-use App\Http\Resources\RatingShowResource;
 use App\Http\Resources\ProductListResource;
 use App\Http\Resources\ProductShowResource;
 use App\Http\Resources\CategoryListResource;

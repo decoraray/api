@@ -45,7 +45,7 @@ class Cart extends Model
         $cart->delete();
     }
 
-    private function add($product)
+    private function add($product) 
     {
         if ($this->products->contains($product)) {
             $this->products()->updateExistingPivot($product, [
@@ -60,16 +60,50 @@ class Cart extends Model
         }
     }
 
-    public function total()
+    public function total() 
     {
         $total = 0;
         for ($i=0; $i < count($this->productsIds()); $i++) {
-
             $total += $this->products()->find($this->productsIds()[$i])->pivot->quantity
                 * $this->products()->find($this->productsIds()[$i])->price;
-
         }
         return $total;
+    }
+
+    public function totalQuantity() 
+    {
+        $total = 0;
+        for ($i=0; $i < count($this->productsIds()); $i++) {
+            $total += $this->products()->find($this->productsIds()[$i])->pivot->quantity;
+        }
+        return $total;
+    }
+
+    public function clear()
+    {
+        $this->products()->detach();
+    }
+
+    public function isEmpty()
+    {
+        return $this->products()->count() == 0;
+    }
+
+    // get total attribute
+
+    public function getTotalAttribute()
+    {
+        return $this->total();
+    }
+
+    public function getTotalQuantityAttribute()
+    {
+        return $this->totalQuantity();
+    }
+
+    public function getIsEmptyAttribute()
+    {
+        return $this->isEmpty();
     }
 
 }
