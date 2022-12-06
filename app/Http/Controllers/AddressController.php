@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\City;
 use App\Models\Address;
-use Illuminate\Http\Request;
-use App\Http\Resources\CityListResource;
 use App\Http\Resources\CountyListResource;
 use App\Http\Requests\AddressCreateRequest;
 use App\Http\Resources\AddressShowResource;
+use App\Http\Requests\AddressUpdateResource;
 
 class AddressController extends Controller
 {
@@ -45,7 +44,7 @@ class AddressController extends Controller
 
         $data['city'] = City::find($data['city_id'])->title;
         $data['county'] = City::find($data['city_id'])->parent()->first()->title;
-
+        $data['uuid'] = uniqid();
         $address = Address::create($data);
 
         return response()->json(new AddressShowResource($address), 201);
@@ -57,9 +56,10 @@ class AddressController extends Controller
      * @param  \App\Models\Address  $address
      * @return \Illuminate\Http\Response
      */
-    public function show(Address $address)
+    public function show(String $uuid)
     {
-        //
+        $address = Address::where('uuid', $uuid)->first() ?? abort(404);
+        return response()->json(new AddressShowResource($address), 200);
     }
 
     /**
@@ -80,9 +80,14 @@ class AddressController extends Controller
      * @param  \App\Models\Address  $address
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Address $address)
+    public function update(AddressUpdateResource $request, String $uuid)
     {
-        //
+        $address = Address::where('uuid', $uuid)->first() ?? abort(404);
+        $data = $request->validated();
+        $data['city'] = City::find($data['city_id'])->title;
+        $data['county'] = City::find($data['city_id'])->parent()->first()->title;
+        $address->update($data);
+        return response()->json(new AddressShowResource($address), 200);
     }
 
     /**
@@ -91,9 +96,11 @@ class AddressController extends Controller
      * @param  \App\Models\Address  $address
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Address $address)
+    public function destroy(String $uuid)
     {
-        //
+        $address = Address::where('uuid', $uuid)->first() ?? abort(404);
+        $address->delete();
+        return response()->json(null, 204);
     }
 
 

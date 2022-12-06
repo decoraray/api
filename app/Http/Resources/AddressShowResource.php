@@ -22,6 +22,7 @@ class AddressShowResource extends JsonResource
             'postal_code'=>$this->postal_code,
             'city'=>$this->city,
             'county'=>$this->county,
+            'uuid'=>$this->uuid,
         ];
     }
 }

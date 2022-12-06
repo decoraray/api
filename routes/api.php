@@ -31,11 +31,10 @@ Route::prefix('v1')
     // public shop routs
     Route::get('/', 'ShopController@initial')->name('initial');
     Route::get('/products', 'ShopController@list')->name('products');
-    Route::get('/categories', 'ShopController@categories')->name('categories');
     Route::get('/products/{product}', 'ShopController@show')->name('product');
+    Route::get('/categories', 'ShopController@categories')->name('categories');
     Route::post('/rate/{product}', 'ShopController@rating')->name('rate');
     Route::get('cities', 'AddressController@cities')->name('cities');
-
 
     // cart routs
     Route::post('/add', 'CartController@add')->name('add');

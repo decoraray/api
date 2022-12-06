@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('city');
             $table->string('county');            
             $table->string('postal_code')->nullable();
+            $table->string('uuid')->unique();
             $table->foreignId('city_id')->nullable()->constrained()->unsigned()->onDelete('set null');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->timestamps();
