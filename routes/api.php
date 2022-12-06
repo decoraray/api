@@ -45,7 +45,7 @@ Route::prefix('v1')
     Route::group(['middleware'=>'App\Http\Middleware\JwtVerify'],function (){
 
         Route::get('/user', function (Request $request) {
-            return $request->user();
+            return $request->user()->with('cart')->first();
         });
 
         Route::post('/purchase', 'CartController@purchase');

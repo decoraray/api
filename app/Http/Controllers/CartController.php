@@ -82,15 +82,25 @@ class CartController extends Controller
         ]);
     }
 
+    private function createOrder($request)
+    {
+
+        $order = auth()->user()->orders->create([
+            'address' => $request->address,
+            'phone' => $request->phone,
+            'status' => 'pending',
+            'total' => $this->cart->total(),
+        ]);
+
+        $order->products()->attach($this->cart->products);
+        return $order;
+    }
+
     function purchase(CartRequest $request) {
 
-        $user = auth()->user();
-        $cart = Cart::find($user->cart->id);
+        $cart = auth()->user()->cart;
 
-        $order = Order::create([
-            'user_id' => $user->id,
-            'total' => $cart->totalPrice(),
-        ]);
+        $order = $this->createOrder($request);
 
         return response()->json([
             'message' => 'purchase done',

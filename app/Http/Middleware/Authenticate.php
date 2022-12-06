@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Servises\AuthService;
+use App\Services\AuthService;
 use Closure;
 use Illuminate\Auth\Middleware\Authenticate as Middleware;
 use Illuminate\Http\Request;

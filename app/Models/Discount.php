@@ -18,5 +18,4 @@ class Discount extends Model
         'used_at'
     ];
 
-    
 }

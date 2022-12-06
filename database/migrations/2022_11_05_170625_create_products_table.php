@@ -23,6 +23,7 @@ return new class extends Migration
             $table->boolean('active')->default(true);
             $table->string('rating_id')->nullable();
             $table->foreignId('category_id')->nullable()->constrained('categories');
+            $table->foreignId('discount_id')->nullable()->constrained('discounts');
             $table->timestamps();
         });
     }

@@ -22,4 +22,21 @@ class Order extends Model
         'total',
     ];
 
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function products()
+    {
+        return $this->belongsToMany(Product::class)
+            ->withPivot('quantity','description')
+            ->withTimestamps();
+    }
+
+    public function discount()
+    {
+        return $this->hasOne(Discount::class);
+    }
+
 }

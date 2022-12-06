@@ -61,4 +61,9 @@ class Product extends Model
         return $this->hasMany(Image::class)->orderBy('id', 'desc')->first();
     }
 
+    public function discount()
+    {
+        return $this->hasOne(Discount::class);
+    }
+    
 }
