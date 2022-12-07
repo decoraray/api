@@ -3,9 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cart;
+use App\Models\Item;
+use App\Models\Order;
+use App\Models\Address;
 use Illuminate\Http\Request;
 use App\Http\Requests\CartRequest;
+use App\Http\Requests\PurchaseRequest;
 use App\Http\Requests\ClearCartRequest;
+use App\Http\Resources\OrderShowResource;
 
 class CartController extends Controller
 {
@@ -82,34 +87,71 @@ class CartController extends Controller
         ]);
     }
 
-    private function createOrder($request) {
-
-        $order = auth()->user()->orders->create([
-            'address' => $request->address,
-            'phone' => $request->phone,
-            'status' => 'pending',
-            'total' => $this->cart->total(),
+    // TODO : this function is not working
+    function discount(Request $request) {
+        $cart = Cart::where('uuid', $request->uuid)->first();
+        $cart->discount_id = $request->discount_id;
+        $cart->save();
+        return response()->json([
+            'message' => 'discount added',
+            'cart' => $cart,
+            'product' => $cart->products,
         ]);
-
-        $order->products()->attach($this->cart->products);
-        return $order;
     }
 
-    function purchase(Request $request) {
+    function purchase(PurchaseRequest $request) {
 
         $cart = Cart::firstOrCreate([
             'user_id' => auth()->id()
         ]);
 
-        dd($cart->total);
+        if ($cart->isEmpty) {
+            return response()->json([
+                'message' => 'cart is empty',
+            ], 400);
+        }
 
-        $order = $this->createOrder($request);
+        $order = $this->createOrder($request->address_id);
 
-        return response()->json([
-            'message' => 'purchase done',
-            'cart' => $cart,
-            'product' => $cart->products,
+        $cart->products()->detach();
+        
+        return response()->json(new OrderShowResource($order), 201);
+    }
+
+    private function createOrder($address_id) {
+        
+        $user = auth()->user();
+
+        $address = Address::where('uuid', $address_id)->first();
+
+        $cart = $user->cart;
+
+        $order = Order::create([
+            'user_id' => $user->id,
+            'uuid' => uniqid(),
+            'address' => $address->address,
+            'city' => $address->city,
+            'county' => $address->county,
+            'postal_code' => $address->postal_code,
+            'phone' => $address->phone,
+            'status' => 'pending',
+            'total' => $cart->total,
+            'discount_amount' => $cart->discountAmount,
+            'discount_id' => $cart->discount_id,
+            'address_id' => $address->id,
         ]);
+
+        for ($i = 0; $i < $cart->products->count(); $i++) {
+            Item::create([
+                'title' => $cart->products[$i]->title,
+                'order_id' => $order->id,
+                'product_id' => $cart->products[$i]->id,
+                'quantity' => $cart->products[$i]->pivot->quantity,
+                'price' => $cart->products[$i]->price,
+            ]);
+        }
+        
+        return $order;
     }
 
 }

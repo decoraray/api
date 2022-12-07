@@ -16,8 +16,14 @@ class Cart extends Model
      */
     protected $fillable = [
         'uuid',
+        'discount_id',
         'user_id'
     ];
+
+    public function discount() 
+    {
+        return $this->belongsTo(Discount::class);
+    }
 
     public function products()
     {
@@ -104,6 +110,16 @@ class Cart extends Model
     public function getIsEmptyAttribute()
     {
         return $this->isEmpty();
+    }
+
+    public function getDiscountAttribute()
+    {
+        return $this->discount()->exists() ? $this->discount->percent : 0;
+    }
+
+    public function getDiscountAmountAttribute()
+    {
+        return $this->discount()->exists() ? $this->total() * $this->discount->percent / 100 : 0;
     }
 
 }

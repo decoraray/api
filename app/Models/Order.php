@@ -15,11 +15,18 @@ class Order extends Model
      * @var array<int, string>
      */
     protected $fillable = [
+        'uuid',
         'user_id',
         'address',
+        'city',
+        'county',
+        'postal_code',
         'phone',
         'status',
         'total',
+        'discount_amount',
+        'discount_id',
+        'address_id',
     ];
 
     public function user()
@@ -37,6 +44,11 @@ class Order extends Model
     public function discount()
     {
         return $this->hasOne(Discount::class);
+    }
+
+    public function items()
+    {
+        return $this->hasMany(Item::class);
     }
 
 }

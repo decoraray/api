@@ -18,4 +18,8 @@ class Discount extends Model
         'used_at'
     ];
 
+    public function carts()
+    {
+        return $this->belongsToMany(Cart::class);
+    }
 }
