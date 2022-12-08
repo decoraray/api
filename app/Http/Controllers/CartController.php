@@ -7,15 +7,30 @@ use App\Models\Item;
 use App\Models\Order;
 use App\Models\Address;
 use Illuminate\Http\Request;
-use App\Http\Requests\CartRequest;
 use App\Http\Requests\PurchaseRequest;
 use App\Http\Requests\ClearCartRequest;
+use App\Http\Resources\CartShowResource;
 use App\Http\Resources\OrderShowResource;
+use App\Http\Requests\CartInteractionRequest;
 
 class CartController extends Controller
 {
+    function index(Request $request) {
+
+        if (auth()->check()) {
+            $cart = Cart::firstOrCreate([
+                'user_id' => auth()->id()
+            ]);
+        } else {
+            $cart = Cart::firstOrCreate([
+                'uuid' => $request->uuid ?? uniqid(),
+            ]);
+        }
+
+        return response()->json(new CartShowResource($cart));
+    }
     //add to cart
-    function add(CartRequest $request) {
+    function add(CartInteractionRequest $request) {
 
         if (auth()->check()) {
             $cart = Cart::firstOrCreate([
@@ -41,12 +56,10 @@ class CartController extends Controller
 
         return response()->json([
             'message' => 'product added to cart',
-            'cart' => $cart,
-            'product' => $cart->products,
         ]);
     }
 
-    function remove(CartRequest $request) {
+    function remove(CartInteractionRequest $request) {
 
         $cart = Cart::where('uuid', $request->uuid)->first();
         $attachedIds = $cart->productsIds();
@@ -62,18 +75,14 @@ class CartController extends Controller
 
         return response()->json([
             'message' => 'product removed from cart',
-            'cart' => $cart,
-            'product' => $cart->products,
         ]);
     }
 
-    function delete(CartRequest $request) {
+    function delete(CartInteractionRequest $request) {
         $cart = Cart::where('uuid', $request->uuid)->first();
         $cart->products()->detach($request->getProduct());
         return response()->json([
             'message' => 'product deleted',
-            'cart' => $cart,
-            'product' => $cart->products,
         ]);
     }
 
@@ -82,8 +91,6 @@ class CartController extends Controller
         $cart->products()->detach();
         return response()->json([
             'message' => 'cart deleted',
-            'cart' => $cart,
-            'product' => $cart->products,
         ]);
     }
 
@@ -94,8 +101,6 @@ class CartController extends Controller
         $cart->save();
         return response()->json([
             'message' => 'discount added',
-            'cart' => $cart,
-            'product' => $cart->products,
         ]);
     }
 

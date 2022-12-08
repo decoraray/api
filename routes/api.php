@@ -37,6 +37,7 @@ Route::prefix('v1')
     Route::get('cities', 'AddressController@cities')->name('cities');
 
     // cart routs
+    Route::get('/cart/{uuid}', 'CartController@index')->name('cart');
     Route::post('/add', 'CartController@add')->name('add');
     Route::post('/remove', 'CartController@remove')->name('remove');
     Route::post('/delete', 'CartController@delete');

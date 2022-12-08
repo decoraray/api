@@ -6,7 +6,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Validator;
 
-class CartRequest extends FormRequest
+class CartInteractionRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
