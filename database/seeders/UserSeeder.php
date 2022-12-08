@@ -19,7 +19,7 @@ class UserSeeder extends Seeder
             'surname' => 'admin',
             'email' => 'admin@admin',
             'phone' => '5528999690',
-            'password' => 'admin',
+            'password' => '$2y$10$iNxVpcKb092CsY2WcJ2E9upshpRLCwHZ2xivIVkEOGni5wSyYif.G', // admin
         ]);
     }
 }
