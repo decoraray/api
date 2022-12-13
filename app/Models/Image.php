@@ -18,4 +18,9 @@ class Image extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function getImagePathAttribute()
+    {
+        return asset('storage/' . $this->image);
+    }
 }

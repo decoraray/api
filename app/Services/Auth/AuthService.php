@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Services;
+namespace App\Services\Auth;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
@@ -22,14 +22,13 @@ class AuthService
             'sub' => $user->id, // Subject of the token
             'iat' => time(), // Time when JWT was issued.
             'nbf' => time(), // Time before which the JWT must not be accepted for processing
-            'exp' => time() + 60*60*24*7, // Expiration time of the token (7 days)
+            'exp' => time() + 60 * 60 * 24 * 7, // Expiration time of the token (7 days)
             'role' => $user->role,
         ];
 
         $jwt = JWT::encode($payload, $key, 'HS256');
 
         return $jwt;
-
     }
 
     function decodeToken($token)
@@ -57,9 +56,4 @@ class AuthService
 
         return $decoded;
     }
-
-
 }
-
-
-

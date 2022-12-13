@@ -16,15 +16,15 @@ class ShopController extends Controller
     {
         return response()->json([
             'message' => 'shop',
-            'Products' => ProductListResource::collection(Product::active()->get()),
-            'Categories' => CategoryListResource::collection(Category::all()),
+            'products' => ProductListResource::collection(Product::active()->get()),
+            'categories' => CategoryListResource::collection(Category::all()),
         ]);
     }
 
     // get product list
     public function list()
     {
-        return response()->json(ProductListResource::collection(Product::active()->get()) );
+        return response()->json(ProductListResource::collection(Product::active()->get()));
     }
 
     // product detail
@@ -50,5 +50,4 @@ class ShopController extends Controller
     {
         return response()->json(CategoryListResource::collection(Category::all()));
     }
-
 }

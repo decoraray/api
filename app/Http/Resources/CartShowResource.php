@@ -4,6 +4,8 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
+use function GuzzleHttp\Promise\queue;
+
 class CartShowResource extends JsonResource
 {
     /**
@@ -15,11 +17,12 @@ class CartShowResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'products' => ProductShowResource::collection($this->products),
+            'products' => ProductCartResource::collection($this->products),
             'total' => $this->total,
             'discountAmount' => $this->discountAmount,
             'discount_id' => $this->discount_id,
             'isEmpty' => $this->isEmpty,
-        ];   
+            'uuid' => $this->uuid,
+        ];
     }
 }

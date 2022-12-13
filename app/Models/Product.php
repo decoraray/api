@@ -31,7 +31,7 @@ class Product extends Model
     public function carts()
     {
         return $this->belongsToMany(Cart::class)
-            ->withPivot('quantity','description')
+            ->withPivot('quantity', 'description')
             ->withTimestamps();
     }
 
@@ -56,7 +56,7 @@ class Product extends Model
         return $this->hasMany(Image::class);
     }
 
-    public function getCoverAttribute() 
+    public function getThumbnailAttribute()
     {
         return $this->hasMany(Image::class)->orderBy('id', 'desc')->first();
     }
@@ -65,5 +65,4 @@ class Product extends Model
     {
         return $this->hasOne(Discount::class);
     }
-    
 }

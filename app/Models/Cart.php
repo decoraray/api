@@ -20,7 +20,7 @@ class Cart extends Model
         'user_id'
     ];
 
-    public function discount() 
+    public function discount()
     {
         return $this->belongsTo(Discount::class);
     }
@@ -28,7 +28,7 @@ class Cart extends Model
     public function products()
     {
         return $this->belongsToMany(Product::class)
-            ->withPivot('quantity','description')
+            ->withPivot('quantity', 'description')
             ->withTimestamps();
     }
 
@@ -43,43 +43,46 @@ class Cart extends Model
     }
 
     // merge another carts products in this
-    public function merge(Cart $cart)
+    public function merge(Cart $firstCart)
     {
-        $cart->products()->each(function ($product) {
+        $firstCart->products()->each(function ($product) {
             $this->add($product);
         });
-        $cart->delete();
+
+        $firstCart->delete();
+
+        $this->save();
     }
 
-    private function add($product) 
+    private function add($product)
     {
         if ($this->products->contains($product)) {
             $this->products()->updateExistingPivot($product, [
-                'quantity' => $this->products()->find($product)->pivot->quantity + $product->pivot->quantity ,
-                'description' => $product->pivot->description??'',
+                'quantity' => $this->products()->find($product)->pivot->quantity + $product->pivot->quantity,
+                'description' => $product->pivot->description ?? '',
             ]);
         } else {
             $this->products()->attach($product, [
                 'quantity' => $product->pivot->quantity,
-                'description' => $product->pivot->description??'',
+                'description' => $product->pivot->description ?? '',
             ]);
         }
     }
 
-    public function total() 
+    public function total()
     {
         $total = 0;
-        for ($i=0; $i < count($this->productsIds()); $i++) {
+        for ($i = 0; $i < count($this->productsIds()); $i++) {
             $total += $this->products()->find($this->productsIds()[$i])->pivot->quantity
                 * $this->products()->find($this->productsIds()[$i])->price;
         }
         return $total;
     }
 
-    public function totalQuantity() 
+    public function totalQuantity()
     {
         $total = 0;
-        for ($i=0; $i < count($this->productsIds()); $i++) {
+        for ($i = 0; $i < count($this->productsIds()); $i++) {
             $total += $this->products()->find($this->productsIds()[$i])->pivot->quantity;
         }
         return $total;
@@ -122,4 +125,16 @@ class Cart extends Model
         return $this->discount()->exists() ? $this->total() * $this->discount->percent / 100 : 0;
     }
 
+    public static function getOrCreate(?string $uuid = null)
+    {
+        if (auth()->check()) {
+            return Cart::firstOrCreate([
+                'user_id' => auth()->id()
+            ]);
+        } else {
+            return Cart::firstOrCreate([
+                'uuid' => $uuid ?? uniqid(),
+            ]);
+        }
+    }
 }

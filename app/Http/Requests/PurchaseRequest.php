@@ -24,6 +24,7 @@ class PurchaseRequest extends FormRequest
     public function rules()
     {
         return [
+            'cart_id' => 'exists:carts,uuid',
             'address_id' => 'required|exists:addresses,uuid',
         ];
     }

@@ -16,14 +16,14 @@ class ProductListResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id'=>$this->id,
-            'title'=>$this->title,
-            'price'=>$this->price,
-            'description'=> Str::limit($this->description, 50),
-            'category'=>$this->category ? $this->category->name : null,
-            'rating'=>$this->rating ? new RatingShowResource($this->rating) : null,
-            'image'=>$this->images->isNotEmpty() ? asset('storage/' .$this->cover->image_path) : null,
+            'id' => $this->id,
+            'title' => $this->title,
+            'price' => $this->price,
+            'description' => Str::limit($this->description, 50),
+            'category' => $this->category ? $this->category->name : null,
+            'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
+            'images' => [],
+            'thumbnail' => $this->images->isNotEmpty() ? new ImageShowResource($this->thumbnail)  : null,
         ];
     }
 }
-

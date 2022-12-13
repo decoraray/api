@@ -15,8 +15,8 @@ class RatingShowResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'count'=>$this->count,
-            'rating'=>$this->rating / $this->count,
+            'count' => $this->count,
+            'rating' => $this->rating / $this->count,
         ];
     }
 }

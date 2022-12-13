@@ -14,8 +14,6 @@ class ImageShowResource extends JsonResource
      */
     public function toArray($request)
     {
-        return [
-            'image_path' => asset('storage/' .$this->image_path)
-        ];
+        return $this->imagePath;
     }
 }
