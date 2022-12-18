@@ -31,7 +31,7 @@ class Product extends Model
     public function carts()
     {
         return $this->belongsToMany(Cart::class)
-            ->withPivot('quantity','description')
+            ->withPivot('quantity', 'description')
             ->withTimestamps();
     }
 
@@ -46,11 +46,23 @@ class Product extends Model
         $query->where('active', 1);
     }
 
-
-    // rating
     public function rating()
     {
         return $this->hasOne(Rating::class);
     }
 
+    public function images()
+    {
+        return $this->hasMany(Image::class);
+    }
+
+    public function getThumbnailAttribute()
+    {
+        return $this->hasMany(Image::class)->orderBy('id', 'desc')->first();
+    }
+
+    public function discount()
+    {
+        return $this->hasOne(Discount::class);
+    }
 }

@@ -8,4 +8,18 @@ use Illuminate\Database\Eloquent\Model;
 class Discount extends Model
 {
     use HasFactory;
+
+    protected $fillable = [
+        'code',
+        'percent',
+        'start_date',
+        'end_date',
+        'active',
+        'used_at'
+    ];
+
+    public function carts()
+    {
+        return $this->belongsToMany(Cart::class);
+    }
 }

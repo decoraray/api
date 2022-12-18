@@ -15,14 +15,15 @@ class ProductShowResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id'=>$this->id,
-            'title'=>$this->title,
-            'slug'=>$this->slug,
-            'description'=>$this->description,
-            'price'=>$this->price,
-            'category'=>$this->category ? $this->category->name : null,
-            'image'=>$this->image,
-            'rating'=>$this->rating ? new RatingShowResource($this->rating) : null,
+            'id' => $this->id,
+            'title' => $this->title,
+            'slug' => $this->slug,
+            'description' => $this->description,
+            'price' => $this->price,
+            'category' => $this->category ? $this->category->name : null,
+            'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
+            'images' => $this->images ? ImageShowResource::collection($this->images) : null,
+            'thumbnail' => [],
         ];
     }
 }

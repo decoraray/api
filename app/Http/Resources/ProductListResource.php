@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Str;
 
 class ProductListResource extends JsonResource
 {
@@ -15,12 +16,14 @@ class ProductListResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id'=>$this->id,
-            'title'=>$this->title,
-            'price'=>$this->price,
-            'category'=>$this->category ? $this->category->name : null,
-            'image'=>$this->image,
-            'rating'=>$this->rating ? new RatingShowResource($this->rating) : null,
+            'id' => $this->id,
+            'title' => $this->title,
+            'price' => $this->price,
+            'description' => Str::limit($this->description, 50),
+            'category' => $this->category ? $this->category->name : null,
+            'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
+            'images' => [],
+            'thumbnail' => $this->images->isNotEmpty() ? new ImageShowResource($this->thumbnail)  : null,
         ];
     }
 }

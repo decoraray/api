@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\ProductShowResource;
+use App\Http\Requests\Admin\CreateProductRequest;
 
 class ProductController extends Controller
 {
@@ -15,7 +17,7 @@ class ProductController extends Controller
      */
     public function index()
     {
-        return Product::all();
+        return  Product::all();
     }
 
     /**
@@ -34,7 +36,7 @@ class ProductController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(CreateProductRequest $request)
     {
         $product = new Product($request->all());
         $product->save();
@@ -49,7 +51,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        return $product;
+        return new ProductShowResource($product);
     }
 
     /**

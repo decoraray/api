@@ -20,6 +20,7 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'surname',
         'email',
         'phone',
         'password',
@@ -53,5 +54,25 @@ class User extends Authenticatable
         return $this->role == 'user';
     }
 
+    public function createToken($name)
+    {
+        return $this->createToken($name)->plainTextToken;
+    }
+
+    public function orders() {
+        return $this->hasMany(Order::class);
+    }
+
+    public function cart() {
+        return $this->hasOne(Cart::class);
+    }
+
+    public function addresses() {
+        return $this->hasMany(Address::class);
+    }
+
+    public function getCartAttribute() {
+        return $this->cart()->first();
+    }
 
 }

@@ -5,41 +5,35 @@ namespace App\Http\Controllers;
 use App\Models\Rating;
 use App\Models\Product;
 use App\Models\Category;
-use App\Http\Resources\RatingShowResource;
 use App\Http\Resources\ProductListResource;
 use App\Http\Resources\ProductShowResource;
 use App\Http\Resources\CategoryListResource;
 
 class ShopController extends Controller
 {
-
+    // get initials data for shop page
     public function initial()
     {
         return response()->json([
             'message' => 'shop',
-            'Products' => ProductListResource::collection(Product::active()->get()),
-            'Categories' => CategoryListResource::collection(Category::all()),
+            'products' => ProductListResource::collection(Product::active()->get()),
+            'categories' => CategoryListResource::collection(Category::all()),
         ]);
     }
 
-    // product list
+    // get product list
     public function list()
     {
-        return response()->json([
-            'message' => 'products',
-            'products' => ProductListResource::collection(Product::active()->get()),
-        ]);
+        return response()->json(ProductListResource::collection(Product::active()->get()));
     }
 
     // product detail
     public function show(Product $product)
     {
-        return response()->json([
-            'message' => 'product',
-            'product' => new ProductShowResource($product),
-        ]);
+        return response()->json(new ProductShowResource($product));
     }
 
+    // give rating to product
     public function rating(Product $product)
     {
         $rating = $product->rating ?? Rating::make(['rating' => 0, 'count' => 0]);
@@ -47,18 +41,13 @@ class ShopController extends Controller
         $product->rating()->save($rating);
 
         return response()->json([
-            'message' => 'rating',
-            'rating' => new RatingShowResource($rating),
+            'message' => 'success'
         ]);
     }
 
-    // category list
+    // get category list
     public function categories()
     {
-        return response()->json([
-            'message' => 'category',
-            'Categories' => CategoryListResource::collection(Category::all())
-        ]);
+        return response()->json(CategoryListResource::collection(Category::all()));
     }
-
 }

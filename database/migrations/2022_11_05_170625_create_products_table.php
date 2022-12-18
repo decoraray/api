@@ -18,11 +18,12 @@ return new class extends Migration
             $table->string('title');
             $table->string('slug')->nullable();
             $table->string('description')->nullable();
-            $table->string('price');
+            $table->integer('price');
             $table->string('image')->nullable();
             $table->boolean('active')->default(true);
             $table->string('rating_id')->nullable();
             $table->foreignId('category_id')->nullable()->constrained('categories');
+            $table->foreignId('discount_id')->nullable()->constrained('discounts');
             $table->timestamps();
         });
     }

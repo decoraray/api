@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Validator;
 
-class CartRequest extends FormRequest
+class CreateProductRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -38,30 +38,10 @@ class CartRequest extends FormRequest
     public function rules()
     {
         return [
-            'uuid' => 'nullable|string',
-            'product' => 'required|integer',
-            'quantity' => 'nullable|integer',
-            'description' => 'nullable|string',
+            'title' => 'required',
+            'price' => ['required' , 'numeric' , 'min:0'],
+            'description' => 'required',
+            'category_id' => ['required','exists:categories,id'],
         ];
-    }
-
-    // get product
-    public function getProduct() {
-        return $this->input('product');
-    }
-
-    // get uuid
-    public function getUuid(){
-        return $this->input('uuid')??null;
-    }
-
-    // get description
-    public function getDescription(){
-        return $this->input('description')??null;
-    }
-
-    // get quantity
-    public function getQuantity(){
-        return $this->input('quantity')??1;
     }
 }

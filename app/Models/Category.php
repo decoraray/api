@@ -20,4 +20,9 @@ class Category extends Model
         'description',
     ];
 
+    public function discount()
+    {
+        return $this->hasOne(Discount::class);
+    }
+    
 }

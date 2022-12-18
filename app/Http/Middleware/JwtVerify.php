@@ -4,7 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use App\Servises\AuthService;
+use App\Services\Auth\AuthService;
 use Firebase\JWT\ExpiredException;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,18 +19,18 @@ class JwtVerify
      */
     public function handle(Request $request, Closure $next)
     {
-        $authorizationHeader = explode(' ',$request->header('Authorization')); // ['Bearer', 'TOKEN']
+        $authorizationHeader = explode(' ', $request->header('Authorization')); // ['Bearer', 'TOKEN']
         $head = $authorizationHeader[0] ?? false;
         $jwt = $authorizationHeader[1] ?? false;
 
-        if(!$head || !$jwt){
+        if (!$head || !$jwt) {
             return response()->json([
                 'status' => 0,
                 'reply' => 'Unauthorized'
-           ]);
+            ]);
         }
 
-        try{
+        try {
 
             $decoded = AuthService::verifyToken($jwt);
 
@@ -39,7 +39,6 @@ class JwtVerify
             Auth::loginUsingId($decoded->sub);
 
             return $next($request);
-
         } catch (ExpiredException $e) {
             return response()->json([
                 'status' => 0,
@@ -51,6 +50,5 @@ class JwtVerify
                 'reply' => 'Invalid User!'
             ], 400);
         }
-
     }
 }
