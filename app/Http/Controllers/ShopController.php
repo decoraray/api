@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\CartShowResource;
+use App\Models\Cart;
 use App\Models\Rating;
 use App\Models\Product;
 use App\Models\Category;
@@ -15,9 +17,9 @@ class ShopController extends Controller
     public function initial()
     {
         return response()->json([
-            'message' => 'shop',
             'products' => ProductListResource::collection(Product::active()->get()),
             'categories' => CategoryListResource::collection(Category::all()),
+            'cart' => new CartShowResource(Cart::getOrCreate()),
         ]);
     }
 
