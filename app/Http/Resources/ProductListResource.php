@@ -23,7 +23,7 @@ class ProductListResource extends JsonResource
             'category' => $this->category ? $this->category->name : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
             'images' => [],
-            'thumbnail' => $this->images->isNotEmpty() ? new ImageShowResource($this->thumbnail)  : null,
+            'thumbnail' => $this->images->isNotEmpty() ? $this->thumbnail->imagePath  : null,
         ];
     }
 }
