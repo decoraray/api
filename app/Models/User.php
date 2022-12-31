@@ -4,6 +4,8 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Laravel\Sanctum\HasApiTokens;
+use App\Events\OneTimePassGenerated;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,7 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable , HasRoles;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -46,11 +48,13 @@ class User extends Authenticatable
     ];
 
 
-    public function isAdmin() {
+    public function isAdmin()
+    {
         return $this->role == 'admin';
     }
 
-    public function isUser() {
+    public function isUser()
+    {
         return $this->role == 'user';
     }
 
@@ -59,20 +63,69 @@ class User extends Authenticatable
         return $this->createToken($name)->plainTextToken;
     }
 
-    public function orders() {
+    public function orders()
+    {
         return $this->hasMany(Order::class);
     }
 
-    public function cart() {
+    public function cart()
+    {
         return $this->hasOne(Cart::class);
     }
 
-    public function addresses() {
+    public function addresses()
+    {
         return $this->hasMany(Address::class);
     }
 
-    public function getCartAttribute() {
+    public function getCartAttribute()
+    {
         return $this->cart()->first();
     }
 
+    public function generateOneTimePassword()
+    {
+        $newlyGenerated = $this->one_time_password == null;
+        if (!$newlyGenerated) {
+            return false;
+        }
+
+        // config('auth.otp.expire');
+        $this->one_time_password = rand(100000, 999999);
+        $this->one_time_password_created_at = now();
+        $this->save();
+
+        event(new OneTimePassGenerated($this));
+
+        return true;
+    }
+
+    protected function clearOneTimePassword()
+    {
+        $this->one_time_password = null;
+        $this->one_time_password_created_at = null;
+        $this->save();
+    }
+
+    public function verifyOneTimePassword($password): bool
+    {
+        if ($this->one_time_password == null || $this->one_time_password_created_at == null) {
+            return false;
+        }
+
+        // check if time is expired 
+        $expired = now()->subMinutes(config('auth.otp.expire')) > $this->one_time_password_created_at;
+        if ($expired) {
+            $this->clearOneTimePassword();
+            return false;
+        }
+
+        // check if password is correct
+        if ($password ==  $this->one_time_password) {
+            $this->clearOneTimePassword();
+            return true;
+        }
+
+        return false;
+    }
 }

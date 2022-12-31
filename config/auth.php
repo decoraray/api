@@ -108,4 +108,10 @@ return [
 
     'password_timeout' => 10800,
 
+    'otp' => [
+        'length' => 6, // digits
+        'expire' => 2, // minutes
+        'throttle' => 180, // seconds
+    ],
+
 ];
