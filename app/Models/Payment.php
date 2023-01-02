@@ -37,7 +37,7 @@ class Payment extends Model
 
     public function pay()
     {
-        // PaymentService::pay($this);
+        PaymentService::pay($this);
         $this->status = 'paid';
         $this->save();
     }

@@ -34,7 +34,7 @@ class Cart extends Model
 
     public function productsIds()
     {
-        return $this->products()->pluck('product_id')->toArray();
+        return empty($this->products->items) ? [] : $this->products()->pluck('product_id')->toArray();
     }
 
     public function user()

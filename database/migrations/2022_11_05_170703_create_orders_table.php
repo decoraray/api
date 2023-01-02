@@ -24,6 +24,10 @@ return new class extends Migration
             $table->string('status');
             $table->integer('total');
             $table->integer('discount_amount');
+            $table->integer('payment_method');
+            $table->integer('payment_status');
+            $table->integer('shipping_method');
+            $table->integer('shipping_price');
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
             $table->foreignId('address_id')->nullable()->constrained('addresses')->onDelete('set null');
             $table->foreignId('discount_id')->nullable()->constrained('discounts')->unsigned()->onDelete('set null');
