@@ -26,6 +26,7 @@ class PaymentRequest extends FormRequest
         return [
             'order_id' => 'required|exists:orders,uuid',
             'method' => 'nullable|in:cash,card',
+            'gateway' => 'required_if:method,card|in:saman,pasargad,mellat,melli,sepah',
             'card_number' => 'required_if:payment_method,card|digits:16',
             'card_expiration' => 'required_if:payment_method,card|date_format:m/Y',
             'card_cvv' => 'required_if:payment_method,card|digits:3',

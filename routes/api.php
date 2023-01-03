@@ -47,6 +47,9 @@ Route::prefix('v1')
         Route::post('/delete', 'CartController@delete');
         Route::post('/clear', 'CartController@clear');
 
+        // verify payment
+        Route::post('/payment/verify', 'PaymentController@verify')->name('payment-verify');
+
 
         // routs after auth ( jwt )
         Route::group(['middleware' => 'App\Http\Middleware\JwtVerify'], function () {
@@ -56,7 +59,6 @@ Route::prefix('v1')
                 return $request->user()->with('cart')->first();
             });
             Route::post('/update', 'AuthController@update')->name('update');
-
 
             // purchase 
             Route::post('/checkout', 'PaymentController@checkout');

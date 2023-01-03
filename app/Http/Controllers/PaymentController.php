@@ -7,10 +7,11 @@ use App\Models\Item;
 use App\Models\Order;
 use App\Models\Address;
 use App\Models\Payment;
-use App\Services\Payment\PaymentService;
 use App\Http\Requests\PaymentRequest;
 use App\Http\Requests\PurchaseRequest;
+use App\Services\Payment\PaymentService;
 use App\Http\Resources\OrderShowResource;
+use App\Support\Payment\Gateways\SamanDriver;
 
 class PaymentController extends Controller
 {
@@ -38,6 +39,19 @@ class PaymentController extends Controller
         return response()->json(new OrderShowResource($order), 201);
     }
 
+
+    private function gatewayFactory($gateway)
+    {
+        $g = [
+            'saman' => SamanDriver::class,
+            'pasargad' => Pasargad::class,
+            'mellat'  => Mellat::class,
+            'melli'  => Melli::class,
+            'sepah'  => Sepah::class,
+        ][$gateway];
+        return resolve($g);
+    }
+
     public function pay(PaymentRequest $request)
     {
         $user = auth()->user();
@@ -52,7 +66,7 @@ class PaymentController extends Controller
 
         $payment = Payment::create([
             'uuid' => uniqid(),
-            'amount' => $order->total,
+            'amount' => round($order->final_price),
             'description' => 'payment for order ' . $order->uuid,
             'user_phone' => $user->phone,
             'method' => $request->method ?? 'card',
@@ -61,7 +75,8 @@ class PaymentController extends Controller
             'status' => 'pending',
         ]);
 
-        // $payment->pay();
+        // selection of gateway & payment
+        $this->gatewayFactory($request->gateway)->Pay($payment);
 
         if ($payment->status == 'success') {
             $order->status = 'paid';
