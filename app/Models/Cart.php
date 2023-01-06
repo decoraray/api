@@ -137,4 +137,9 @@ class Cart extends Model
             ]);
         }
     }
+
+    public function count()
+    {
+        return $this->products()->count();
+    }
 }
