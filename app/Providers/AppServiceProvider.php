@@ -13,7 +13,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        //
+        $this->app->bind(
+            \App\Clients\SmsClient\SmsProviderClientInterface::class,
+            \App\Clients\SmsClient\SmsProviderClient::class
+        );
     }
 
     /**

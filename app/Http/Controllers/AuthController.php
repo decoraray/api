@@ -2,21 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\LoginRequest;
-use App\Http\Requests\RegisterRequest;
 use App\Models\Cart;
 use App\Models\User;
-use App\Services\Auth\AuthService;
 use Illuminate\Http\Request;
+use App\Services\Auth\AuthService;
+use App\Http\Requests\LoginRequest;
 use Illuminate\Support\Facades\Hash;
+use App\Http\Requests\RegisterRequest;
+use App\Http\Requests\SmsVerifyRequest;
+use App\Http\Requests\UpdateUserRequest;
+use App\Http\Requests\SmsRegisterRequest;
 
 
 class AuthController extends Controller
 {
-
-    public function login(LoginRequest $request)
+    public function emailLogin(LoginRequest $request)
     {
-
         $user = User::where('email', $request->email)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
@@ -25,12 +26,17 @@ class AuthController extends Controller
             ], 404);
         }
 
+        return $this->login($user, $request->getUuid());
+    }
+
+    private function login($user, $uuid = null)
+    {
         $token = AuthService::createToken($user);
 
         $cart = Cart::firstOrCreate(['user_id' => $user->id]);
-        if ($request->getUuid()) {
-            if (!empty(Cart::where('uuid', $request->getUuid())->first())) {
-                $cart->merge(Cart::where('uuid', $request->getUuid())->first());
+        if ($uuid) {
+            if (!empty(Cart::where('uuid', $uuid)->first())) {
+                $cart->merge(Cart::where('uuid', $uuid)->first());
             }
         }
 
@@ -40,6 +46,55 @@ class AuthController extends Controller
         ];
 
         return response($response, 200);
+    }
+
+    public function smsLogin(Request $request)
+    {
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user) {
+            return response([
+                'message' => ['These credentials do not match our records.']
+            ], 404);
+        }
+
+        $otpGenerated = $user->generateOneTimePassword();
+        if (!$otpGenerated) {
+            return response([
+                'message' => ['Failed to generate one time password.']
+            ], 500);
+        }
+
+        $response = [
+            'message' => 'Check your sms',
+        ];
+
+        // if app is in local environment, we don't need to send sms
+        if (app()->environment('local')) {
+            $response['otp'] = $user->one_time_password;
+        }
+
+        return response($response, 200);
+    }
+
+    public function smsVerify(SmsVerifyRequest $request)
+    {
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user) {
+            return response([
+                'message' => ['These credentials do not match our records.']
+            ], 404);
+        }
+
+        $passed = $user->verifyOneTimePassword($request->password);
+        if (!$passed) {
+            return response([
+                'message' => ['Invalid one time password.']
+            ], 404);
+        }
+
+        return $this->login($user, $request->getUuid());
     }
 
     public function register(RegisterRequest $request)
@@ -70,6 +125,31 @@ class AuthController extends Controller
         return response($response, 201);
     }
 
+    public function smsRegister(SmsRegisterRequest $request)
+    {
+        $user = User::create([
+            'phone' => $request->phone,
+            'password' => Hash::make($request->password),
+        ]);
+
+        $otpGenerated = $user->generateOneTimePassword();
+        if (!$otpGenerated) {
+            return response([
+                'message' => ['Failed to generate one time password.']
+            ], 500);
+        }
+        $response = [
+            'message' => 'Check your sms',
+        ];
+
+        // if app is in local environment, we don't need to send sms
+        if (app()->environment('local')) {
+            $response['otp'] = $user->one_time_password;
+        }
+
+        return response($response, 200);
+    }
+
     public function forgotPassword(Request $request)
     {
         $user = User::where('email', $request->email)->first();
@@ -79,6 +159,22 @@ class AuthController extends Controller
         $response = [
             'message' => 'Check your email',
         ];
+        return response($response, 200);
+    }
+
+    public function update(UpdateUserRequest $request)
+    {
+        $user = User::where('id', $request->user()->id)->first();
+
+        // filter nulls from request
+        $data = array_filter($request->all());
+
+        $user->update($data);
+
+        $response = [
+            'user' => $user,
+        ];
+
         return response($response, 200);
     }
 }

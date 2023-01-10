@@ -20,7 +20,6 @@ class CartController extends Controller
     function index(Request $request)
     {
         $cart = Cart::getOrCreate($request->uuid);
-
         return response()->json(new CartShowResource($cart));
     }
 

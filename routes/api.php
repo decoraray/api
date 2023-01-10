@@ -24,9 +24,12 @@ Route::prefix('v1')
         });
 
         // auth routs
-        Route::post('/login', 'AuthController@login')->name('login');
-        Route::post('/register', 'AuthController@register')->name('register');
+        Route::post('/email-login', 'AuthController@emailLogin')->name('email-login');
+        Route::post('/register', 'AuthController@register')->name('email-register');
         Route::post('/forgot-password', 'AuthController@forgotPassword')->name('forgot-password'); // TODO
+        Route::post('/login', 'AuthController@smsLogin')->name('sms-login');
+        Route::post('/register', 'AuthController@smsRegister')->name('sms-register');
+        Route::post('/sms-verify', 'AuthController@smsVerify')->name('sms-verify');
 
         // public shop routs
         Route::get('/initials', 'ShopController@initial')->name('initial');
@@ -44,13 +47,18 @@ Route::prefix('v1')
         Route::post('/delete', 'CartController@delete');
         Route::post('/clear', 'CartController@clear');
 
+        // verify payment
+        Route::post('/payment/verify', 'PaymentController@verify')->name('payment-verify');
+
 
         // routs after auth ( jwt )
         Route::group(['middleware' => 'App\Http\Middleware\JwtVerify'], function () {
 
+            // user routs
             Route::get('/user', function (Request $request) {
                 return $request->user()->with('cart')->first();
             });
+            Route::post('/update', 'AuthController@update')->name('update');
 
             // purchase 
             Route::post('/checkout', 'PaymentController@checkout');

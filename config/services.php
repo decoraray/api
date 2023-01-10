@@ -36,4 +36,9 @@ return [
         'sandbox' => env('ZARINPAL_SANDBOX', true),
     ],
 
+    'sms_provider' => [
+        'url' => env('SMS_PROVIDER_URL'),
+        'app_key' => env('SMS_PROVIDER_APP_KEY'),
+    ]
+
 ];
