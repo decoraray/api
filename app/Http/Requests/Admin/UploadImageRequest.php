@@ -39,7 +39,9 @@ class UploadImageRequest extends FormRequest
     {
         return [
             'image' => 'required|image|mimes:jpg,png,jpeg,gif,svg,webp|max:2048',
-            'product_id' => ['required','integer','exists:products,id'],
+            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'thumbnail' => 'boolean,nullable',
+            'slug' => 'string,nullable',
         ];
     }
 }
