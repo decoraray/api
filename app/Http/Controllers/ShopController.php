@@ -32,7 +32,7 @@ class ShopController extends Controller
     // popular products
     public function popular()
     {
-        return response()->json(ProductListResource::collection(Product::active()->popular()->get()));
+        return response()->json(ProductListResource::collection(Product::active()->get()));
     }
 
     // product detail
