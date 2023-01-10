@@ -66,4 +66,10 @@ class Product extends Model
     {
         return $this->hasOne(Discount::class);
     }
+
+    // popular products
+    public function scopePopular($query)
+    {
+        $query->where('active', 1)->orderBy('id', 'desc');
+    }
 }

@@ -29,6 +29,12 @@ class ShopController extends Controller
         return response()->json(ProductListResource::collection(Product::active()->get()));
     }
 
+    // popular products
+    public function popular()
+    {
+        return response()->json(ProductListResource::collection(Product::active()->popular()->get()));
+    }
+
     // product detail
     public function show($slug)
     {

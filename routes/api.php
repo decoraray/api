@@ -34,6 +34,7 @@ Route::prefix('v1')
         // public shop routs
         Route::get('/initials', 'ShopController@initial')->name('initial');
         Route::get('/products', 'ShopController@list')->name('products');
+        Route::get('/popular-products', 'ShopController@popular')->name('popular-products');
         Route::get('/products/{slug}', 'ShopController@show')->name('product');
         Route::get('/categories', 'ShopController@categories')->name('categories');
         Route::post('/rate/{product}', 'ShopController@rating')->name('rate');
