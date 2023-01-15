@@ -39,29 +39,33 @@ class CartInteractionRequest extends FormRequest
     {
         return [
             'uuid' => 'nullable|string',
-            'product' => 'required|integer|exists:products,id',
+            'variation' => 'required|integer|exists:variations,id',
             'quantity' => 'nullable|integer|min:1',
             'description' => 'nullable|string',
         ];
     }
 
-    // get product
-    public function getProduct() {
-        return $this->input('product');
+    // get variation
+    public function getVariation()
+    {
+        return $this->input('variation');
     }
 
     // get uuid
-    public function getUuid(){
-        return $this->input('uuid')??null;
+    public function getUuid()
+    {
+        return $this->input('uuid') ?? null;
     }
 
     // get description
-    public function getDescription(){
-        return $this->input('description')??null;
+    public function getDescription()
+    {
+        return $this->input('description') ?? null;
     }
 
     // get quantity
-    public function getQuantity(){
-        return $this->input('quantity')??1;
+    public function getQuantity()
+    {
+        return $this->input('quantity') ?? 1;
     }
 }

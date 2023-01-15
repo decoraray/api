@@ -18,20 +18,11 @@ return new class extends Migration
             $table->string('title');
             $table->string('slug')->nullable();
             $table->string('classifier')->nullable();
-            $table->float('weight')->nullable();
-            $table->string('color')->nullable();
-            $table->string('material')->nullable();
-            $table->string('keywords')->nullable();
             $table->text('description')->nullable();
-            $table->integer('price');
-            $table->integer('tax')->nullable();
             $table->integer('stock')->default(0);
-            $table->string('image')->nullable();
             $table->boolean('active')->default(true);
             $table->string('rating_id')->nullable();
             $table->foreignId('category_id')->nullable()->constrained('categories');
-            $table->foreignId('discount_id')->nullable()->constrained('discounts');
-            $table->foreignId('product_id')->nullable()->constrained('products'); // for parent product
             $table->timestamps();
         });
     }

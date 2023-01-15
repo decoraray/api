@@ -18,8 +18,7 @@ class ProductListResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
-            'slug' => $this->slug,
-            'price' => $this->price,
+            'price' => $this->averagePrice,
             'description' => Str::limit($this->description, 50),
             'category' => $this->category ? $this->category->name : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,

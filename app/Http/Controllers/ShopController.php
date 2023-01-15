@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Resources\CartShowResource;
 use App\Models\Cart;
 use App\Models\Rating;
 use App\Models\Product;
 use App\Models\Category;
+use App\Http\Requests\SearchRequest;
+use App\Http\Resources\CartShowResource;
 use App\Http\Resources\ProductListResource;
 use App\Http\Resources\ProductShowResource;
 use App\Http\Resources\CategoryListResource;
@@ -18,7 +19,6 @@ class ShopController extends Controller
     {
         return response()->json([
             'products' => ProductListResource::collection(Product::active()->get()),
-            'categories' => CategoryListResource::collection(Category::all()),
             'cart' => new CartShowResource(Cart::getOrCreate()),
         ]);
     }
@@ -26,7 +26,32 @@ class ShopController extends Controller
     // get product list
     public function list()
     {
-        return response()->json(ProductListResource::collection(Product::active()->get()));
+        return response()->json(
+            ProductListResource::collection(
+                Product::active()
+                    ->take(50)
+                    ->get()
+            )
+        );
+    }
+
+    // get product list by category
+    public function search(SearchRequest $request)
+    {
+        return response()->json(
+            ProductListResource::collection(
+                Product::active()
+                    ->when($request->category, function ($query) use ($request) {
+                        return $query->where('category_id', $request->category);
+                    })
+                    ->when($request->product, function ($query) use ($request) {
+                        return $query->where('id', '<>', $request->product);
+                    })
+                    ->take($request->take ?? 50)
+                    ->offset($request->offset ?? 0)
+                    ->get()
+            )
+        );
     }
 
     // popular products
