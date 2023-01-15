@@ -85,4 +85,10 @@ class Product extends Model
     {
         return $this->variations->pluck('color')->unique();
     }
+
+    // popular products
+    public function scopePopular($query)
+    {
+        $query->where('active', 1)->orderBy('id', 'desc');
+    }
 }

@@ -54,9 +54,24 @@ class ShopController extends Controller
         );
     }
 
-    // product detail
-    public function show(Product $product)
+    // popular products
+    public function popular()
     {
+        return response()->json(ProductListResource::collection(Product::active()->popular()->get()));
+    }
+
+    // search products
+    public function search()
+    {
+        $products = Product::active()->search(request('query'))->get();
+
+        return response()->json(ProductListResource::collection($products));
+    }
+
+    // product detail
+    public function show($slug)
+    {
+        $product = Product::where('slug', $slug)->firstOrFail();
         return response()->json(new ProductShowResource($product));
     }
 
