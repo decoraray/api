@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Color;
 use App\Models\Product;
 use Illuminate\Http\Request;
+use App\Models\ProductVariation;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductShowResource;
 use App\Http\Requests\Admin\CreateProductRequest;
@@ -88,5 +91,45 @@ class ProductController extends Controller
     {
         $product->delete();
         return $product;
+    }
+
+
+    public function importProducts()
+    {
+
+        $oldProducts = DB::connection('mysql')->table('imported_products')->get();
+
+        $oldProducts->each(function ($product) {
+
+            if ($product->parent_code == null) {
+
+                $newProduct = new Product();
+                $newProduct->title = $product->title;
+                $newProduct->classifier = $product->code;
+                $newProduct->slug = $product->slug;
+                $newProduct->description = $product->description;
+                $newProduct->category_id = 1;
+
+                if (str_contains($product->status, 'غیر فعال')) {
+                    $newProduct->active = false;
+                }
+                $newProduct->save();
+            } else {
+                $parent = Product::where('classifier', $product->parent_code)->first();
+                $color = Color::findOrCreate($product->color);
+
+                $newProductVariation = new ProductVariation();
+                $newProductVariation->product_id = $parent->id;
+                $newProductVariation->color_id = $color->id;
+                $newProductVariation->stock = $product->stock;
+                $newProductVariation->weight = $product->weight;
+                $newProductVariation->price = $product->price;
+
+                if (str_contains($product->status, 'غیر فعال')) {
+                    $newProductVariation->active = false;
+                }
+                $newProductVariation->save();
+            }
+        });
     }
 }

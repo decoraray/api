@@ -19,7 +19,7 @@ class ProductShowResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'description' => $this->description,
-            'price' => $this->price,
+            'variations' => VariationShowResource::collection($this->variations->where('active', 1)),
             'category' => $this->category ? $this->category->name : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
             'images' => $this->images ? ImageShowResource::collection($this->images) : null,

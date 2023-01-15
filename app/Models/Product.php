@@ -16,12 +16,12 @@ class Product extends Model
      */
     protected $fillable = [
         'title',
-        'price',
         'description',
         'category_id',
         'active',
+        'code',
+        'slug',
     ];
-
 
     public function category()
     {
@@ -61,8 +61,28 @@ class Product extends Model
         return $this->hasMany(Image::class)->orderBy('id', 'desc')->first();
     }
 
-    public function discount()
+    public function metas()
     {
-        return $this->hasOne(Discount::class);
+        return $this->hasMany(ProductMeta::class);
+    }
+
+    public function materials()
+    {
+        return $this->hasMany(Material::class);
+    }
+
+    public function variations()
+    {
+        return $this->hasMany(Variation::class);
+    }
+
+    public function getAveragePriceAttribute()
+    {
+        return $this->variations->avg('price');
+    }
+
+    public function getColorsAttribute()
+    {
+        return $this->variations->pluck('color')->unique();
     }
 }

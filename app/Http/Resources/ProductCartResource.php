@@ -16,13 +16,10 @@ class ProductCartResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'title' => $this->title,
+            'title' => $this->product->title,
             'price' => $this->price,
-            'description' => [],
-            'category' => $this->category ? $this->category->name : null,
-            'rating' => [],
-            'images' => [],
-            'thumbnail' => $this->images->isNotEmpty() ? new ImageShowResource($this->thumbnail)  : null,
+            'category' => $this->product->category ? $this->product->category->name : null,
+            'thumbnail' => $this->product->images->isNotEmpty() ? new ImageShowResource($this->product->thumbnail)  : null,
             'quantity' => $this->pivot->quantity,
         ];
     }

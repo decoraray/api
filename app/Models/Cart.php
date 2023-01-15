@@ -25,16 +25,16 @@ class Cart extends Model
         return $this->belongsTo(Discount::class);
     }
 
-    public function products()
+    public function variations()
     {
-        return $this->belongsToMany(Product::class)
+        return $this->belongsToMany(Variation::class)
             ->withPivot('quantity', 'description')
             ->withTimestamps();
     }
 
-    public function productsIds()
+    public function variationsIds()
     {
-        return empty($this->products->items) ? [] : $this->products()->pluck('product_id')->toArray();
+        return $this->isEmpty ? [] : $this->variations()->pluck('variation_id')->toArray();
     }
 
     public function user()
@@ -42,11 +42,11 @@ class Cart extends Model
         return $this->belongsTo(User::class);
     }
 
-    // merge another carts products in this
+    // merge another carts variations in this
     public function merge(Cart $firstCart)
     {
-        $firstCart->products()->each(function ($product) {
-            $this->add($product);
+        $firstCart->variations()->each(function ($variation) {
+            $this->add($variation);
         });
 
         $firstCart->delete();
@@ -54,17 +54,17 @@ class Cart extends Model
         $this->save();
     }
 
-    private function add($product)
+    private function add($variation)
     {
-        if ($this->products->contains($product)) {
-            $this->products()->updateExistingPivot($product, [
-                'quantity' => $this->products()->find($product)->pivot->quantity + $product->pivot->quantity,
-                'description' => $product->pivot->description ?? '',
+        if ($this->variations->contains($variation)) {
+            $this->variations()->updateExistingPivot($variation, [
+                'quantity' => $this->variations()->find($variation)->pivot->quantity + $variation->pivot->quantity,
+                'description' => $variation->pivot->description ?? '',
             ]);
         } else {
-            $this->products()->attach($product, [
-                'quantity' => $product->pivot->quantity,
-                'description' => $product->pivot->description ?? '',
+            $this->variations()->attach($variation, [
+                'quantity' => $variation->pivot->quantity,
+                'description' => $variation->pivot->description ?? '',
             ]);
         }
     }
@@ -72,9 +72,9 @@ class Cart extends Model
     public function total()
     {
         $total = 0;
-        for ($i = 0; $i < count($this->productsIds()); $i++) {
-            $total += $this->products()->find($this->productsIds()[$i])->pivot->quantity
-                * $this->products()->find($this->productsIds()[$i])->price;
+        for ($i = 0; $i < count($this->variationsIds()); $i++) {
+            $total += $this->variations()->find($this->variationsIds()[$i])->pivot->quantity
+                * $this->variations()->find($this->variationsIds()[$i])->price;
         }
         return $total;
     }
@@ -82,20 +82,20 @@ class Cart extends Model
     public function totalQuantity()
     {
         $total = 0;
-        for ($i = 0; $i < count($this->productsIds()); $i++) {
-            $total += $this->products()->find($this->productsIds()[$i])->pivot->quantity;
+        for ($i = 0; $i < count($this->variationsIds()); $i++) {
+            $total += $this->variations()->find($this->variationsIds()[$i])->pivot->quantity;
         }
         return $total;
     }
 
     public function clear()
     {
-        $this->products()->detach();
+        $this->variations()->detach();
     }
 
     public function isEmpty()
     {
-        return $this->products()->count() == 0;
+        return $this->variations()->count() == 0;
     }
 
     // get total attribute

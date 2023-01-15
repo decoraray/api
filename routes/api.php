@@ -23,6 +23,8 @@ Route::prefix('v1')
             return 'health';
         });
 
+        Route::get('/test', 'App\Http\Controllers\Admin\ProductController@importProducts');
+
         // auth routs
         Route::post('/email-login', 'AuthController@emailLogin')->name('email-login');
         Route::post('/register', 'AuthController@register')->name('email-register');
@@ -34,6 +36,7 @@ Route::prefix('v1')
         // public shop routs
         Route::get('/initials', 'ShopController@initial')->name('initial');
         Route::get('/products', 'ShopController@list')->name('products');
+        Route::post('/search', 'ShopController@search')->name('search');
         Route::get('/products/{product}', 'ShopController@show')->name('product');
         Route::get('/categories', 'ShopController@categories')->name('categories');
         Route::post('/rate/{product}', 'ShopController@rating')->name('rate');
