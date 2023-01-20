@@ -7,12 +7,12 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use App\Services\Auth\AuthService;
 use App\Http\Requests\LoginRequest;
+use App\Services\Sms\Drivers\SmsIr;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\SmsVerifyRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Requests\SmsRegisterRequest;
-
 
 class AuthController extends Controller
 {
@@ -64,6 +64,8 @@ class AuthController extends Controller
                 'message' => ['Failed to generate one time password.']
             ], 500);
         }
+
+        SmsIr::verify($user->phone, $user->one_time_password);
 
         $response = [
             'message' => 'Check your sms',
