@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Color;
 use App\Models\Product;
+use App\Models\Variation;
 use Illuminate\Http\Request;
 use App\Models\ProductVariation;
 use Illuminate\Support\Facades\DB;
@@ -118,7 +119,7 @@ class ProductController extends Controller
                 $parent = Product::where('classifier', $product->parent_code)->first();
                 $color = Color::findOrCreate($product->color);
 
-                $newProductVariation = new ProductVariation();
+                $newProductVariation = new Variation();
                 $newProductVariation->product_id = $parent->id;
                 $newProductVariation->color_id = $color->id;
                 $newProductVariation->stock = $product->stock;
@@ -131,5 +132,7 @@ class ProductController extends Controller
                 $newProductVariation->save();
             }
         });
+
+        return 'done';
     }
 }
