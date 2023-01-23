@@ -6,11 +6,11 @@ use App\Models\Color;
 use App\Models\Product;
 use App\Models\Variation;
 use Illuminate\Http\Request;
-use App\Models\ProductVariation;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductShowResource;
 use App\Http\Requests\Admin\CreateProductRequest;
+use App\Http\Resources\ProductAdminListResource;
 
 class ProductController extends Controller
 {
@@ -21,7 +21,13 @@ class ProductController extends Controller
      */
     public function index()
     {
-        return  Product::all();
+        return response()->json(
+            ProductAdminListResource::collection(
+                Product::take(10)
+                    ->get()
+            )
+        );
+        // return  Product::all();
     }
 
     /**
