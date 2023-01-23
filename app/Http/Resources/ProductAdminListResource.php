@@ -18,6 +18,7 @@ class ProductAdminListResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'slug' => $this->slug,
             'price' => $this->averagePrice,
             'variation_count' => $this->variations->count(),
             'description' => Str::limit($this->description, 50),
