@@ -54,27 +54,6 @@ class ProductController extends Controller
         return $product;
     }
 
-    // add new product variation
-    public function addVariation(AddProductVariationRequest $request)
-    {
-        $product = Product::find($request->product_id);
-
-        $color = Color::findOrCreate($request->color);
-
-        $variation = new Variation();
-
-        $variation->product_id = $product->id;
-        $variation->color_id = $color->id;
-        $variation->stock = $request->stock;
-        $variation->weight = $request->weight;
-        $variation->price = $request->price;
-        $variation->active = $request->active;
-        $variation->size = $request->size;
-        $variation->save();
-
-        return $variation;
-    }
-
     /**
      * Display the specified resource.
      *

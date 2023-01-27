@@ -77,7 +77,7 @@ Route::prefix('v1')
             Route::prefix('admin')->namespace('Admin')->group(function () {
                 Route::post('image', 'ImageController@imageStore');
                 Route::resource('products', 'ProductController');
-                Route::post('products/{product}/variations', 'ProductController@addVariation');
+                Route::resource('variations', 'VariationController');
                 Route::resource('category', 'CategoryController');
                 Route::resource('discount', 'DiscountController');
             });
