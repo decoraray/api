@@ -17,6 +17,7 @@ class ProductAdminListResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'code' => $this->code,
             'title' => $this->title,
             'slug' => $this->slug,
             'price' => $this->averagePrice,

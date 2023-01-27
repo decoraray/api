@@ -39,9 +39,9 @@ class CreateProductRequest extends FormRequest
     {
         return [
             'title' => 'required',
-            'price' => ['required' , 'numeric' , 'min:0'],
+            'slug' => 'required|unique:products,slug',
             'description' => 'required',
-            'category_id' => ['required','exists:categories,id'],
+            'category_id' => ['required', 'exists:categories,id'],
         ];
     }
 }

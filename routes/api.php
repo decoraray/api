@@ -23,7 +23,7 @@ Route::prefix('v1')
             return 'health';
         });
 
-        Route::get('/test', 'App\Http\Controllers\Admin\ProductController@importProducts');
+        Route::get('/port-products', 'App\Http\Controllers\Admin\ProductController@importProducts');
 
         // auth routs
         Route::post('/email-login', 'AuthController@emailLogin')->name('email-login');
@@ -77,6 +77,7 @@ Route::prefix('v1')
             Route::prefix('admin')->namespace('Admin')->group(function () {
                 Route::post('image', 'ImageController@imageStore');
                 Route::resource('products', 'ProductController');
+                Route::post('products/{product}/variations', 'ProductController@addVariation');
                 Route::resource('category', 'CategoryController');
                 Route::resource('discount', 'DiscountController');
             });

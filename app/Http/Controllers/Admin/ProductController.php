@@ -9,8 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductShowResource;
-use App\Http\Requests\Admin\CreateProductRequest;
 use App\Http\Resources\ProductAdminListResource;
+use App\Http\Requests\Admin\CreateProductRequest;
+use App\Http\Requests\Admin\AddProductVariationRequest;
 
 class ProductController extends Controller
 {
@@ -51,6 +52,27 @@ class ProductController extends Controller
         $product = new Product($request->all());
         $product->save();
         return $product;
+    }
+
+    // add new product variation
+    public function addVariation(AddProductVariationRequest $request)
+    {
+        $product = Product::find($request->product_id);
+
+        $color = Color::findOrCreate($request->color);
+
+        $variation = new Variation();
+
+        $variation->product_id = $product->id;
+        $variation->color_id = $color->id;
+        $variation->stock = $request->stock;
+        $variation->weight = $request->weight;
+        $variation->price = $request->price;
+        $variation->active = $request->active;
+        $variation->size = $request->size;
+        $variation->save();
+
+        return $variation;
     }
 
     /**
