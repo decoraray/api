@@ -37,7 +37,7 @@ Route::prefix('v1')
         Route::get('/initials', 'ShopController@initial')->name('initial');
         Route::get('/products', 'ShopController@list')->name('products');
         Route::post('/search', 'ShopController@search')->name('search');
-        Route::get('/products/{product}', 'ShopController@show')->name('product');
+        Route::get('/products/{slugOrId}', 'ShopController@show')->name('product');
         Route::get('/categories', 'ShopController@categories')->name('categories');
         Route::post('/rate/{product}', 'ShopController@rating')->name('rate');
         Route::get('cities', 'AddressController@cities')->name('cities');
