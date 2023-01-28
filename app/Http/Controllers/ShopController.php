@@ -61,9 +61,10 @@ class ShopController extends Controller
     }
 
     // product detail
-    public function show($slug)
+    public function show($slugOrId)
     {
-        $product = Product::where('slug', $slug)->firstOrFail();
+        $product = Product::where('id', $slugOrId)->orWhere('slug', $slugOrId)->firstOrFail();
+
         return response()->json(new ProductShowResource($product));
     }
 
