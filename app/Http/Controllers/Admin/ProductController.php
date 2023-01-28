@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductShowResource;
 use App\Http\Resources\ProductAdminListResource;
 use App\Http\Requests\Admin\CreateProductRequest;
+use App\Http\Resources\admin\ProductShowAdminResource;
 use App\Http\Requests\Admin\AddProductVariationRequest;
 
 class ProductController extends Controller
@@ -32,16 +33,6 @@ class ProductController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -51,7 +42,7 @@ class ProductController extends Controller
     {
         $product = new Product($request->all());
         $product->save();
-        return $product;
+        return new ProductShowAdminResource($product);
     }
 
     /**
@@ -62,18 +53,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        return $product;
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Product  $product
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Product $product)
-    {
-        //
+        return new ProductShowAdminResource($product);
     }
 
     /**
@@ -86,7 +66,7 @@ class ProductController extends Controller
     public function update(Request $request, Product $product)
     {
         $product->update($request->all());
-        return $product;
+        return new ProductShowAdminResource($product);
     }
 
     /**
@@ -98,7 +78,7 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         $product->delete();
-        return $product;
+        return new ProductShowAdminResource($product);
     }
 
 

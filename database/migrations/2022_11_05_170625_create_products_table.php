@@ -19,7 +19,6 @@ return new class extends Migration
             $table->string('slug')->nullable();
             $table->string('classifier')->nullable();
             $table->text('description')->nullable();
-            $table->integer('stock')->default(0);
             $table->boolean('active')->default(true);
             $table->string('rating_id')->nullable();
             $table->foreignId('category_id')->nullable()->constrained('categories');
