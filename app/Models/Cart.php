@@ -129,7 +129,7 @@ class Cart extends Model
     {
         if (auth()->check()) {
             return Cart::firstOrCreate([
-                'user_id' => auth()->id()
+                'user_id' => auth()->id(),
             ]);
         } else {
             return Cart::firstOrCreate([

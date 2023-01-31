@@ -46,6 +46,13 @@ class Product extends Model
         $query->where('active', 1);
     }
 
+    public function scopeHasActiveVariation($query)
+    {
+        $query->whereHas('variations', function ($query) {
+            $query->where('active', 1);
+        });
+    }
+
     public function rating()
     {
         return $this->hasOne(Rating::class);

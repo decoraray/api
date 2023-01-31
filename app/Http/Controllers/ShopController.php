@@ -18,7 +18,7 @@ class ShopController extends Controller
     public function initial()
     {
         return response()->json([
-            'products' => ProductListResource::collection(Product::active()->get()),
+            'products' => ProductListResource::collection(Product::active()->hasActiveVariation()->get()),
             'cart' => new CartShowResource(Cart::getOrCreate()),
         ]);
     }
