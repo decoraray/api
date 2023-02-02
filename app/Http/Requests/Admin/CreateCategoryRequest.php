@@ -40,6 +40,8 @@ class CreateCategoryRequest extends FormRequest
         return [
             'name' => 'required',
             'slug' => 'required',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+            'parent_id' => 'nullable|exists:categories,id',
             'description' => 'required',
         ];
     }
