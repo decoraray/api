@@ -26,7 +26,7 @@ class CheckoutRequest extends FormRequest
         return [
             'cart_id' => 'exists:carts,uuid',
             'address_id' => 'required|exists:addresses,uuid',
-            'payment_method' => 'required|in:door,online,transfer',
+            'payment_method' => 'required|integer|in:1,2,3',
         ];
     }
 }
