@@ -19,7 +19,7 @@ class UserShowResource extends JsonResource
             'email' => $this->email,
             'phone' => (string)$this->national_code . (string)$this->phone,
             'address' => AddressShowResource::collection($this->addresses),
-            'cart' => CartShowResource::collection($this->carts),
+            'cart' => CartShowResource::collection($this->cart),
         ];
     }
 }
