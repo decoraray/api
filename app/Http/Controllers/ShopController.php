@@ -83,6 +83,6 @@ class ShopController extends Controller
     // get category list
     public function categories()
     {
-        return response()->json(CategoryResource::collection(Category::all()));
+        return response()->json(CategoryResource::collection(Category::parents()->get()));
     }
 }
