@@ -23,6 +23,7 @@ class Order extends Model
         'postal_code',
         'phone',
         'status',
+        'payment_method',
         'total',
         'discount_amount',
         'discount_id',
