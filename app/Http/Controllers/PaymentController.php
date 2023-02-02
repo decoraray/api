@@ -8,7 +8,7 @@ use App\Models\Order;
 use App\Models\Address;
 use App\Models\Payment;
 use App\Http\Requests\PaymentRequest;
-use App\Http\Requests\PurchaseRequest;
+use App\Http\Requests\CheckoutRequest;
 use App\Services\Payment\PaymentService;
 use App\Http\Resources\OrderShowResource;
 use App\Support\Payment\Gateways\SamanDriver;
@@ -21,7 +21,7 @@ class PaymentController extends Controller
         //
     }
 
-    function checkout(PurchaseRequest $request)
+    function checkout(CheckoutRequest $request)
     {
 
         $cart = Cart::getOrCreate(); // TODO : get cart by uuid 
@@ -32,9 +32,9 @@ class PaymentController extends Controller
             ], 400);
         }
 
-        $order = $this->createOrder($request->address_id);
+        $order = $this->createOrder($request->address_id, $request->payment_method);
 
-        $cart->products()->detach();
+        // $cart->products()->detach();
 
         return response()->json(new OrderShowResource($order), 201);
     }
@@ -92,12 +92,12 @@ class PaymentController extends Controller
         ], 201);
     }
 
-    private function createOrder($address_id)
+    private function createOrder($addressId, $paymentMethod)
     {
 
         $user = auth()->user();
 
-        $address = Address::where('uuid', $address_id)->first();
+        $address = Address::where('uuid', $addressId)->first();
 
         $cart = $user->cart;
 
@@ -109,6 +109,7 @@ class PaymentController extends Controller
             'county' => $address->county,
             'postal_code' => $address->postal_code,
             'phone' => $address->phone,
+            'payment_method' => $paymentMethod,
             'status' => 'pending',
             'total' => $cart->total,
             'discount_amount' => $cart->discountAmount,

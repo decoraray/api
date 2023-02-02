@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class PurchaseRequest extends FormRequest
+class CheckoutRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -26,6 +26,7 @@ class PurchaseRequest extends FormRequest
         return [
             'cart_id' => 'exists:carts,uuid',
             'address_id' => 'required|exists:addresses,uuid',
+            'payment_method' => 'required|in:door,online,transfer',
         ];
     }
 }
