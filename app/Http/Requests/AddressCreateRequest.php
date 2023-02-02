@@ -30,7 +30,6 @@ class AddressCreateRequest extends FormRequest
             'address' => 'required|string|max:255',
             'postal_code' => 'nullable|string|max:255',
             'city_id' => 'nullable|integer|exists:cities,id|gt:31', // 31 is the biggest county id
-            'user_id' => 'required|integer|exists:users,id',
         ];
     }
 }

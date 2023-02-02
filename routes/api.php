@@ -59,8 +59,10 @@ Route::prefix('v1')
 
             // user routs
             Route::get('/user', function (Request $request) {
-                return $request->user()->with('cart')->first();
+                // return $request->user()->with('cart')->first();
+                return new App\Http\Resources\UserShowResource($request->user());
             });
+
             Route::post('/update', 'AuthController@update')->name('update');
 
             // purchase 

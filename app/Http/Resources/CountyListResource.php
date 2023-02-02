@@ -15,9 +15,9 @@ class CountyListResource extends JsonResource
     public function toArray($request)
     {
         return [
-            'id'=>$this->id,
-            'title'=>$this->title,
-            'children'=>CityListResource::collection($this->children),
+            'id' => $this->id,
+            'title' => $this->title,
+            'children' => CityListResource::collection($this->children),
         ];
     }
 }
