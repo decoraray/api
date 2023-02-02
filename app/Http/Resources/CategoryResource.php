@@ -4,7 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class CategoryShowResource extends JsonResource
+class CategoryResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -21,8 +21,7 @@ class CategoryShowResource extends JsonResource
             'description' => $this->description,
             // 'image' => $this->image,
             'parent_id' => $this->parent_id ?? null,
-            'children' => $this->children ?? CategoryShowResource::collection($this->children),
-
+            'children' => $this->children ?? CategoryResource::collection($this->children),
         ];
     }
 }

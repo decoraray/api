@@ -8,9 +8,9 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Http\Requests\SearchRequest;
 use App\Http\Resources\CartShowResource;
+use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductListResource;
 use App\Http\Resources\ProductShowResource;
-use App\Http\Resources\CategoryListResource;
 
 class ShopController extends Controller
 {
@@ -83,6 +83,6 @@ class ShopController extends Controller
     // get category list
     public function categories()
     {
-        return response()->json(CategoryListResource::collection(Category::all()));
+        return response()->json(CategoryResource::collection(Category::all()));
     }
 }
