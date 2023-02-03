@@ -41,15 +41,13 @@ class ShopController extends Controller
         return response()->json(
             ProductListResource::collection(
                 Product::active()
-                    ->when($request->category, function ($query) use ($request) {
-                        return $query->where('category_id', $request->category);
-                    })
+                    ->byCategory($request->category)
+                    ->byTag($request->tag)
+                    ->Sort()
                     ->when($request->product, function ($query) use ($request) {
                         return $query->where('id', '<>', $request->product);
                     })
-                    ->take($request->take ?? 50)
-                    ->offset($request->offset ?? 0)
-                    ->get()
+                    ->paginate(20)
             )
         );
     }

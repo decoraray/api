@@ -32,6 +32,10 @@ class VariationController extends Controller
         $variation->size = $request->size;
         $variation->save();
 
+        // TODO: be more clever!
+        // update product average price
+        Product::find($request->product_id)->updateAveragePrice();
+
         return $variation;
     }
 

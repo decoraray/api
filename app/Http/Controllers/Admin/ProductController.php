@@ -82,6 +82,7 @@ class ProductController extends Controller
     }
 
 
+
     public function importProducts()
     {
 
@@ -116,10 +117,25 @@ class ProductController extends Controller
                 if (str_contains($product->status, 'غیر فعال')) {
                     $newProductVariation->active = false;
                 }
+
+                // TODO : be more clever!
+                $parent->updateAveragePrice();
+
+
                 $newProductVariation->save();
             }
         });
 
+        return 'done';
+    }
+
+    public function updateAveragePrice()
+    {
+
+        // for all products: 
+        foreach (Product::all() as $product) {
+            $product->updateAveragePrice();
+        }
         return 'done';
     }
 }

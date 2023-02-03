@@ -16,11 +16,13 @@ class Product extends Model
      */
     protected $fillable = [
         'title',
+        'tag',
         'description',
         'category_id',
         'active',
         'code',
         'slug',
+        'average_price',
     ];
 
     public function category()
@@ -88,14 +90,58 @@ class Product extends Model
         return $this->variations->avg('price');
     }
 
+    public function updateAveragePrice()
+    {
+        $this->average_price = $this->variations->avg('price');
+        $this->save();
+    }
+
     public function getColorsAttribute()
     {
         return $this->variations->pluck('color')->unique();
     }
 
-    // popular products
     public function scopePopular($query)
     {
         $query->where('active', 1)->orderBy('id', 'desc');
+    }
+
+    public function scopeByCategory($query, $category)
+    {
+        $query->where('category_id', $category);
+    }
+
+    public function scopeByTag($query, $tag)
+    {
+        $query->where('tag', $tag);
+    }
+
+    // sort by price asc
+    public function scopeSort($query)
+    {
+        if (request()->has('sort')) {
+            if (request()->get('sort') == 'price_asc') {
+                $query->priceAsc();
+            } elseif (request()->get('sort') == 'price_desc') {
+                $query->priceDesc();
+            } elseif (request()->get('sort') == 'newest') {
+                $query->newest();
+            }
+        }
+    }
+
+    public function scopePriceAsc($query)
+    {
+        $query->orderBy('average_price', 'asc');
+    }
+
+    public function scopePriceDesc($query)
+    {
+        $query->orderBy('average_price', 'desc');
+    }
+
+    public function scopeNewest($query)
+    {
+        $query->orderBy('id', 'desc');
     }
 }

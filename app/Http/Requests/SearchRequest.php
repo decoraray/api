@@ -40,8 +40,9 @@ class SearchRequest extends FormRequest
         return [
             "category" => "integer",
             "product" => "integer",
-            "take" => "integer",
-            "offset" => "integer",
+            "page" => "integer",
+            "tag" => "string",
+            "sort" => "string|in:price_asc,price_desc,newest",
         ];
     }
 
