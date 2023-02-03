@@ -47,7 +47,7 @@ class ShopController extends Controller
                     ->when($request->product, function ($query) use ($request) {
                         return $query->where('id', '<>', $request->product);
                     })
-                    ->paginate(20)
+                    ->paginate($request->per_page ?? 20)
             )
         );
     }

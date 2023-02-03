@@ -85,6 +85,11 @@ class Product extends Model
         return $this->hasMany(Variation::class);
     }
 
+    public function tag()
+    {
+        return $this->belongsTo(Tag::class);
+    }
+
     public function getAveragePriceAttribute()
     {
         return $this->variations->avg('price');
@@ -113,7 +118,7 @@ class Product extends Model
 
     public function scopeByTag($query, $tag)
     {
-        $query->where('tag', $tag);
+        $query->where('tag_id', $tag);
     }
 
     // sort by price asc
