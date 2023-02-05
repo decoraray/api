@@ -97,7 +97,7 @@ class Product extends Model
 
     public function updateAveragePrice()
     {
-        $this->average_price = $this->variations->avg('price')->round();
+        $this->average_price = $this->variations->avg('price');
         $this->save();
     }
 
