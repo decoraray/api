@@ -92,12 +92,12 @@ class Product extends Model
 
     public function getAveragePriceAttribute()
     {
-        return $this->variations->avg('price');
+        return round($this->variations->avg('price'));
     }
 
     public function updateAveragePrice()
     {
-        $this->average_price = $this->variations->avg('price');
+        $this->average_price = round($this->variations->avg('price'), 1);
         $this->save();
     }
 
