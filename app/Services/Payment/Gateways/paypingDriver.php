@@ -10,10 +10,12 @@ class Payping implements GatewayInterface
 {
     private $token;
     private $callback;
+    private $url;
 
     public function __construct()
     {
         $this->token = config('services.payping.token');
+        $this->url = config('services.payping.url');
         $this->callback = route('payment.verify', $this->getName());
     }
     public function Pay(Payment $payment)
@@ -23,16 +25,9 @@ class Payping implements GatewayInterface
 
     private function redirectToBank($payment)
     {
-
-        // {
-        //     "amount": 50000000,
-        //     "payerIdentity": "string",
-        //     "payerName": "string",
-        //     "description": "string",
-        //     "returnUrl": "string",
-        //     "clientRefId": "string"
-        //   }
-        Http::post('https://api.payping.ir/v2/pay', [
+        Http::withHeaders([
+            'Authorization' => $this->token,
+        ])->post($this->url . '/v2/pay', [
             'amount' => $payment->amount,
             'payerIdentity' => $payment->user->mobile,
             'returnUrl' => $this->callback,
@@ -43,7 +38,7 @@ class Payping implements GatewayInterface
     public function verify(Request $request)
     {
         $soapClient = new \SoapClient('https://acquirer.samanepay.com/payments/referencepayment.asmx?WSDL');
-        $response = $soapClient->VerifyTransaction($request->input('RefNum'), $this->merchantID);
+        $response = $soapClient->VerifyTransaction($request->input('RefNum'), $this->token);
 
         $payment = $this->getPayment($request->input('ResNum'));
 

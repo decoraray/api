@@ -42,7 +42,8 @@ return [
     ],
 
     'payping' => [
-        'token' => env('PAYPING_TOKEN',),
+        'token' => env('PAYPING_TOKEN'),
+        'url' => env('PAYPING_URL'),
     ]
 
 ];

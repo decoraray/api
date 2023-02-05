@@ -39,19 +39,6 @@ class PaymentController extends Controller
         return response()->json(new OrderShowResource($order), 201);
     }
 
-
-    private function gatewayFactory($gateway)
-    {
-        $g = [
-            'saman' => SamanDriver::class,
-            'pasargad' => Pasargad::class,
-            'mellat'  => Mellat::class,
-            'melli'  => Melli::class,
-            'sepah'  => Sepah::class,
-        ][$gateway];
-        return resolve($g);
-    }
-
     public function pay(PaymentRequest $request)
     {
         $user = auth()->user();
@@ -155,5 +142,17 @@ class PaymentController extends Controller
             ], 400);
         }
         return response()->json(new OrderShowResource($order));
+    }
+
+    private function gatewayFactory($gateway)
+    {
+        $g = [
+            'saman' => SamanDriver::class,
+            'pasargad' => Pasargad::class,
+            'mellat'  => Mellat::class,
+            'melli'  => Melli::class,
+            'sepah'  => Sepah::class,
+        ][$gateway];
+        return resolve($g);
     }
 }

@@ -42,6 +42,7 @@ class AuthController extends Controller
 
         $response = [
             'user' => $user,
+            'cart_uuid' => $cart->uuid,
             'token' => $token
         ];
 
