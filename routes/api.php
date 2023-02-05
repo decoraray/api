@@ -23,7 +23,7 @@ Route::prefix('v1')
             return 'health';
         });
 
-        Route::get('/update-avg', 'App\Http\Controllers\Admin\AuthController@updateAveragePrice');
+        Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
 
         Route::get('/port-products', 'App\Http\Controllers\Admin\ProductController@importProducts');
 
