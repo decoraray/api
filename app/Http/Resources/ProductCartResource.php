@@ -20,7 +20,7 @@ class ProductCartResource extends JsonResource
             'price' => $this->price,
             'category' => $this->product->category ? $this->product->category->name : null,
             'color' => $this->color ? $this->color->name : null,
-            'thumbnail' => $this->product->images->isNotEmpty() ? new ImageShowResource($this->product->thumbnail)  : null,
+            'thumbnail' => $this->product->images->isNotEmpty() ? $this->product->thumbnail->imagePath  : null,
             'quantity' => $this->pivot->quantity,
         ];
     }
