@@ -131,7 +131,9 @@ class Product extends Model
                 $query->priceDesc();
             } elseif (request()->get('sort') == 'newest') {
                 $query->newest();
-            }
+            } elseif (request()->get('sort') == 'oldest') {
+                $query->oldest();
+            };
         }
     }
 
@@ -148,5 +150,10 @@ class Product extends Model
     public function scopeNewest($query)
     {
         $query->orderBy('id', 'desc');
+    }
+
+    public function scopeOldest($query)
+    {
+        $query->orderBy('id', 'asc');
     }
 }

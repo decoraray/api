@@ -41,8 +41,8 @@ class SearchRequest extends FormRequest
             "category" => "integer",
             "product" => "integer",
             "page" => "integer",
-            "tag" => "integer|exists:tags,id",
-            "sort" => "string|in:price_asc,price_desc,newest,default",
+            "tag" => "integer",
+            "sort" => "string|in:price_asc,price_desc,newest,oldest,default",
             "count" => "integer",
         ];
     }
