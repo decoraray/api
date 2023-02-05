@@ -41,6 +41,7 @@ class ShopController extends Controller
         return response()->json(
             ProductListResource::collection(
                 Product::active()
+                    ->hasActiveVariation()
                     ->byCategory($request->category)
                     ->byTag($request->tag)
                     ->Sort()

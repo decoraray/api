@@ -8,11 +8,9 @@ use App\Models\Variation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ProductShowResource;
 use App\Http\Resources\ProductAdminListResource;
 use App\Http\Requests\Admin\CreateProductRequest;
 use App\Http\Resources\admin\ProductShowAdminResource;
-use App\Http\Requests\Admin\AddProductVariationRequest;
 
 class ProductController extends Controller
 {
