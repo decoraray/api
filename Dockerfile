@@ -28,6 +28,14 @@ COPY --from=composer:2.5.1 /usr/bin/composer /usr/bin/composer
 # RUN mkdir -p /home/$user/.composer && \
 # chown -R $user:$user /home/$user
 
+#upload
+RUN echo "file_uploads = On\n" \
+    "memory_limit = 500M\n" \
+    "upload_max_filesize = 500M\n" \
+    "post_max_size = 500M\n" \
+    "max_execution_time = 600\n" \
+    > /usr/local/etc/php/conf.d/uploads.ini
+
 # Set working directory
 WORKDIR /app
 
