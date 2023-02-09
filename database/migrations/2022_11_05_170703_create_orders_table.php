@@ -15,19 +15,19 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->string('uuid')->unique();;
+            $table->string('uuid')->unique();
             $table->string('address');
             $table->string('city');
             $table->string('county');
             $table->string('postal_code');
             $table->string('phone');
             $table->integer('status')->default(0);
-            $table->integer('total');
             $table->integer('discount_amount')->default(0);
             $table->string('payment_method')->default('1');
             $table->integer('payment_status')->default(0);
             $table->integer('shipping_method')->default(1);
             $table->integer('shipping_price')->default(0);
+            $table->integer('total');
 
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
             $table->foreignId('address_id')->nullable()->constrained('addresses')->onDelete('set null');

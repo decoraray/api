@@ -128,9 +128,13 @@ class Cart extends Model
     public static function getOrCreate(?string $uuid = null)
     {
         if (auth()->check()) {
-            return Cart::firstOrCreate([
+            $cart = Cart::firstOrCreate([
                 'user_id' => auth()->id(),
             ]);
+
+            $cart->uuid =  $cart->uuid ?? uniqid();
+
+            return $cart;
         } else {
             return Cart::firstOrCreate([
                 'uuid' => $uuid ?? uniqid(),

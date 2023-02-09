@@ -78,7 +78,7 @@ Route::prefix('v1')
             Route::resource('address', 'AddressController');
 
             // admin routs
-            Route::prefix('admin')->namespace('Admin')->group(function () {
+            Route::prefix('admin')->middleware(['role:SuperAdmin'])->namespace('Admin')->group(function () {
                 Route::post('image', 'ImageController@imageStore');
                 Route::resource('products', 'ProductController');
                 Route::resource('variations', 'VariationController');

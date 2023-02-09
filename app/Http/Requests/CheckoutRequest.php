@@ -24,9 +24,8 @@ class CheckoutRequest extends FormRequest
     public function rules()
     {
         return [
-            'cart_id' => 'exists:carts,uuid',
             'address_id' => 'required|exists:addresses,uuid',
-            'payment_method' => 'required|integer|in:1,2,3',
+            'payment_method' => 'required|integer|in:1,2,3', // 1: cash, 2: online, 3: bank
         ];
     }
 }

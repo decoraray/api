@@ -34,7 +34,7 @@ class PaymentController extends Controller
 
         $order = $this->createOrder($request->address_id, $request->payment_method);
 
-        // $cart->products()->detach();
+        // $cart->products()->detach(); // TODO : detach products from cart
 
         return response()->json(new OrderShowResource($order), 201);
     }
@@ -97,6 +97,7 @@ class PaymentController extends Controller
             'postal_code' => $address->postal_code,
             'phone' => $address->phone,
             'payment_method' => $paymentMethod,
+            'payment_status' => 'pending',
             'status' => 'pending',
             'total' => $cart->total,
             'discount_amount' => $cart->discountAmount,
