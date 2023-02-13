@@ -53,8 +53,7 @@ Route::prefix('v1')
         Route::post('/clear', 'CartController@clear');
 
         // verify payment
-        Route::post('/payment/verify', 'PaymentController@verify')->name('payment-verify');
-
+        Route::post('/payment-verify', 'PaymentController@verify')->name('payment-verify');
 
         // routs after auth ( jwt )
         Route::group(['middleware' => 'App\Http\Middleware\JwtVerify'], function () {
@@ -71,8 +70,7 @@ Route::prefix('v1')
             Route::post('/checkout', 'PaymentController@checkout');
             Route::get('/orders', 'PaymentController@orders');
             Route::post('/pay', 'PaymentController@pay');
-            Route::post('/pay-validate', 'PaymentController@payValidate');
-            Route::get('/payment/{uuid}', 'PaymentController@verify');
+            // Route::post('/pay-validate', 'PaymentController@payValidate');
 
             // address 
             Route::resource('address', 'AddressController');

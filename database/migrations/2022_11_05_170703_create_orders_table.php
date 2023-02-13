@@ -21,17 +21,14 @@ return new class extends Migration
             $table->string('county');
             $table->string('postal_code');
             $table->string('phone');
-            $table->integer('status')->default(0);
+            $table->string('status')->default('pending');
             $table->integer('discount_amount')->default(0);
-            $table->string('payment_method')->default('1');
-            $table->integer('payment_status')->default(0);
-            $table->integer('shipping_method')->default(1);
-            $table->integer('shipping_price')->default(0);
             $table->integer('total');
 
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
             $table->foreignId('address_id')->nullable()->constrained('addresses')->onDelete('set null');
             $table->foreignId('discount_id')->nullable()->constrained('discounts')->unsigned()->onDelete('set null');
+            $table->foreignId('shipping_id')->nullable()->constrained('shippings')->unsigned()->onDelete('set null');
             $table->timestamps();
         });
     }

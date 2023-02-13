@@ -17,8 +17,10 @@ class OrderItemResource extends JsonResource
         return [
             'title' => $this->title,
             'quantity' => $this->quantity,
+            'image' => $this->image,
             'description' => $this->description,
             'price' => $this->price,
+            'color' => $this->variation->color->name,
         ];
     }
 }

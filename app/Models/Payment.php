@@ -23,6 +23,11 @@ class Payment extends Model
         'method',
         'user_id',
         'order_id',
+        'status',
+        'gateway',
+        'ref_id',
+        'card_number',
+        'card_pan',
     ];
 
     public function user()
@@ -33,12 +38,5 @@ class Payment extends Model
     public function orders()
     {
         return $this->belongsTo(Order::class);
-    }
-
-    public function pay()
-    {
-        PaymentService::pay($this);
-        $this->status = 'paid';
-        $this->save();
     }
 }

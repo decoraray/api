@@ -3,6 +3,8 @@
 namespace App\Services\Payment;
 
 use App\Models\Payment;
+use App\Services\Payment\Gateways\GatewayInterface;
+use Illuminate\Http\Request;
 
 class PaymentService
 {
@@ -11,27 +13,30 @@ class PaymentService
     {
         //
     }
-    public function verify($uuid)
+    public function verify($payment, $gateway)
     {
-        $payment = Payment::where('uuid', $uuid)->first();
+        $driver =  $this->getDriver($gateway);
 
-        // $MerchantID = config('services.zarinpal.merchant_id');
-        // $SandBox = config('services.zarinpal.sandbox');
-        // $res = $this->driver::verify($MerchantID, $payment->amount, $SandBox);
-
-        return response()->json([
-            'message' => 'payment successful',
-        ]);
+        return $driver->verify($payment);
     }
 
-    public function pay($payment)
-    {;
+    public function pay($payment, $gateway)
+    {
+        $driver =  $this->getDriver($gateway);
+        return $driver->pay($payment);
+    }
 
-        // driver::pay($payment);
-        // dd('paying');
+    private function  getDriver($gateway): GatewayInterface
+    {
+        // get class of driver by name of gateway
+        $driver = 'App\Services\Payment\Gateways\\' . ucfirst($gateway) . 'Driver';
 
-        return response()->json([
-            'message' => 'payment successful',
-        ]);
+        // check if driver exists
+        if (!class_exists($driver)) {
+            throw new \Exception('driver not found');
+        }
+
+        // create new instance of driver
+        return new $driver;
     }
 }

@@ -28,6 +28,7 @@ class Order extends Model
         'discount_amount',
         'discount_id',
         'address_id',
+        'shipping_id',
     ];
 
     public function user()

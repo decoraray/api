@@ -14,6 +14,7 @@ class Item extends Model
         'description',
         'price',
         'product_id',
+        'variation_id',
         'order_id',
         'quantity'
     ];
@@ -28,4 +29,8 @@ class Item extends Model
         return $this->belongsTo(Product::class);
     }
 
+    public function variation()
+    {
+        return $this->belongsTo(Variation::class);
+    }
 }

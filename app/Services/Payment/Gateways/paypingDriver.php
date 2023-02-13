@@ -5,8 +5,10 @@ namespace App\Services\Payment\Gateways;
 use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Redirect;
+use Termwind\Components\Dd;
 
-class Payping implements GatewayInterface
+class PaypingDriver implements GatewayInterface
 {
     private $token;
     private $callback;
@@ -16,65 +18,65 @@ class Payping implements GatewayInterface
     {
         $this->token = config('services.payping.token');
         $this->url = config('services.payping.url');
-        $this->callback = route('payment.verify', $this->getName());
-    }
-    public function Pay(Payment $payment)
-    {
-        $this->redirectToBank($payment);
+        $this->callback = route('payment-verify', ['gateway' => 'payping']);
     }
 
-    private function redirectToBank($payment)
+    public function Pay(Payment $payment)
     {
-        Http::withHeaders([
-            'Authorization' => $this->token,
+        // step 1 
+        $refId = $this->getRefId($payment);
+        $payment->update([
+            'ref_id' => $refId,
+        ]);
+        // dd($payment, $refId);
+
+        // step 2 
+        return Redirect::to($this->url . '/v2/pay/gotoipg/' . $refId);
+    }
+
+    private function getRefId($payment)
+    {
+        $user = $payment->user;
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
         ])->post($this->url . '/v2/pay', [
+            'payerName' => $user->name,
             'amount' => $payment->amount,
             'payerIdentity' => $payment->user->mobile,
             'returnUrl' => $this->callback,
             'clientRefId' => $payment->uuid,
+            'description' => 'پرداخت از طریق سایت',
         ])->throw()->json();
+
+        return $response['code'];
     }
 
-    public function verify(Request $request)
+    public function verify($payment)
     {
-        $soapClient = new \SoapClient('https://acquirer.samanepay.com/payments/referencepayment.asmx?WSDL');
-        $response = $soapClient->VerifyTransaction($request->input('RefNum'), $this->token);
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $this->token,
+            'Content-Type' => 'application/json',
+            'Accept' => 'application/json',
+        ])->post($this->url . '/v2/pay/verify', [
+            'RefId' => $payment->ref_id,
+            'amount' => strval($payment->amount)
+        ])->throw()->json();
 
-        $payment = $this->getPayment($request->input('ResNum'));
-
-        $response = $payment->amount; // this line makes a fake success payment
-        $request->merge(['RefNum' => '45852525']); // this line for put a fake RefNum in request
-
-        return $response == ($payment->amount)
-            ? $this->transactionSuccess($payment, $request->input('RefNum'))
-            : $this->transactionFailed();
+        if ($response['code'] == 200) {
+            $payment->update([
+                'status' => 'paid',
+            ]);
+            return $payment;
+        } else {
+            throw new \Exception('payment failed');
+        }
     }
-
-    private function transactionSuccess($payment, $refNum)
-    {
-        return [
-            'status' => self::TRANSACTION_SUCCESS,
-            'payment' => $payment,
-            'refNum' => $refNum,
-            'gateway' => $this->getName()
-        ];
-    }
-
-    private function getPayment($resNum)
-    {
-        return Payment::where('res_num', $resNum)->firstOrFail();
-    }
-
-    private function transactionFailed()
-    {
-        return [
-            'status' => self::TRANSACTION_FAILED
-        ];
-    }
-
 
     public function getName(): string
     {
-        return 'saman';
+        return 'payping';
     }
 }

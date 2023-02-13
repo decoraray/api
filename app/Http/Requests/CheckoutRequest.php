@@ -25,7 +25,7 @@ class CheckoutRequest extends FormRequest
     {
         return [
             'address_id' => 'required|exists:addresses,uuid',
-            'payment_method' => 'required|integer|in:1,2,3', // 1: cash, 2: online, 3: bank
+            'shipping_id' => 'required|exists:shippings,id',
         ];
     }
 }
