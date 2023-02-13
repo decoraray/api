@@ -62,7 +62,7 @@ class PaypingDriver implements GatewayInterface
             'Accept' => 'application/json',
         ])->post($this->url . '/v2/pay/verify', [
             'RefId' => $payment->ref_id,
-            'amount' => strval($payment->amount)
+            'amount' => $payment->amount
         ])->throw()->json();
 
         if ($response['code'] == 200) {
