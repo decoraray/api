@@ -82,6 +82,7 @@ Route::prefix('v1')
                 Route::resource('variations', 'VariationController');
                 Route::resource('category', 'CategoryController');
                 Route::resource('discount', 'DiscountController');
+                Route::resource('orders', 'OrderController');
             });
         });
     });
