@@ -20,7 +20,7 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->integer('quantity');
             $table->foreignId('product_id')->nullable()->constrained()->unsigned()->onDelete('set null');
-            $table->foreignId('variant_id')->nullable()->constrained()->unsigned()->onDelete('set null');
+            $table->foreignId('variation_id')->nullable()->constrained()->unsigned()->onDelete('set null');
             $table->foreignId('order_id')->nullable()->constrained()->unsigned()->onDelete('cascade');
             $table->timestamps();
         });
