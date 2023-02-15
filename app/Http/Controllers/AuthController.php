@@ -13,6 +13,7 @@ use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\SmsVerifyRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Requests\SmsRegisterRequest;
+use App\Http\Resources\UserShowResource;
 
 class AuthController extends Controller
 {
@@ -41,7 +42,7 @@ class AuthController extends Controller
         }
 
         $response = [
-            'user' => $user,
+            'user' =>  new UserShowResource($user),
             'cart_uuid' => $cart->uuid,
             'token' => $token
         ];
@@ -120,8 +121,10 @@ class AuthController extends Controller
             }
         }
 
+        $user = User::where('email', $request->email)->first();
+
         $response = [
-            'user' => User::where('email', $request->email)->first(),
+            'user' => new UserShowResource($user),
             'token' => $token
         ];
 
