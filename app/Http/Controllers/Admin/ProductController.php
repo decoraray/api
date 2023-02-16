@@ -27,8 +27,11 @@ class ProductController extends Controller
         //             ->get()
         //     )
         // );
-        return  ProductAdminListResource::collection(
-            Product::all()
+        return response()->json(
+            ProductAdminListResource::collection(
+                Product::take(100)
+                    ->get()
+            )
         );
     }
 
