@@ -21,13 +21,15 @@ class ProductController extends Controller
      */
     public function index()
     {
-        return response()->json(
-            ProductAdminListResource::collection(
-                Product::take(10)
-                    ->get()
-            )
+        // return response()->json(
+        //     ProductAdminListResource::collection(
+        //         Product::take(10)
+        //             ->get()
+        //     )
+        // );
+        return  ProductAdminListResource::collection(
+            Product::all()
         );
-        // return  Product::all();
     }
 
     /**
