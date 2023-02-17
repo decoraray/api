@@ -11,19 +11,22 @@ class ImageController extends Controller
 {
     public function imageStore(UploadImageRequest $request)
     {
+        $images = $request->file('images');
 
-        $image_path = $request->file('image')->store('image', 'public');
+        foreach ($images as $image) {
+            $image_path = $image->store('image', 'public');
 
-        $data = Image::create([
-            'image' => $image_path,
-            'product_id' => $request->product_id
-        ]);
+            Image::create([
+                'image' => $image_path,
+                'product_id' => $request->product_id
+            ]);
+        }
 
-        return response($data, Response::HTTP_CREATED);
+        return response(Response::HTTP_CREATED);
     }
 
     public function image(Image $image)
-    {   
+    {
         $url = asset('storage/' . $image->image_path);
 
         return response()->json([
