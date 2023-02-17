@@ -59,10 +59,7 @@ Route::prefix('v1')
         Route::group(['middleware' => 'App\Http\Middleware\JwtVerify'], function () {
 
             // user routs
-            Route::get('/user', function (Request $request) {
-                return $request->user()->with('cart')->first();
-                // return new App\Http\Resources\UserShowResource($request->user()->first());
-            });
+            Route::get('/user', 'AuthController@user')->name('user');
 
             Route::post('/update', 'AuthController@update')->name('update');
 

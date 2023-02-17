@@ -183,4 +183,11 @@ class AuthController extends Controller
 
         return response($response, 200);
     }
+
+    public function user(Request $request)
+    {
+        $user = User::where('id', $request->user()->id)->first();
+
+        return response()->json(new UserShowResource($user), 200);
+    }
 }
