@@ -18,16 +18,15 @@ class Product extends Model
         'title',
         'tag',
         'description',
-        'category_id',
         'active',
         'code',
         'slug',
         'average_price',
     ];
 
-    public function category()
+    public function categories()
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsToMany(Category::class);
     }
 
     public function carts()
@@ -113,7 +112,9 @@ class Product extends Model
 
     public function scopeByCategory($query, $category)
     {
-        $query->where('category_id', $category);
+        $query->whereHas('categories', function ($query) use ($category) {
+            $query->where('category_id', $category);
+        });
     }
 
     public function scopeByTag($query, $tag)

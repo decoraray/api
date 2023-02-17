@@ -45,6 +45,11 @@ class ProductController extends Controller
     {
         $product = new Product($request->all());
         $product->save();
+
+        // add the product to the request categories
+
+        $product->categories()->attach($request->categories);
+
         return new ProductShowAdminResource($product);
     }
 

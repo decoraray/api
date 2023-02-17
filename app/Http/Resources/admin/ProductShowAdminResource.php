@@ -6,6 +6,7 @@ use App\Http\Resources\ImageShowResource;
 use App\Http\Resources\RatingShowResource;
 use App\Http\Resources\VariationShowResource;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\CategoryLightShowResource;
 
 class ProductShowAdminResource extends JsonResource
 {
@@ -27,7 +28,7 @@ class ProductShowAdminResource extends JsonResource
             'description' => $this->description,
             'active' => $this->active,
             'variations' => VariationShowResource::collection($this->variations->where('active', 1)),
-            'category' => $this->category ? $this->category->name : null,
+            'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
             'images' => $this->images ? ImageShowResource::collection($this->images) : null,
             'thumbnail' => $this->images->isNotEmpty() ? $this->thumbnail->imagePath  : null,

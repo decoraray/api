@@ -41,7 +41,8 @@ class CreateProductRequest extends FormRequest
             'title' => 'required',
             'slug' => 'required|unique:products,slug',
             'description' => 'required',
-            'category_id' => ['required', 'exists:categories,id'],
+            'categories' => ['required', 'array'],
+            'categories.*' => ['required', 'integer', 'exists:categories,id'],
         ];
     }
 }

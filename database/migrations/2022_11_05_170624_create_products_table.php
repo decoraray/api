@@ -22,7 +22,6 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->boolean('active')->default(true);
             $table->string('rating_id')->nullable();
-            $table->foreignId('category_id')->nullable()->constrained('categories');
             $table->foreignId('tag_id')->nullable()->constrained('tags');
             $table->timestamps();
         });
