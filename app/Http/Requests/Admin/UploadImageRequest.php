@@ -38,8 +38,8 @@ class UploadImageRequest extends FormRequest
     public function rules()
     {
         return [
-            'images' => 'required|array',
-            'images.*' => 'required|image|mimes:jpg,png,jpeg,gif,svg,webp|max:2048',
+            // each image is required, must be an image, must be one of the listed extensions, and must be less than 8MB
+            'images.*' => 'required|image|mimes:jpg,png,jpeg,gif,svg,webp|max:8192',
             'product_id' => ['required', 'integer', 'exists:products,id'],
         ];
     }
