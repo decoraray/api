@@ -21,7 +21,7 @@ class ProductListResource extends JsonResource
             'slug' => $this->slug,
             'price' => $this->averagePrice,
             'description' => Str::limit($this->description, 50),
-            'category' => $this->category ? $this->category->name : null,
+            'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
             'images' =>  $this->images->isNotEmpty() ? ImageShowResource::collection($this->images) : null,
             'thumbnail' => $this->images->isNotEmpty() ? $this->thumbnail->imagePath  : null,

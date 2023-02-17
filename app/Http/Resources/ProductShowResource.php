@@ -21,7 +21,7 @@ class ProductShowResource extends JsonResource
             'classifier' => $this->classifier,
             'description' => $this->description,
             'variations' => VariationShowResource::collection($this->variations->where('active', 1)),
-            'category' => $this->category ? $this->category->name : null,
+            'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
             'images' => $this->images ? ImageShowResource::collection($this->images) : null,
             'thumbnail' => $this->images->isNotEmpty() ? $this->thumbnail->imagePath  : null,
