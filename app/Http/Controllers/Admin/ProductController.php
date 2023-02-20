@@ -80,6 +80,11 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        // delete images from disk
+        $product->images->each(function ($image) {
+            $image->delete();
+        });
+
         $product->delete();
         return response()->json(null, 204);
     }

@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Image extends Model
 {
@@ -22,5 +23,12 @@ class Image extends Model
     public function getImagePathAttribute()
     {
         return asset('storage/' . $this->image);
+    }
+
+    // delete the image from the storage
+    public function delete()
+    {
+        Storage::delete($this->image);
+        parent::delete();
     }
 }
