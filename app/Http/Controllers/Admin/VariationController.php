@@ -11,6 +11,20 @@ use App\Http\Resources\ProductShowResource;
 
 class VariationController extends Controller
 {
+    //arrayStore 
+    public function arrayStore(Request $request, Product $product)
+    {
+        $variations = $request->all();
+        $product->variations()->delete();
+        foreach ($variations as $variation) {
+            $color = Color::findOrCreate($variation['color']);
+            $variation['color_id'] = $color->id;
+            $product->variations()->create($variation);
+        }
+
+        return new ProductShowResource($product);
+    }
+
     /**
      * Store a newly created resource in storage.
      *

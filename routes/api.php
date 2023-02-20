@@ -77,6 +77,7 @@ Route::prefix('v1')
                 Route::post('image', 'ImageController@imageStore');
                 Route::resource('products', 'ProductController');
                 Route::resource('variations', 'VariationController');
+                Route::post('products/{product}/variations', 'VariationController@arrayStore');
                 Route::resource('categories', 'CategoryController');
                 Route::resource('discount', 'DiscountController');
                 Route::resource('orders', 'OrderController');
