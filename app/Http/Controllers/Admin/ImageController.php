@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Image;
+use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\Admin\UploadImageRequest;
 
@@ -23,6 +25,29 @@ class ImageController extends Controller
         }
 
         return response(Response::HTTP_CREATED);
+    }
+
+    // imageDelete
+    public function imageDelete(Request $request)
+    {
+        // find image in database by address (image_path)
+        $path = explode('storage/', $request->address)[1];
+
+        $image = Image::where('image', $path)->first();
+
+        if (!$image) {
+            return response()->json([
+                'message' => 'Image not found'
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        // delete image from database
+        $image->delete();
+
+        // delete image from storage
+        Storage::disk('public')->delete($request->address);
+
+        return response(Response::HTTP_NO_CONTENT);
     }
 
     public function image(Image $image)

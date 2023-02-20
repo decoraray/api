@@ -74,10 +74,14 @@ Route::prefix('v1')
 
             // admin routs
             Route::prefix('admin')->middleware(['role:SuperAdmin'])->namespace('Admin')->group(function () {
-                Route::post('image', 'ImageController@imageStore');
+
                 Route::resource('products', 'ProductController');
+                Route::post('image', 'ImageController@imageStore');
+                Route::delete('image', 'ImageController@imageDelete');
+
                 Route::resource('variations', 'VariationController');
                 Route::post('products/{product}/variations', 'VariationController@arrayStore');
+
                 Route::resource('categories', 'CategoryController');
                 Route::resource('discount', 'DiscountController');
                 Route::resource('orders', 'OrderController');
