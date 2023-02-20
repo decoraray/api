@@ -21,18 +21,8 @@ class ProductController extends Controller
      */
     public function index()
     {
-        // return response()->json(
-        //     ProductAdminListResource::collection(
-        //         Product::take(10)
-        //             ->get()
-        //     )
-        // );
-        return response()->json(
-            ProductAdminListResource::collection(
-                Product::take(100)
-                    ->get()
-            )
-        );
+        $products = Product::with('categories')->paginate(20);
+        return ProductAdminListResource::collection($products);
     }
 
     /**
@@ -91,7 +81,7 @@ class ProductController extends Controller
     public function destroy(Product $product)
     {
         $product->delete();
-        return new ProductShowAdminResource($product);
+        return response()->json(null, 204);
     }
 
 

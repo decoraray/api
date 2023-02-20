@@ -78,6 +78,6 @@ class VariationController extends Controller
     public function destroy(Variation $variation)
     {
         $variation->delete();
-        return $variation;
+        return response()->json(null, 204);
     }
 }
