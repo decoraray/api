@@ -75,7 +75,7 @@ class VariationController extends Controller
      * @param  \App\Models\Variation  $variation
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Product $variation)
+    public function destroy(Variation $variation)
     {
         $variation->delete();
         return $variation;
