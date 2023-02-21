@@ -115,8 +115,10 @@ class Product extends Model
         if (!$category) {
             return;
         }
+
         $query->whereHas('categories', function ($query) use ($category) {
-            $query->where('category_id', $category);
+            $query->where('category_id', $category)
+                ->orWhere('slug', $category);
         });
     }
 

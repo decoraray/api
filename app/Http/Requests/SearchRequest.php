@@ -38,7 +38,7 @@ class SearchRequest extends FormRequest
     public function rules()
     {
         return [
-            "category" => "integer",
+            "category" => "",
             "product" => "integer",
             "page" => "integer",
             "tag" => "integer",
