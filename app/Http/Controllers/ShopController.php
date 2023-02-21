@@ -6,6 +6,7 @@ use App\Models\Cart;
 use App\Models\Rating;
 use App\Models\Product;
 use App\Models\Category;
+use Illuminate\Http\Request;
 use App\Http\Requests\SearchRequest;
 use App\Http\Resources\CartShowResource;
 use App\Http\Resources\CategoryResource;
@@ -31,6 +32,24 @@ class ShopController extends Controller
                 Product::active()
                     ->take(50)
                     ->get()
+            )
+        );
+    }
+
+    // search product
+    public function listByCategory(Request $request, $category, $product = null)
+    {
+
+        if ($product) {
+            $product = Product::where('id', $product)->orWhere('slug', $product)->firstOrFail();
+            return response()->json(new ProductShowResource($product));
+        }
+        return response()->json(
+            ProductListResource::collection(
+                Product::active()
+                    ->hasActiveVariation()
+                    ->byCategory($category)
+                    ->paginate($request->per_page ?? 20)
             )
         );
     }

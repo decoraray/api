@@ -23,8 +23,13 @@ Route::prefix('v1')
             return 'health';
         });
 
-        Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
+        // slug links for SEO 
+        Route::get('/products', 'ShopController@list')->name('products');
+        Route::get('/products/{slugOrId}', 'ShopController@show')->name('product');
+        Route::get('/categories/{category:slug}', 'ShopController@listByCategory')->name('category');
+        Route::get('/categories/{category:slug}/{product:slug}', 'ShopController@listByCategory');
 
+        Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
         Route::get('/port-products', 'App\Http\Controllers\Admin\ProductController@importProducts');
 
         // auth routs
@@ -37,9 +42,7 @@ Route::prefix('v1')
 
         // public shop routs
         Route::get('/initials', 'ShopController@initial')->name('initial');
-        Route::get('/products', 'ShopController@list')->name('products');
         Route::post('/search', 'ShopController@search')->name('search');
-        Route::get('/products/{slugOrId}', 'ShopController@show')->name('product');
         Route::get('/categories', 'ShopController@categories')->name('categories');
         Route::post('/rate/{product}', 'ShopController@rating')->name('rate');
         Route::get('cities', 'AddressController@cities')->name('cities');
