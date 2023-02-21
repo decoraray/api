@@ -16,6 +16,7 @@ class ImageController extends Controller
         $images = $request->file('images');
 
         foreach ($images as $image) {
+
             $image_path = $image->store('image', 'public');
 
             Image::create([
@@ -41,11 +42,7 @@ class ImageController extends Controller
             ], Response::HTTP_NOT_FOUND);
         }
 
-        // delete image from database
         $image->delete();
-
-        // delete image from storage
-        Storage::disk('public')->delete($request->address);
 
         return response(Response::HTTP_NO_CONTENT);
     }

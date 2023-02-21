@@ -28,7 +28,9 @@ class Image extends Model
     // delete the image from the storage
     public function delete()
     {
+        Storage::disk('public')->delete($this->image);
         Storage::delete($this->image);
+
         parent::delete();
     }
 }
