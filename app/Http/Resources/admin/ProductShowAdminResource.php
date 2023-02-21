@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\admin;
+namespace App\Http\Resources\Admin;
 
 use App\Http\Resources\ImageShowResource;
 use App\Http\Resources\RatingShowResource;

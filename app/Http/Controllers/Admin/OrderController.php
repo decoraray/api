@@ -2,85 +2,51 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateOrderRequest;
+use App\Http\Resources\Admin\OrderListAdminResource;
+use App\Http\Resources\Admin\OrderShowAdminResource;
 
 class OrderController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function index()
     {
-        return Order::all();
+        return OrderListAdminResource::collection(Order::paginate(40))->additional([
+            'status_names' => OrderStatus::names(),
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Order  $order
-     * @return \Illuminate\Http\Response
-     */
     public function show(Order $order)
     {
-        //
+        return new OrderShowAdminResource($order);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Order  $order
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Order $order)
+    public function update(UpdateOrderRequest $request, Order $order)
     {
-        //
+        return $order->update($request->validated());
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Order  $order
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, Order $order)
+    public function uuid(Request $request)
     {
-        //
+        $order = Order::where('uuid', $request->uuid)->firstOrFail();
+
+        return new OrderShowAdminResource($order);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Order  $order
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy(Order $order)
+    public function search(Request $request)
     {
-        //
+        $orders = Order::where('uuid', 'like', "%{$request->search}%")
+            ->orWhere('city', 'like', "%{$request->search}%")
+            ->orWhere('phone', 'like', "%{$request->search}%")
+            ->orWhere('status', 'like', "%{$request->search}%")
+            ->paginate(40);
+
+        return OrderListAdminResource::collection($orders)->additional([
+            'status_names' => OrderStatus::names(),
+        ]);
     }
 }
