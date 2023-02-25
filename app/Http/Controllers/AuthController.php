@@ -60,12 +60,7 @@ class AuthController extends Controller
             ], 404);
         }
 
-        $otpGenerated = $user->generateOneTimePassword();
-        if (!$otpGenerated) {
-            return response([
-                'message' => ['Failed to generate one time password.']
-            ], 500);
-        }
+        $user->generateOneTimePassword();
 
         SmsIr::verify($user->phone, $user->one_time_password);
 

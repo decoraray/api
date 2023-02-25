@@ -85,11 +85,6 @@ class User extends Authenticatable
 
     public function generateOneTimePassword()
     {
-        $newlyGenerated = $this->one_time_password == null;
-        if (!$newlyGenerated) {
-            return false;
-        }
-
         // config('auth.otp.expire');
         $this->one_time_password = rand(100000, 999999);
         $this->one_time_password_created_at = now();

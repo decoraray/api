@@ -14,16 +14,24 @@ class SmsIr implements DriverInterface
 
     public static function verify(string $phone, string $code): bool
     {
-        Http::post(config('services.sms_provider') . 'send/verify', [
-            'Mobile' => [$phone],
-            'TemplateId' =>  10000,
-            'Parameters' => [
-                'code' => $code,
-            ],
-        ])->withHeaders([
+        $response = Http::withHeaders([
             'accept' => 'application/json',
             'X-API-KEY' => config('services.sms_provider.app_key'),
-        ])->throw()->json();
+        ])->post(config('services.sms_provider.url') . 'send/verify', [
+            'mobile' => $phone,
+            'templateId' =>  1,
+            'parameters' => [
+                [
+                    'name' => 'code',
+                    'value' => $code
+                ],
+            ],
+        ]);
+
+        if ($response->failed()) {
+            log($response->body());
+            return false;
+        }
 
         return true;
     }
