@@ -124,7 +124,11 @@ class Product extends Model
 
     public function scopeByTag($query, $tag)
     {
-        $query->where('tag_id', $tag);
+        if (!$tag) {
+            return;
+        }
+
+        $query->where('tag_id', 'like', $tag);
     }
 
     // sort by price asc
