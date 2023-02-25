@@ -25,12 +25,6 @@ class VariationController extends Controller
         return new ProductShowResource($product);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(Request $request)
     {
         $color = Color::findOrCreate($request->color);
@@ -53,13 +47,7 @@ class VariationController extends Controller
         return $variation;
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Variation  $variation
-     * @return \Illuminate\Http\Response
-     */
+
     public function update(Request $request, Variation $variation)
     {
         $color = Color::findOrCreate($request->color);
@@ -69,12 +57,6 @@ class VariationController extends Controller
         return $variation;
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Variation  $variation
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Variation $variation)
     {
         $variation->delete();

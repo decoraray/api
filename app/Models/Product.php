@@ -118,7 +118,7 @@ class Product extends Model
 
         $query->whereHas('categories', function ($query) use ($category) {
             $query->where('category_id', $category)
-                ->orWhere('slug', $category);
+                ->orWhere('slug', 'like', "%$category%");
         });
     }
 
