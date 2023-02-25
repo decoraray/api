@@ -19,7 +19,7 @@ class SmsIr implements DriverInterface
             'X-API-KEY' => config('services.sms_provider.app_key'),
         ])->post(config('services.sms_provider.url') . 'send/verify', [
             'mobile' => $phone,
-            'templateId' =>  1,
+            'templateId' =>  100000,
             'parameters' => [
                 [
                     'name' => 'code',
