@@ -29,8 +29,7 @@ class SmsIr implements DriverInterface
         ]);
 
         if ($response->failed()) {
-            log($response->body());
-            return false;
+            throw new \Exception($response->body());
         }
 
         return true;
