@@ -104,6 +104,7 @@ class User extends Authenticatable
 
     public function verifyOneTimePassword($password): bool
     {
+
         if ($this->one_time_password == null || $this->one_time_password_created_at == null) {
             return false;
         }
@@ -117,7 +118,11 @@ class User extends Authenticatable
 
         // check if password is correct
         if ($password ==  $this->one_time_password) {
+
             $this->clearOneTimePassword();
+
+            $this->phone_verified_at = now();
+
             return true;
         }
 

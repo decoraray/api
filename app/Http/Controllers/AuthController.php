@@ -30,6 +30,27 @@ class AuthController extends Controller
         return $this->login($user, $request->getUuid());
     }
 
+    public function smsLogin(Request $request)
+    {
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user || $user->phone_verified_at == null) {
+            return response([
+                'message' => ['These credentials do not match our records.']
+            ], 404);
+        }
+
+        $user->generateOneTimePassword();
+
+        SmsIr::verify($user->phone, $user->one_time_password);
+
+        $response = [
+            'message' => 'Check your sms',
+        ];
+
+        return response($response, 200);
+    }
+
     private function login($user, $uuid = null)
     {
         $token = AuthService::createToken($user);
@@ -46,32 +67,6 @@ class AuthController extends Controller
             'cart_uuid' => $cart->uuid,
             'token' => $token
         ];
-
-        return response($response, 200);
-    }
-
-    public function smsLogin(Request $request)
-    {
-        $user = User::where('phone', $request->phone)->first();
-
-        if (!$user) {
-            return response([
-                'message' => ['These credentials do not match our records.']
-            ], 404);
-        }
-
-        $user->generateOneTimePassword();
-
-        SmsIr::verify($user->phone, $user->one_time_password);
-
-        $response = [
-            'message' => 'Check your sms',
-        ];
-
-        // if app is in local environment, we don't need to send sms
-        if (app()->environment('local')) {
-            $response['otp'] = $user->one_time_password;
-        }
 
         return response($response, 200);
     }
@@ -139,14 +134,10 @@ class AuthController extends Controller
                 'message' => ['Failed to generate one time password.']
             ], 500);
         }
+
         $response = [
             'message' => 'Check your sms',
         ];
-
-        // if app is in local environment, we don't need to send sms
-        if (app()->environment('local')) {
-            $response['otp'] = $user->one_time_password;
-        }
 
         return response($response, 200);
     }
