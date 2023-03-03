@@ -109,6 +109,7 @@ class AuthController extends Controller
     {
 
         $user = User::create([
+            'uuid' => uniqid(),
             'name' => $request->name,
             'surname' => $request->surname,
             'email' => $request->email,
@@ -138,6 +139,7 @@ class AuthController extends Controller
     public function smsRegister(SmsRegisterRequest $request)
     {
         $user = User::create([
+            'uuid' => uniqid(),
             'name' => $request->name,
             'surname' => $request->surname,
             'phone' => $request->phone,
