@@ -5,7 +5,6 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Laravel\Sanctum\HasApiTokens;
 use App\Events\OneTimePassGenerated;
-use Illuminate\Support\Facades\Hash;
 use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -119,9 +118,8 @@ class User extends Authenticatable
         // check if password is correct
         if ($password ==  $this->one_time_password) {
 
-            $this->clearOneTimePassword();
-
             $this->phone_verified_at = now();
+            $this->clearOneTimePassword(); // this method save the model
 
             return true;
         }

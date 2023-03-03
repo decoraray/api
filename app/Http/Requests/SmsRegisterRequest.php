@@ -38,6 +38,8 @@ class SmsRegisterRequest extends FormRequest
     public function rules()
     {
         return [
+            "name" => "string",
+            "surname" => "string",
             "phone" => "required|numeric|unique:users",
             "cart_uuid" => "nullable"
         ];

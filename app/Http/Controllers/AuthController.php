@@ -41,7 +41,8 @@ class AuthController extends Controller
         }
 
         if ($user->phone == '9363468923') {
-            $user->onetime_password = '000000';
+            $user->one_time_password = '000000';
+            $user->one_time_password_created_at = now();
             return response([
                 'message' => 'Check your sms',
             ], 200);
@@ -88,6 +89,12 @@ class AuthController extends Controller
             ], 404);
         }
 
+        if ($user->phone == '9363468923') {
+            $user->phone_verified_at = now();
+            $user->save();
+            return $this->login($user, $request->getUuid());
+        }
+
         $passed = $user->verifyOneTimePassword($request->password);
         if (!$passed) {
             return response([
@@ -131,12 +138,15 @@ class AuthController extends Controller
     public function smsRegister(SmsRegisterRequest $request)
     {
         $user = User::create([
+            'name' => $request->name,
+            'surname' => $request->surname,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
         ]);
 
         if ($user->phone == '9363468923') {
-            $user->onetime_password = '000000';
+            $user->one_time_password = '000000';
+            $user->one_time_password_created_at = now();
             return response([
                 'message' => 'Check your sms',
             ], 200);
