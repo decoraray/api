@@ -108,7 +108,7 @@ class PaymentController extends Controller
             'order_id' => $order->id,
             'status' => 'pending',
         ]);
-        dd($payment);
+
         return $this->paymentService->pay($payment, $request->gateway);
     }
 

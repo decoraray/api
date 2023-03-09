@@ -48,7 +48,8 @@ class RegisterRequest extends FormRequest
     }
 
     //get uuid from request
-    public function getUuid() {
-        return $this->get('cart_uuid')??null;
+    public function getUuid()
+    {
+        return $this->get('cart_uuid') ?? null;
     }
 }

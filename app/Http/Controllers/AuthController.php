@@ -138,13 +138,23 @@ class AuthController extends Controller
 
     public function smsRegister(SmsRegisterRequest $request)
     {
-        $user = User::create([
-            'uuid' => uniqid(),
-            'name' => $request->name,
-            'surname' => $request->surname,
-            'phone' => $request->phone,
-            'password' => Hash::make($request->password),
-        ]);
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user) {
+            $user = User::create([
+                'uuid' => uniqid(),
+                'name' => $request->name,
+                'surname' => $request->surname,
+                'phone' => $request->phone,
+                'password' => Hash::make($request->password),
+            ]);
+        }
+
+        if ($user->phone_verified_at != null) {
+            return response([
+                'message' => ['This phone number is already registered.']
+            ], 404);
+        }
 
         if ($user->phone == '9363468923') {
             $user->one_time_password = '000000';
