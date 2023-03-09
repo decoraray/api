@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\OrderStatus;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class OrderShowResource extends JsonResource
@@ -21,8 +22,13 @@ class OrderShowResource extends JsonResource
             'county' => $this->county,
             'postal_code' => $this->postal_code,
             'phone' => $this->phone,
-            'status' => $this->status,
+            'status' => OrderStatus::tryFrom($this->status) ?? OrderStatus::PENDING,
+            'shipping' => $this->shipping->name,
+            'shipping_price' => $this->shipping->price,
+            'items_total' => $this->items->sum('price'),
             'total' => $this->total,
+            'payment_method' => $this->payment_method,
+            'payableAmount' => $this->payableAmount,
             'discount_amount' => $this->discount_amount,
             'items' => OrderItemResource::collection($this->items),
         ];

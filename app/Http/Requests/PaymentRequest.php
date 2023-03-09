@@ -25,7 +25,6 @@ class PaymentRequest extends FormRequest
     {
         return [
             'order_id' => 'required|exists:orders,uuid',
-            'method' => 'nullable|in:cash,card', // 1: cash, 2: online, 3: bank
             'gateway' => 'required_if:method,card|in:payping,melli',
         ];
     }

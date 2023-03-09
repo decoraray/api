@@ -1,9 +1,11 @@
 <?php
 
-namespace App\Http\Resources;
+namespace App\Http\Resources\Admin;
 
-use Illuminate\Http\Resources\Json\JsonResource;
+
 use Illuminate\Support\Str;
+use App\Http\Resources\RatingShowResource;
+use Illuminate\Http\Resources\Json\JsonResource;
 
 class ProductAdminListResource extends JsonResource
 {

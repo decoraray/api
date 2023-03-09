@@ -8,8 +8,8 @@ use App\Models\Variation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ProductAdminListResource;
 use App\Http\Requests\Admin\CreateProductRequest;
+use App\Http\Resources\Admin\ProductAdminListResource;
 use App\Http\Resources\Admin\ProductShowAdminResource;
 
 class ProductController extends Controller

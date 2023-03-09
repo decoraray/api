@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('status')->default('pending');
             $table->integer('discount_amount')->default(0);
             $table->integer('total');
+            $table->string('payment_method'); // TODO : make it dynamic
 
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('cascade');
             $table->foreignId('address_id')->nullable()->constrained('addresses')->onDelete('set null');

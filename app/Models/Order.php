@@ -58,13 +58,28 @@ class Order extends Model
         return $this->hasOne(Address::class);
     }
 
-    public function payment()
+    public function payments()
     {
-        return $this->hasOne(Payment::class);
+        return $this->hasMany(Payment::class);
     }
 
     public function shipping()
     {
         return $this->belongsTo(Shipping::class);
+    }
+
+    public function getPayableAmount()
+    {
+        $method = $this->payment_method;
+        switch ($method) {
+            case 'online':
+                return round($this->total);
+            case 'partial':
+                return round($this->total * 0.3);
+            case 'door':
+                return $this->total;
+            default:
+                return $this->total;
+        }
     }
 }

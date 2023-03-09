@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\OrderStatus;
 use App\Models\Cart;
 use App\Models\Item;
 use App\Models\Order;
 use App\Models\Address;
 use App\Models\Payment;
+use App\Models\Shipping;
+use Illuminate\Http\Request;
 use App\Http\Requests\PaymentRequest;
 use App\Http\Requests\CheckoutRequest;
 use App\Services\Payment\PaymentService;
 use App\Http\Resources\OrderShowResource;
-use Illuminate\Http\Request;
 
 class PaymentController extends Controller
 {
@@ -32,21 +34,25 @@ class PaymentController extends Controller
             ], 400);
         }
 
-        $order = $this->createOrder($request->address_id, $request->shipping_id);
-
-        $cart->variations()->detach(); // TODO : detach products from cart
+        $order = $this->createOrder($request);
 
         return response()->json(new OrderShowResource($order), 201);
     }
 
-    private function createOrder($addressId, $shipping_id)
+    private function createOrder($request)
     {
+
+        $addressId = $request->address_id;
+        $shipping_id = $request->shipping_id;
+        $paymentMethod = $request->payment_method;
 
         $user = auth()->user();
 
         $address = Address::where('uuid', $addressId)->first();
 
         $cart = $user->cart;
+
+        $shipping = Shipping::find($shipping_id);
 
         $order = Order::create([
             'user_id' => $user->id,
@@ -56,8 +62,9 @@ class PaymentController extends Controller
             'county' => $address->county,
             'postal_code' => $address->postal_code,
             'phone' => $address->phone,
-            'status' => 'pending',
-            'total' => $cart->total,
+            'status' => OrderStatus::PENDING->value,
+            'total' => $cart->total + $shipping->price,
+            'payment_method' => $paymentMethod,
             'discount_amount' => $cart->discountAmount,
             'discount_id' => $cart->discount_id,
             'address_id' => $address->id,
@@ -75,13 +82,14 @@ class PaymentController extends Controller
             ]);
         }
 
+        $cart->clear();
+
         return $order;
     }
 
     public function pay(PaymentRequest $request)
     {
         $user = auth()->user();
-
         $order = Order::where('uuid', $request->order_id)->first();
 
         if (empty($order) || $order->status == 'paid') {
@@ -92,15 +100,15 @@ class PaymentController extends Controller
 
         $payment = Payment::create([
             'uuid' => uniqid(),
-            'amount' => round($order->total),
+            'amount' => $order->getPayableAmount(),
             'description' => 'payment for order ' . $order->uuid,
             'user_phone' => $user->phone,
-            'method' => $request->method ?? 'card',
+            'method' => $request->method,
             'user_id' => $user->id,
             'order_id' => $order->id,
             'status' => 'pending',
         ]);
-
+        dd($payment);
         return $this->paymentService->pay($payment, $request->gateway);
     }
 
