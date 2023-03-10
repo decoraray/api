@@ -15,6 +15,12 @@ class OrderShowResource extends JsonResource
      */
     public function toArray($request)
     {
+        if (is_object($this->status)) {
+            $status = $this->status->value;
+        } else {
+            $status = $this->status;
+        }
+
         return [
             'uuid' => $this->uuid,
             'address' => $this->address,
@@ -22,8 +28,8 @@ class OrderShowResource extends JsonResource
             'county' => $this->county,
             'postal_code' => $this->postal_code,
             'phone' => $this->phone,
-            'status' => $this->status,
-            'status_color' => OrderStatus::tryFrom($this->status)->color(),
+            'status' => $status,
+            'status_color' => OrderStatus::tryFrom($status)->color(),
             'shipping' => $this->shipping->name,
             'shipping_price' => $this->shipping->price,
             'items_total' => $this->items->sum('price'),
