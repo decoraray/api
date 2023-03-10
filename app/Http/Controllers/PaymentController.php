@@ -74,6 +74,7 @@ class PaymentController extends Controller
         for ($i = 0; $i < $cart->variations->count(); $i++) {
             Item::create([
                 'title' => $cart->variations[$i]->product->title,
+                'slug' => $cart->variations[$i]->product->slug,
                 'order_id' => $order->id,
                 'product_id' => $cart->variations[$i]->product->id,
                 'variation_id' => $cart->variations[$i]->id,
