@@ -17,9 +17,47 @@ enum OrderStatus: string
     case SHIPPING = 'ارسال کالا';
     case DELIVERED = 'تحویل کالا';
     case RETURNED = 'مرجوعی کالا';
+    case CANCELED = 'لغو شده';
 
     public static function names(): array
     {
         return array_column(static::cases(), 'name');
     }
+
+    public function color(): string
+    {
+        switch ($this->value) {
+            case self::PENDING:
+                return '#Deaa3b';
+            case self::CONFIRMED:
+                return '#7ab917';
+            case self::CUTTING:
+                return '#7ab917';
+            case self::CNC:
+                return '#7ab917';
+            case self::VACUUM:
+                return '#7ab917';
+            case self::COLORING:
+                return '#7ab917';
+            case self::PVC:
+                return '#7ab917';
+            case self::ASSEMBLY:
+                return '#7ab917';
+            case self::PACKAGING:
+                return '#7ab917';
+            case self::SHIPPING:
+                return '#7ab917';
+            case self::DELIVERED:
+                return '#7ab917';
+            case self::RETURNED:
+                return '#C54426';
+            case self::CANCELED:
+                return '#737373';
+        }
+    }
 }
+
+// sabz: #7ab917
+// qirmizi: #C54426
+// narenji: #Deaa3b
+// tusi: #737373
