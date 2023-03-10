@@ -26,7 +26,7 @@ class CheckoutRequest extends FormRequest
         return [
             'address_id' => 'required|exists:addresses,uuid',
             'shipping_id' => 'required|exists:shippings,id',
-            'payment_method' => 'required|in:online,door,partial', // TODO : make it dynamic
+            'payment_method' => 'required|in:online,cash,partial', // TODO : make it dynamic
         ];
     }
 }

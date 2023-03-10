@@ -36,6 +36,31 @@ class PaymentController extends Controller
 
         $order = $this->createOrder($request);
 
+        $paymentMethod = $request->payment_method;
+        if ($paymentMethod == 'cash') {
+            $order->update([
+                'status' => OrderStatus::PAID,
+            ]);
+
+            return response()->json(new OrderShowResource($order), 201);
+        }
+
+        // create payment
+        $user = auth()->user();
+        $payment = Payment::create([
+            'uuid' => uniqid(),
+            'amount' => $order->getPayableAmount(),
+            'description' => 'payment for order ' . $order->uuid,
+            'user_phone' => $user->phone,
+            'method' => $request->method,
+            'user_id' => $user->id,
+            'order_id' => $order->id,
+            'status' => 'pending',
+        ]);
+
+        return $this->paymentService->pay($payment, $request->gateway);
+
+
         return response()->json(new OrderShowResource($order), 201);
     }
 

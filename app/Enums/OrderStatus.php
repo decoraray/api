@@ -5,6 +5,7 @@ namespace App\Enums;
 enum OrderStatus: string
 {
     case PENDING = 'درانتظار بررسی';
+    case PAID = 'پرداخت شده';
     case CONFIRMED = 'تایید شده';
     case CUTTING = 'برش';
     case CNC = 'سی ان سی';
@@ -28,6 +29,8 @@ enum OrderStatus: string
         switch ($this) {
             case self::PENDING:
                 return '#Deaa3b';
+            case self::PAID:
+                return '#7ab917';
             case self::CONFIRMED:
                 return '#7ab917';
             case self::CUTTING:

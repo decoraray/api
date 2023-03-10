@@ -23,7 +23,7 @@ class OrderShowResource extends JsonResource
             'postal_code' => $this->postal_code,
             'phone' => $this->phone,
             'status' => $this->status,
-            'status_color' => OrderStatus::tryFrom($this->status)->color(),
+            'status_color' => OrderStatus::tryFrom($this->status->value)->color(),
             'shipping' => $this->shipping->name,
             'shipping_price' => $this->shipping->price,
             'items_total' => $this->items->sum('price'),
