@@ -62,7 +62,7 @@ class PaymentController extends Controller
             'county' => $address->county,
             'postal_code' => $address->postal_code,
             'phone' => $address->phone,
-            'status' => OrderStatus::PENDING->value,
+            'status' => OrderStatus::PENDING,
             'total' => $cart->total + $shipping->price,
             'payment_method' => $paymentMethod,
             'discount_amount' => $cart->discountAmount,
