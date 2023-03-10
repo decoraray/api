@@ -50,7 +50,7 @@ class PaymentController extends Controller
         return $this->paymentService->pay($payment, $request->gateway);
     }
 
-    private function createOrder($request)
+    private function createOrder($request): Order
     {
 
         $addressId = $request->address_id;
@@ -73,7 +73,7 @@ class PaymentController extends Controller
             'county' => $address->county,
             'postal_code' => $address->postal_code,
             'phone' => $address->phone,
-            'status' => OrderStatus::PENDING,
+            'status' => OrderStatus::PENDING->value,
             'total' => $cart->total + $shipping->price,
             'payment_method' => $paymentMethod,
             'discount_amount' => $cart->discountAmount,
@@ -99,7 +99,7 @@ class PaymentController extends Controller
         return $order;
     }
 
-    public function createPayment(Request $request, Order $order)
+    private function createPayment(Request $request, Order $order): Payment
     {
         $user = auth()->user();
         return Payment::create([
@@ -110,33 +110,9 @@ class PaymentController extends Controller
             'method' => $request->payment_method,
             'user_id' => $user->id,
             'order_id' => $order->id,
+            'gateway' => $request->gateway,
             'status' => 'pending',
         ]);
-    }
-
-    public function pay(PaymentRequest $request)
-    {
-        $user = auth()->user();
-        $order = Order::where('uuid', $request->order_id)->first();
-
-        if (empty($order) || $order->status == 'paid') {
-            return response()->json([
-                'message' => 'order already paid or does not exist',
-            ], 400);
-        }
-
-        $payment = Payment::create([
-            'uuid' => uniqid(),
-            'amount' => $order->getPayableAmount(),
-            'description' => 'payment for order ' . $order->uuid,
-            'user_phone' => $user->phone,
-            'method' => $request->method,
-            'user_id' => $user->id,
-            'order_id' => $order->id,
-            'status' => 'pending',
-        ]);
-
-        return $this->paymentService->pay($payment, $request->gateway);
     }
 
     public function orders()
