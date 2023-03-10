@@ -41,13 +41,18 @@ class PaymentController extends Controller
             $order->update([
                 'status' => OrderStatus::PAID,
             ]);
-
-            return response()->json(new OrderShowResource($order), 201);
+            return response()->json(
+                ['url' => ''],
+                201
+            );
         }
 
         $payment = $this->createPayment($request, $order);
 
-        return $this->paymentService->pay($payment, $request->gateway);
+        return response()->json(
+            ['url' => $this->paymentService->pay($payment, $request->gateway)],
+            201
+        );
     }
 
     private function createOrder($request): Order

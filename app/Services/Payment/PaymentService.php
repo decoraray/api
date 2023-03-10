@@ -20,7 +20,7 @@ class PaymentService
         return $driver->verify($payment);
     }
 
-    public function pay($payment, $gateway)
+    public function pay($payment, $gateway): string
     {
         $driver =  $this->getDriver($gateway);
         return $driver->pay($payment);

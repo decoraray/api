@@ -21,17 +21,18 @@ class PaypingDriver implements GatewayInterface
         $this->callback = route('payment-verify', ['gateway' => 'payping']);
     }
 
-    public function Pay(Payment $payment)
+    public function Pay(Payment $payment): string
     {
         // step 1 
-        $refId = $this->getRefId($payment);
+        // $refId = $this->getRefId($payment); // TODO : fake code
+        $refId = 11111;
+
         $payment->update([
             'ref_id' => $refId,
         ]);
-        // dd($payment, $refId);
 
         // step 2 
-        return Redirect::to($this->url . '/v2/pay/gotoipg/' . $refId);
+        return $this->url . '/v2/pay/gotoipg/' . $refId;
     }
 
     private function getRefId($payment)
