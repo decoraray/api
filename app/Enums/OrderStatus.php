@@ -53,6 +53,8 @@ enum OrderStatus: string
                 return '#C54426';
             case self::CANCELED:
                 return '#737373';
+            default:
+                return '#Deaa3b';
         }
     }
 }
