@@ -45,23 +45,9 @@ class PaymentController extends Controller
             return response()->json(new OrderShowResource($order), 201);
         }
 
-        // create payment
-        $user = auth()->user();
-        $payment = Payment::create([
-            'uuid' => uniqid(),
-            'amount' => $order->getPayableAmount(),
-            'description' => 'payment for order ' . $order->uuid,
-            'user_phone' => $user->phone,
-            'method' => $request->method,
-            'user_id' => $user->id,
-            'order_id' => $order->id,
-            'status' => 'pending',
-        ]);
+        $payment = $this->createPayment($request, $order);
 
         return $this->paymentService->pay($payment, $request->gateway);
-
-
-        return response()->json(new OrderShowResource($order), 201);
     }
 
     private function createOrder($request)
@@ -111,6 +97,21 @@ class PaymentController extends Controller
         $cart->clear();
 
         return $order;
+    }
+
+    public function createPayment(Request $request, Order $order)
+    {
+        $user = auth()->user();
+        return Payment::create([
+            'uuid' => uniqid(),
+            'amount' => $order->getPayableAmount(),
+            'description' => 'payment for order ' . $order->uuid,
+            'user_phone' => $user->phone,
+            'method' => $request->payment_method,
+            'user_id' => $user->id,
+            'order_id' => $order->id,
+            'status' => 'pending',
+        ]);
     }
 
     public function pay(PaymentRequest $request)
