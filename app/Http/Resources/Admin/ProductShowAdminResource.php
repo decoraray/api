@@ -4,6 +4,7 @@ namespace App\Http\Resources\Admin;
 
 use App\Http\Resources\ImageShowResource;
 use App\Http\Resources\RatingShowResource;
+use App\Http\Resources\VariationShowResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 use App\Http\Resources\CategoryLightShowResource;
 
@@ -26,7 +27,7 @@ class ProductShowAdminResource extends JsonResource
             'classifier' => $this->classifier,
             'description' => $this->description,
             'active' => $this->active,
-            'variations' => VariationShowAdminResource::collection($this->variations->where('active', 1)),
+            'variations' => VariationShowResource::collection($this->variations->where('active', 1)),
             'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
             'images' => $this->images ? ImageShowResource::collection($this->images) : null,
