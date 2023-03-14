@@ -99,7 +99,7 @@ class PaymentController extends Controller
             ]);
         }
 
-        $cart->clear();
+        // $cart->clear(); // TODO : clear cart
 
         return $order;
     }

@@ -23,9 +23,10 @@ class PaypingDriver implements GatewayInterface
 
     public function Pay(Payment $payment): string
     {
+
         // step 1 
-        // $refId = $this->getRefId($payment); // TODO : fake code
-        $refId = 11111;
+        $refId = $this->getRefId($payment); // TODO : fake code
+        // $refId = 11111;
 
         $payment->update([
             'ref_id' => $refId,
@@ -45,7 +46,8 @@ class PaypingDriver implements GatewayInterface
             'Accept' => 'application/json',
         ])->post($this->url . '/v2/pay', [
             'payerName' => $user->name,
-            'amount' => $payment->amount,
+            // 'amount' => (int)$payment->amount,
+            'amount' => 1000,
             'payerIdentity' => $payment->user->mobile,
             'returnUrl' => $this->callback,
             'clientRefId' => $payment->uuid,
