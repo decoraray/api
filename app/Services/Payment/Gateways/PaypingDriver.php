@@ -3,10 +3,7 @@
 namespace App\Services\Payment\Gateways;
 
 use App\Models\Payment;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Redirect;
-use Termwind\Components\Dd;
 
 class PaypingDriver implements GatewayInterface
 {
@@ -14,19 +11,21 @@ class PaypingDriver implements GatewayInterface
     private $callback;
     private $url;
 
+    private $hardCodedUrl = 'https://decoraray-api.mamoyz.dev/api/v1/payment-verify?gateway=payping';
+
     public function __construct()
     {
         $this->token = config('services.payping.token');
         $this->url = config('services.payping.url');
-        $this->callback = route('payment-verify', ['gateway' => 'payping']);
+        // $this->callback = route('payment-verify', ['gateway' => 'payping']);
+        $this->callback = $this->hardCodedUrl; // TODO : make it dynamic
     }
 
     public function Pay(Payment $payment): string
     {
 
         // step 1 
-        $refId = $this->getRefId($payment); // TODO : fake code
-        // $refId = 11111;
+        $refId = $this->getRefId($payment);
 
         $payment->update([
             'ref_id' => $refId,
