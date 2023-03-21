@@ -148,10 +148,10 @@ class PaymentController extends Controller
             $payment->order->update([
                 'status' => 'paid',
             ]);
+        } else {
+            return redirect()->away(config('front_url') . '/payments/error/');
         }
 
-        return response()->json([
-            'message' => 'payment verified',
-        ], 200);
+        return redirect()->away(config('front_url') . '/payments/success/');
     }
 }
