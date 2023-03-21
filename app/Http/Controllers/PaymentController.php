@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\OrderStatus;
 use App\Models\Cart;
 use App\Models\Item;
 use App\Models\Order;
 use App\Models\Address;
 use App\Models\Payment;
 use App\Models\Shipping;
+use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use App\Http\Requests\CheckoutRequest;
 use App\Services\Payment\PaymentService;
+use Illuminate\Support\Facades\Redirect;
 use App\Http\Resources\OrderShowResource;
 
 class PaymentController extends Controller
@@ -149,8 +150,8 @@ class PaymentController extends Controller
                 'status' => 'paid',
             ]);
         } else {
-            return redirect(config('front_url') . '/payments/error/')->with('status', 'Failed');
+            return Redirect::to(config('front_url') . '/payments/error/');
         }
-        return redirect(config('front_url') . '/payments/success/')->with('status', 'Success!');
+        return Redirect::to(config('front_url') . '/payments/success/');
     }
 }
