@@ -130,6 +130,8 @@ class PaymentController extends Controller
     public function verify(Request $request)
     {
 
+        dd($request->all());
+
         $payment = Payment::where('uuid', $request->clientrefid)->first();
 
         $payment->update([
