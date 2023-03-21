@@ -149,9 +149,8 @@ class PaymentController extends Controller
                 'status' => 'paid',
             ]);
         } else {
-            return redirect()->away(config('front_url') . '/payments/error/');
+            return redirect(config('front_url') . '/payments/error/')->with('status', 'Failed');
         }
-
-        return redirect()->away(config('front_url') . '/payments/success/');
+        return redirect(config('front_url') . '/payments/success/')->with('status', 'Success!');
     }
 }
