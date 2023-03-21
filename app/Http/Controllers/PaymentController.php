@@ -10,7 +10,6 @@ use App\Models\Address;
 use App\Models\Payment;
 use App\Models\Shipping;
 use Illuminate\Http\Request;
-use App\Http\Requests\PaymentRequest;
 use App\Http\Requests\CheckoutRequest;
 use App\Services\Payment\PaymentService;
 use App\Http\Resources\OrderShowResource;

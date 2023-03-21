@@ -42,7 +42,7 @@ class PaypingDriver implements GatewayInterface
         ])->post($this->url . '/v2/pay', [
             'payerName' => $user->name,
             // 'amount' => (int)$payment->amount,
-            'amount' => 1000,
+            'amount' => $payment->amount,
             'payerIdentity' => $payment->user->mobile,
             'returnUrl' => $this->callback,
             'clientRefId' => $payment->uuid,
