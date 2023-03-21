@@ -55,6 +55,17 @@ class PaypingDriver implements GatewayInterface
     public function verify($payment)
     {
 
+        // Request to callback link from payping 
+        // array:6 [▼ // app/Http/Controllers/PaymentController.php:133
+        //     "code" => "a4c17db"
+        //     "refid" => "80037571456"
+        //     "clientrefid" => "6419914b94171"
+        //     "cardnumber" => null
+        //     "cardhashpan" => "63144DDD215E8B0002BF6064FD67D5893F1361B8FB70855C2C32E52A7439F54E"
+        //     "gateway" => "payping"
+        //     ]
+
+        // response of '/v2/pay/verify' 
         // array:4 [▼ // app/Services/Payment/Gateways/PaypingDriver.php:67
         //     "amount" => 1000
         //     "cardNumber" => "603799******6680"
