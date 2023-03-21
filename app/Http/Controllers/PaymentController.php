@@ -132,6 +132,10 @@ class PaymentController extends Controller
 
         $payment = Payment::where('uuid', $request->clientrefid)->first();
 
+        $payment->update([
+            'ref_id' =>  $request->refid,
+        ]);
+
         if (empty($payment)) {
             return response()->json([
                 'message' => 'payment not found',

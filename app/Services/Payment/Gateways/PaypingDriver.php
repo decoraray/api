@@ -27,10 +27,6 @@ class PaypingDriver implements GatewayInterface
         // step 1 
         $refId = $this->getRefId($payment);
 
-        $payment->update([
-            'ref_id' => $refId,
-        ]);
-
         // step 2 
         return $this->url . '/v2/pay/gotoipg/' . $refId;
     }
