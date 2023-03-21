@@ -41,7 +41,8 @@ class PaypingDriver implements GatewayInterface
             'Accept' => 'application/json',
         ])->post($this->url . '/v2/pay', [
             'payerName' => $user->name,
-            'amount' => (int)$payment->amount,
+            // 'amount' => (int)$payment->amount,
+            'amount' => 1000, // TODO : remove this hard coded value
             'payerIdentity' => $payment->user->mobile,
             'returnUrl' => $this->callback,
             'clientRefId' => $payment->uuid,
@@ -59,7 +60,8 @@ class PaypingDriver implements GatewayInterface
             'Accept' => 'application/json',
         ])->post($this->url . '/v2/pay/verify', [
             'RefId' => $payment->ref_id,
-            'amount' => $payment->amount
+            // 'amount' => $payment->amount
+            'amount' => 1000 // TODO : remove this hard coded value
         ])->throw()->json();
 
         if ($response['code'] == 200) {
