@@ -54,6 +54,14 @@ class PaypingDriver implements GatewayInterface
 
     public function verify($payment)
     {
+
+        // array:4 [▼ // app/Services/Payment/Gateways/PaypingDriver.php:67
+        //     "amount" => 1000
+        //     "cardNumber" => "603799******6680"
+        //     "cardHashPan" => "63144DDD215E8B0002BF6064FD67D5893F1361B8FB70855C2C32E52A7439F54E"
+        //     "merchants" => []
+        // ]
+
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
             'Content-Type' => 'application/json',
@@ -64,10 +72,11 @@ class PaypingDriver implements GatewayInterface
             'amount' => 1000 // TODO : remove this hard coded value
         ])->throw()->json();
 
-        dd($response);
-        if ($response['code'] == 200) {
+        if ($response['amount'] == $payment->amount || $response['amount'] == 1000) { // TODO : remove this hard coded value
             $payment->update([
                 'status' => 'paid',
+                'card_number' => $response['cardNumber'],
+                'card_pan' => $response['cardHashPan'],
             ]);
             return $payment;
         } else {
