@@ -64,6 +64,7 @@ class PaypingDriver implements GatewayInterface
             'amount' => 1000 // TODO : remove this hard coded value
         ])->throw()->json();
 
+        dd($response);
         if ($response['code'] == 200) {
             $payment->update([
                 'status' => 'paid',
