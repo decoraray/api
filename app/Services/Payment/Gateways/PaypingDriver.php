@@ -41,8 +41,7 @@ class PaypingDriver implements GatewayInterface
             'Accept' => 'application/json',
         ])->post($this->url . '/v2/pay', [
             'payerName' => $user->name,
-            // 'amount' => (int)$payment->amount,
-            'amount' => $payment->amount,
+            'amount' => (int)$payment->amount,
             'payerIdentity' => $payment->user->mobile,
             'returnUrl' => $this->callback,
             'clientRefId' => $payment->uuid,
