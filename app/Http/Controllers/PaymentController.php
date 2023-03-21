@@ -130,13 +130,19 @@ class PaymentController extends Controller
     public function verify(Request $request)
     {
 
+        // array:6 [▼ // app/Http/Controllers/PaymentController.php:133
+        //     "code" => "a4c17db"
+        //     "refid" => "80037571456"
+        //     "clientrefid" => "6419914b94171"
+        //     "cardnumber" => null
+        //     "cardhashpan" => "63144DDD215E8B0002BF6064FD67D5893F1361B8FB70855C2C32E52A7439F54E"
+        //     "gateway" => "payping"
+        //     ]
+
         dd($request->all());
 
         $payment = Payment::where('uuid', $request->clientrefid)->first();
 
-        $payment->update([
-            'ref_id' =>  $request->refid,
-        ]);
 
         if (empty($payment)) {
             return response()->json([
@@ -147,6 +153,7 @@ class PaymentController extends Controller
         $payment->update([
             'card_number' => $request->cardnumber,
             'card_pan' => $request->cardhashpan,
+            'ref_id' =>  $request->refid,
         ]);
 
         $payment = $this->paymentService->verify($payment, $request->gateway);
