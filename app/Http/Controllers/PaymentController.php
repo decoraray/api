@@ -149,5 +149,9 @@ class PaymentController extends Controller
                 'status' => 'paid',
             ]);
         }
+
+        return response()->json([
+            'message' => 'payment verified',
+        ], 200);
     }
 }
