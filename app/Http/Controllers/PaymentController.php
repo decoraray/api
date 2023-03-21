@@ -147,7 +147,7 @@ class PaymentController extends Controller
 
         if ($payment->status == 'paid') {
             $payment->order->update([
-                'status' => 'paid',
+                'status' => OrderStatus::PAID,
             ]);
         } else {
             return Redirect::to(config('app.front_url') . '/payments/error/');
