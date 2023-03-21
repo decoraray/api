@@ -139,10 +139,7 @@ class PaymentController extends Controller
         //     "gateway" => "payping"
         //     ]
 
-        dd($request->all());
-
         $payment = Payment::where('uuid', $request->clientrefid)->first();
-
 
         if (empty($payment)) {
             return response()->json([
