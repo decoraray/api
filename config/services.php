@@ -44,6 +44,8 @@ return [
     'payping' => [
         'token' => env('PAYPING_TOKEN'),
         'url' => env('PAYPING_URL'),
+        'callback' => env('PAYPING_CALLBACK'),
+        'test' => env('PAYPING_TEST', false),
     ]
 
 ];

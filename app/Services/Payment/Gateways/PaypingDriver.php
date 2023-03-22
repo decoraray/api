@@ -16,8 +16,9 @@ class PaypingDriver implements GatewayInterface
     {
         $this->token = config('services.payping.token');
         $this->url = config('services.payping.url');
-        // $this->callback = route('payment-verify', ['gateway' => 'payping']);
+
         $this->callback = config('app.url') . '/api/v1/payment-verify?gateway=payping';
+        // $this->callback = config('services.callback');
     }
 
     public function Pay(Payment $payment): string
@@ -34,14 +35,19 @@ class PaypingDriver implements GatewayInterface
     {
         $user = $payment->user;
 
+        if (config('services.payping.test')) {
+            $amount = 1000;
+        } else {
+            $amount = (int)$payment->amount;
+        }
+
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
         ])->post($this->url . '/v2/pay', [
             'payerName' => $user->name,
-            // 'amount' => (int)$payment->amount,
-            'amount' => 1000, // TODO : remove this hard coded value
+            'amount' => $amount,
             'payerIdentity' => $payment->user->mobile,
             'returnUrl' => $this->callback,
             'clientRefId' => $payment->uuid,
@@ -72,17 +78,22 @@ class PaypingDriver implements GatewayInterface
         //     "merchants" => []
         // ]
 
+        if (config('services.payping.test')) {
+            $amount = 1000;
+        } else {
+            $amount = (int)$payment->amount;
+        }
+
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $this->token,
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
         ])->post($this->url . '/v2/pay/verify', [
             'RefId' => $payment->ref_id,
-            // 'amount' => $payment->amount
-            'amount' => 1000 // TODO : remove this hard coded value
+            'amount' => $amount
         ])->throw()->json();
 
-        if ($response['amount'] == $payment->amount || $response['amount'] == 1000) { // TODO : remove this hard coded value
+        if ($response['amount'] == $amount) {
             $payment->update([
                 'status' => 'paid',
                 'card_number' => $response['cardNumber'],
