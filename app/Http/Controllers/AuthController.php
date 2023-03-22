@@ -64,6 +64,7 @@ class AuthController extends Controller
         $token = AuthService::createToken($user);
 
         $cart = Cart::firstOrCreate(['user_id' => $user->id]);
+
         if ($uuid) {
             if (!empty(Cart::where('uuid', $uuid)->first())) {
                 $cart->merge(Cart::where('uuid', $uuid)->first());

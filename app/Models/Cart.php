@@ -20,6 +20,14 @@ class Cart extends Model
         'user_id'
     ];
 
+    public static function boot()
+    {
+        parent::boot();
+        self::creating(function ($model) {
+            $model->uuid = $model->uuid ?? uniqid();
+        });
+    }
+
     public function discount()
     {
         return $this->belongsTo(Discount::class);
