@@ -41,7 +41,7 @@ class RegisterRequest extends FormRequest
             "name" => "required|string",
             "surname" => "required|string",
             "email" => "required|email|unique:users",
-            "phone" => "required|numeric|unique:users",
+            "phone" => "required|numeric",
             "password" => "required|string|min:8",
             "cart_uuid" => "nullable"
         ];
