@@ -40,7 +40,7 @@ class SmsRegisterRequest extends FormRequest
         return [
             "name" => "string",
             "surname" => "string",
-            "phone" => "required|numeric|unique:users",
+            "phone" => "required|numeric",
             "cart_uuid" => "nullable"
         ];
     }
