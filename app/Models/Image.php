@@ -22,7 +22,7 @@ class Image extends Model
 
     public function getImagePathAttribute()
     {
-        return 'https://decoraray-api.mamoyz.dev/storage/' . $this->image;
+        return config('app.url') . '/storage/' . $this->image;
         // return asset('storage/' . $this->image);
     }
 

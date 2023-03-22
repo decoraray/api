@@ -11,14 +11,13 @@ class PaypingDriver implements GatewayInterface
     private $callback;
     private $url;
 
-    private $hardCodedUrl = 'https://decoraray-api.mamoyz.dev/api/v1/payment-verify?gateway=payping';
 
     public function __construct()
     {
         $this->token = config('services.payping.token');
         $this->url = config('services.payping.url');
         // $this->callback = route('payment-verify', ['gateway' => 'payping']);
-        $this->callback = $this->hardCodedUrl; // TODO : make it dynamic
+        $this->callback = config('app.url') . '/api/v1/payment-verify?gateway=payping';
     }
 
     public function Pay(Payment $payment): string
