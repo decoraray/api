@@ -20,7 +20,7 @@ class OrderListAdminResource extends JsonResource
             'phone' => $this->phone,
             'status' => $this->status,
             'total' => $this->total,
-            'shipping_id' => $this->shipping_id,
+            'shipping' => $this->shipping->name,
             'items_count' => $this->items->count(),
         ];
     }
