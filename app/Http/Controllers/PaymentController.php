@@ -39,7 +39,7 @@ class PaymentController extends Controller
         $paymentMethod = $request->payment_method;
         if ($paymentMethod == 'cash') {
             $order->update([
-                'status' => OrderStatus::PAID,
+                'status' => OrderStatus::PENDING,
             ]);
             return response()->json(
                 ['url' => ''],
