@@ -34,7 +34,7 @@ class AuthController extends Controller
     {
         $user = User::where('phone', $request->phone)->first();
 
-        if (!$user || $user->phone_verified_at == null) {
+        if (!$user) {
             return response([
                 'message' => ['These credentials do not match our records.']
             ], 404);
