@@ -28,7 +28,7 @@ enum OrderStatus: string
     {
         $values = [];
         foreach (static::cases() as $case) {
-            $values[] = (object) [
+            $values[] = [
                 $case->name => $case->value,
             ];
         }
