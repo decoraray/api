@@ -6,6 +6,7 @@ namespace App\Http\Resources\Admin;
 use Illuminate\Support\Str;
 use App\Http\Resources\RatingShowResource;
 use Illuminate\Http\Resources\Json\JsonResource;
+use App\Http\Resources\CategoryLightShowResource;
 
 class ProductAdminListResource extends JsonResource
 {
@@ -26,6 +27,7 @@ class ProductAdminListResource extends JsonResource
             'variation_count' => $this->variations->count(),
             'description' => Str::limit($this->description, 50),
             'category' => $this->category ? $this->category->name : null,
+            'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
             'images' => [],
             'thumbnail' => $this->images->isNotEmpty() ? $this->thumbnail->imagePath  : null,
