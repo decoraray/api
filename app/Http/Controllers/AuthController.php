@@ -40,13 +40,13 @@ class AuthController extends Controller
             ], 404);
         }
 
-        if ($user->phone == '9363468923') {
-            $user->one_time_password = '000000';
-            $user->one_time_password_created_at = now();
-            return response([
-                'message' => 'Check your sms',
-            ], 200);
-        }
+        // if ($user->phone == '9363468923') {
+        //     $user->one_time_password = '000000';
+        //     $user->one_time_password_created_at = now();
+        //     return response([
+        //         'message' => 'Check your sms',
+        //     ], 200);
+        // }
 
         $user->generateOneTimePassword();
 
@@ -90,11 +90,11 @@ class AuthController extends Controller
             ], 404);
         }
 
-        if ($user->phone == '9363468923') {
-            $user->phone_verified_at = now();
-            $user->save();
-            return $this->login($user, $request->getUuid());
-        }
+        // if ($user->phone == '9363468923') {
+        //     $user->phone_verified_at = now();
+        //     $user->save();
+        //     return $this->login($user, $request->getUuid());
+        // }
 
         $passed = $user->verifyOneTimePassword($request->password);
         if (!$passed) {
@@ -157,13 +157,13 @@ class AuthController extends Controller
             ], 404);
         }
 
-        if ($user->phone == '9363468923') {
-            $user->one_time_password = '000000';
-            $user->one_time_password_created_at = now();
-            return response([
-                'message' => 'Check your sms',
-            ], 200);
-        }
+        // if ($user->phone == '9363468923') {
+        //     $user->one_time_password = '000000';
+        //     $user->one_time_password_created_at = now();
+        //     return response([
+        //         'message' => 'Check your sms',
+        //     ], 200);
+        // }
 
         $otpGenerated = $user->generateOneTimePassword();
         if (!$otpGenerated) {
@@ -171,6 +171,8 @@ class AuthController extends Controller
                 'message' => ['Failed to generate one time password.']
             ], 500);
         }
+
+        SmsIr::verify($user->phone, $user->one_time_password);
 
         $response = [
             'message' => 'Check your sms',
