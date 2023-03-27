@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Order;
+use App\Models\Shipping;
 use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdateOrderRequest;
 use App\Http\Resources\Admin\OrderListAdminResource;
 use App\Http\Resources\Admin\OrderShowAdminResource;
+use App\Http\Resources\Admin\ShippingListAdminResource;
 
 class OrderController extends Controller
 {
@@ -17,6 +19,7 @@ class OrderController extends Controller
     {
         return OrderListAdminResource::collection(Order::paginate(40))->additional([
             'status_names' => OrderStatus::names(),
+            'shipping_methods' => ShippingListAdminResource::collection(Shipping::all()),
         ]);
     }
 
