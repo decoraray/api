@@ -26,8 +26,16 @@ enum OrderStatus: string
 
     public static function values(): array
     {
-        return array_column(static::cases(), 'value');
+        $values = [];
+        foreach (static::cases() as $case) {
+            $values[] = (object) [
+                'name' => $case->name,
+                'value' => $case->value,
+            ];
+        }
+        return $values;
     }
+
 
     public function color(): string
     {

@@ -18,9 +18,7 @@ class OrderController extends Controller
     public function index()
     {
         return OrderListAdminResource::collection(Order::paginate(40))->additional([
-            'status_names' => [
-                OrderStatus::names() => OrderStatus::values(),
-            ],
+            'status_names' => OrderStatus::values(),
             'shipping_methods' => ShippingListAdminResource::collection(Shipping::all()),
         ]);
     }
