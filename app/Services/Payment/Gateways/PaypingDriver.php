@@ -91,7 +91,10 @@ class PaypingDriver implements GatewayInterface
         ])->post($this->url . '/v2/pay/verify', [
             'RefId' => $payment->ref_id,
             'amount' => $amount
-        ])->throw()->json();
+        ]);
+
+        if ($response->failed()) {
+        }
 
         if ($response['amount'] == $amount) {
             $payment->update([
