@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Admin;
 
+use App\Enums\OrderStatus;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class OrderListAdminResource extends JsonResource
@@ -14,11 +15,13 @@ class OrderListAdminResource extends JsonResource
      */
     public function toArray($request)
     {
+        $status = OrderStatus::fromName($this->status);
+
         return [
             'uuid' => $this->uuid,
             'city' => $this->city,
             'phone' => $this->phone,
-            'status' => $this->status,
+            'status' => $status,
             'total' => $this->total,
             'shipping' => $this->shipping->name,
             'items_count' => $this->items->count(),
