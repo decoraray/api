@@ -31,7 +31,7 @@ class OrderController extends Controller
     public function update(UpdateOrderRequest $request, Order $order)
     {
         // takes "CONFIRMED" from request and returns the enum instance
-        $status = OrderStatus::fromName($request->status);
+        $status = OrderStatus::tryFrom($request->status);
 
         $order->update([
             'status' => $status->value

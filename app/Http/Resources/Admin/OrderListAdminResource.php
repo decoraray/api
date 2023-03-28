@@ -15,7 +15,7 @@ class OrderListAdminResource extends JsonResource
      */
     public function toArray($request)
     {
-        $status = OrderStatus::fromName($this->status);
+        $status = OrderStatus::tryFrom($this->status);
 
         return [
             'uuid' => $this->uuid,
