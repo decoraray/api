@@ -19,6 +19,17 @@ enum OrderStatus: string
     case RETURNED = 'مرجوعی کالا';
     case CANCELED = 'لغو شده';
 
+    public static function fromName(string $name): self
+    {
+        foreach (static::cases() as $case) {
+            if ($case->name === $name) {
+                return $case;
+            }
+        }
+
+        throw new \InvalidArgumentException("Invalid value: {$name}");
+    }
+
     public static function names(): array
     {
         return array_column(static::cases(), 'name');

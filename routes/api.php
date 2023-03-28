@@ -87,7 +87,8 @@ Route::prefix('v1')
                 Route::resource('categories', 'CategoryController');
                 Route::resource('discount', 'DiscountController');
 
-                Route::resource('orders', 'OrderController')->only(['index', 'show', 'update']);
+                Route::resource('orders', 'OrderController')->only(['index', 'show']);
+                Route::patch('/orders/{order:uuid}', 'OrderController@update');
                 Route::get('/orders/uuid/{uuid}', 'OrderController@uuid');
             });
         });
