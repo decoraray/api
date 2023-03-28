@@ -45,6 +45,7 @@ Route::prefix('v1')
         Route::get('/categories', 'ShopController@categories')->name('categories');
         Route::post('/rate/{product}', 'ShopController@rating')->name('rate');
         Route::get('cities', 'AddressController@cities')->name('cities');
+        Route::get('shippings', 'AddressController@shippings')->name('shippings');
 
         // cart routs
         Route::get('/cart', 'CartController@index')->name('cart');

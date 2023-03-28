@@ -13,4 +13,9 @@ class Shipping extends Model
     {
         return $this->belongsToMany(Order::class);
     }
+
+    public function cities()
+    {
+        return $this->belongsToMany(City::class, 'city_shipping')->withPivot('override_price');
+    }
 }

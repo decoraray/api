@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\City;
 use App\Models\Address;
+use App\Models\Shipping;
+use App\Http\Resources\ShippingResource;
 use App\Http\Resources\CountyListResource;
 use App\Http\Requests\AddressCreateRequest;
 use App\Http\Resources\AddressShowResource;
 use App\Http\Requests\AddressUpdateResource;
+use Termwind\Components\Dd;
 
 class AddressController extends Controller
 {
@@ -108,5 +111,19 @@ class AddressController extends Controller
     {
         $counties =  \App\Models\City::where('parent', 0)->with('children')->get();
         return CountyListResource::collection($counties);
+    }
+
+
+    public function shippings()
+    {
+
+        if (!request()->city_id) {
+            $shippings = Shipping::all();
+        } else {
+            $city = City::find(request()->city_id);
+            $shippings = $city->shippings;
+        }
+
+        return ShippingResource::collection($shippings);
     }
 }
