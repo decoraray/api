@@ -113,7 +113,6 @@ class AddressController extends Controller
         return CountyListResource::collection($counties);
     }
 
-
     public function shippings()
     {
 

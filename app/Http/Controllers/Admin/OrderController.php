@@ -30,13 +30,13 @@ class OrderController extends Controller
 
     public function update(UpdateOrderRequest $request, Order $order)
     {
-        return $order->update($request->validated());
+        $order->update($request->validated());
+        return new OrderShowAdminResource($order);
     }
 
     public function uuid(Request $request)
     {
         $order = Order::where('uuid', $request->uuid)->firstOrFail();
-
         return new OrderShowAdminResource($order);
     }
 
