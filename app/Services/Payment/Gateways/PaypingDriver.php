@@ -93,19 +93,15 @@ class PaypingDriver implements GatewayInterface
             'amount' => $amount
         ]);
 
-        if ($response->failed()) {
-        }
-
-        if ($response['amount'] == $amount) {
+        if ($response->successful() && $response['amount'] == $amount) {
             $payment->update([
                 'status' => 'paid',
                 'card_number' => $response['cardNumber'],
                 'card_pan' => $response['cardHashPan'],
             ]);
-            return $payment;
-        } else {
-            throw new \Exception('payment failed');
         }
+
+        return $payment;
     }
 
     public function getName(): string
