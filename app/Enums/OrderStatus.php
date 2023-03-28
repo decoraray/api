@@ -21,6 +21,7 @@ enum OrderStatus: string
 
     public static function fromName(string $name): self
     {
+
         foreach (static::cases() as $case) {
             if ($case->name === $name) {
                 return $case;
