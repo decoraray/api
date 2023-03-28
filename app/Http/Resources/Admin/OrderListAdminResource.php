@@ -25,6 +25,8 @@ class OrderListAdminResource extends JsonResource
             'total' => $this->total,
             'shipping' => $this->shipping->name,
             'items_count' => $this->items->count(),
+            'created_at' => $this->created_at->format('d.m.Y H:i:s'),
+            'updated_at' => $this->updated_at->format('d.m.Y H:i:s'),
         ];
     }
 }

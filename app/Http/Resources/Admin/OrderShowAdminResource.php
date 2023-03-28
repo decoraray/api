@@ -23,6 +23,8 @@ class OrderShowAdminResource extends JsonResource
             'discount_id' => $this->discount_id,
             'address_id' => $this->address_id,
             'shipping' => $this->shipping->name,
+            'created_at' => $this->created_at->format('d.m.Y H:i:s'),
+            'updated_at' => $this->updated_at->format('d.m.Y H:i:s'),
         ];
     }
 }
