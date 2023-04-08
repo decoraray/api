@@ -24,7 +24,7 @@ class OrderShowAdminResource extends JsonResource
             'discount_id' => $this->discount_id,
             'address_id' => $this->address_id,
             'shipping' => $this->shipping->name,
-            'items' => OrderItemResource::collection($this->items),
+            'items' => $this->items ?? OrderItemResource::collection($this->items),
             'created_at' => $this->created_at->format('d.m.Y H:i:s'),
             'updated_at' => $this->updated_at->format('d.m.Y H:i:s'),
         ];
