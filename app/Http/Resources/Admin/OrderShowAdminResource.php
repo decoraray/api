@@ -18,6 +18,8 @@ class OrderShowAdminResource extends JsonResource
 
         return [
             'id' => $this->id,
+            'user_id' => $this->user_id,
+            'name' => $this->user->name . ' ' . $this->user->surname,
             'uuid' => $this->uuid,
             'address' => $this->address,
             'city' => $this->city,
