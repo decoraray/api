@@ -28,8 +28,10 @@ Route::prefix('v1')
         Route::get('/categories/{category:slug}', 'ShopController@listByCategory')->name('category');
         Route::get('/categories/{category:slug}/{product:slug}', 'ShopController@listByCategory');
 
-        Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
-        Route::get('/port-products', 'App\Http\Controllers\Admin\ProductController@importProducts');
+        // maintenance routs 
+        // Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
+        // Route::get('/port-products', 'App\Http\Controllers\Admin\ProductController@importProducts');
+        Route::get('/update-categories', 'App\Http\Controllers\Admin\ProductController@updateCategories');
 
         // auth routs
         Route::post('/email-login', 'AuthController@emailLogin')->name('email-login');

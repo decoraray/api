@@ -43,12 +43,12 @@ class JwtVerify
             return response()->json([
                 'status' => 0,
                 'reply' => 'Expired Token!'
-            ], 400);
+            ], 401);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 0,
                 'reply' => 'Invalid User!'
-            ], 400);
+            ], 401);
         }
     }
 }

@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CreateProductRequest;
 use App\Http\Resources\Admin\ProductAdminListResource;
 use App\Http\Resources\Admin\ProductShowAdminResource;
+use App\Models\Category;
 
 class ProductController extends Controller
 {
@@ -145,5 +146,28 @@ class ProductController extends Controller
             $product->updateAveragePrice();
         }
         return 'done';
+    }
+
+
+    // find all products and assign them to the category they belong to
+    public function updateCategories()
+    {
+        $products = Product::all();
+
+        $categories = Category::all();
+
+        $products->each(function ($product) use ($categories) {
+            $category = $categories->first(function ($category) use ($product) {
+                return str_contains($product->title, $category->name);
+            });
+
+            if ($category) {
+                $product->categories()->attach($category->id);
+                // if category has parent add it to the product
+                if ($category->parent) {
+                    $product->categories()->attach($category->parent->id);
+                }
+            }
+        });
     }
 }
