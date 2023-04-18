@@ -26,7 +26,6 @@ class ProductAdminListResource extends JsonResource
             'price' => $this->averagePrice,
             'variation_count' => $this->variations->count(),
             'description' => Str::limit($this->description, 50),
-            'category' => $this->category ? $this->category->name : null,
             'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
             'images' => [],

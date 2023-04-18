@@ -112,7 +112,7 @@ class Product extends Model
 
     public function scopeByCategory($query, $category)
     {
-        if (!$category) {
+        if (!$category || $category == 'null') {
             return;
         }
 

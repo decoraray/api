@@ -20,9 +20,17 @@ class ProductController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with('categories')->paginate(40);
+        $products = Product::with('categories')
+            ->byCategory($request->category)
+            ->when(
+                $request->title && $request->title != 'null',
+                function ($query) use ($request) {
+                    return $query->where('title', 'like', "%{$request->title}%");
+                }
+            )
+            ->paginate(40);
         return ProductAdminListResource::collection($products);
     }
 
@@ -91,7 +99,7 @@ class ProductController extends Controller
     }
 
 
-
+    // TODO : one time use
     public function importProducts()
     {
 
@@ -138,6 +146,7 @@ class ProductController extends Controller
         return 'done';
     }
 
+    // TODO : one time use
     public function updateAveragePrice()
     {
 
@@ -148,7 +157,7 @@ class ProductController extends Controller
         return 'done';
     }
 
-
+    // TODO : one time use
     // find all products and assign them to the category they belong to
     public function updateCategories()
     {
