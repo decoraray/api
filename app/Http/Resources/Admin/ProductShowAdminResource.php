@@ -26,6 +26,7 @@ class ProductShowAdminResource extends JsonResource
             'slug' => $this->slug,
             'classifier' => $this->classifier,
             'description' => $this->description,
+            'dimensions' => $this->dimensions,
             'active' => $this->active,
             'variations' => VariationShowResource::collection($this->variations->where('active', 1)),
             'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,

@@ -21,6 +21,7 @@ class Product extends Model
         'active',
         'code',
         'slug',
+        'dimensions',
         'average_price',
     ];
 

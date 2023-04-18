@@ -40,6 +40,7 @@ class CreateProductRequest extends FormRequest
         return [
             'title' => 'required',
             'slug' => 'required|unique:products,slug',
+            'dimensions' => 'string',
             'description' => 'required',
             'categories' => ['required', 'array'],
             'categories.*' => ['required', 'integer', 'exists:categories,id'],

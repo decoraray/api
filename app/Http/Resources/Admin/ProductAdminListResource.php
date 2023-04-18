@@ -24,6 +24,7 @@ class ProductAdminListResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'price' => $this->averagePrice,
+            'dimensions' => $this->dimensions,
             'variation_count' => $this->variations->count(),
             'description' => Str::limit($this->description, 50),
             'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,
