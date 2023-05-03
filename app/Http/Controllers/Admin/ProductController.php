@@ -75,7 +75,9 @@ class ProductController extends Controller
         $product->update($request->all());
 
         if ($request->categories) {
-            $product->categories()->sync($request->categories);
+            // if categoryes are array get all , else plunk ids and get them
+            $categories = is_array($request->categories) ? $request->categories : $request->categories->pluck('id');
+            $product->categories()->sync($categories);
         }
 
         return new ProductShowAdminResource($product);
