@@ -75,7 +75,7 @@ class ProductController extends Controller
         $product->update($request->all());
 
         if ($request->categories) {
-            $product->categories()->sync($request->categories->pluck('id'));
+            $product->categories()->sync($request->categories);
         }
 
         return new ProductShowAdminResource($product);
