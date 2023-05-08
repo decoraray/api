@@ -47,11 +47,6 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    public function fullName()
-    {
-        return $this->name . ' ' . $this->surname;
-    }
-
     public function isAdmin()
     {
         return $this->role == 'admin';
@@ -85,6 +80,12 @@ class User extends Authenticatable
     public function getCartAttribute()
     {
         return $this->cart()->first();
+    }
+
+    // get full name 
+    public function getFullNameAttribute()
+    {
+        return $this->name . ' ' . $this->surname;
     }
 
     public function generateOneTimePassword()
