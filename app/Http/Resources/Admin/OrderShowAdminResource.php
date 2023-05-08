@@ -38,6 +38,7 @@ class OrderShowAdminResource extends JsonResource
             'items' => $this->items ? OrderItemResource::collection($this->items) : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'payments' => $this->payments ? PaymentShowAdminResource::collection($this->payments) : null,
         ];
     }
 }
