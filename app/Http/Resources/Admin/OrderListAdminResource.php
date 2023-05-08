@@ -19,6 +19,7 @@ class OrderListAdminResource extends JsonResource
 
         return [
             'uuid' => $this->uuid,
+            'user' => $this->user->fullName,
             'city' => $this->city,
             'phone' => $this->phone,
             'status' => $status,
