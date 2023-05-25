@@ -94,6 +94,7 @@ Route::prefix('v1')
                 Route::get('/orders/uuid/{uuid}', 'OrderController@uuid');
 
                 Route::resource('colors', 'ColorController');
+                Route::post('colors/sample/{color}', 'ColorController@addSample');
             });
         });
     });
