@@ -16,12 +16,20 @@ class Color extends Model
      */
     protected $fillable = [
         'name',
-        'hex',
+        'slug',
+        'sample',
+        'hex'
     ];
 
     public function products()
     {
         return $this->belongsToMany(ProductVariation::class);
+    }
+
+    public function getPathAttribute()
+    {
+        return config('app.url') . '/storage/' . $this->sample;
+        // return asset('storage/' . $this->image);
     }
 
     public static function findOrCreate($name)

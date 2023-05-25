@@ -18,6 +18,7 @@ class VariationShowResource extends JsonResource
             'id' => $this->id,
             'price' => $this->price,
             'color' => $this->color->name,
+            'sample' => $this->color->sample == null ? null : $this->color->path,
             'stock' => $this->stock,
         ];
     }
