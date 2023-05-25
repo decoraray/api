@@ -58,4 +58,17 @@ class ColorController extends Controller
     {
         return $color->delete();
     }
+
+    public function addSample(Color $color)
+    {
+        if (!request()->hasFile('sample')) {
+            return response()->json([
+                'message' => 'No file was uploaded.'
+            ], 422);
+        }
+
+        $color->update([
+            'sample' => request()->file('sample')->store('samples', 'public'),
+        ]);
+    }
 }
