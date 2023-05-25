@@ -1,9 +1,13 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
 use App\Models\Color;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Http\Resources\ColorShowResource;
+use App\Http\Requests\Admin\CreateColorRequest;
+use App\Http\Requests\Admin\UpdateColorRequest;
 
 class ColorController extends Controller
 {
@@ -14,72 +18,44 @@ class ColorController extends Controller
      */
     public function index()
     {
-        //
+        return ColorShowResource::collection(Color::all());
     }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
+    public function store(CreateColorRequest $request)
     {
-        //
+        Color::create([
+            'name' => $request->name,
+            'slug' => $request->slug ?? $request->name,
+            'sample' => $request->hasFile('sample') ? $request->file('sample')->store('samples', 'public') : null,
+            'hex' => $request->hex ?? '#000000',
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  \App\Models\Color  $color
-     * @return \Illuminate\Http\Response
-     */
     public function show(Color $color)
     {
-        //
+        // return $color;
+        return new ColorShowResource($color);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  \App\Models\Color  $color
-     * @return \Illuminate\Http\Response
-     */
-    public function edit(Color $color)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Color  $color
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, Color $color)
     {
-        //
+
+        // TODO: Add
+        // maintenance mode
+        return response()->json([
+            'message' => 'This feature is not available yet. Please try again later.'
+        ], 500);
+
+        // $color->update([
+        //     'name' => $request->name,
+        //     'slug' => $request->slug ?? $request->name,
+        //     'sample' => $request->hasFile('sample') ? $request->file('sample')->store('samples', 'public') : null,
+        //     'hex' => $request->hex,
+        // ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  \App\Models\Color  $color
-     * @return \Illuminate\Http\Response
-     */
     public function destroy(Color $color)
     {
-        //
+        return $color->delete();
     }
 }
