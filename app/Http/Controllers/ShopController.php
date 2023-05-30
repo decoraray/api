@@ -109,4 +109,31 @@ class ShopController extends Controller
     {
         return response()->json(CategoryResource::collection(Category::parents()->get()));
     }
+
+
+    /**
+     * {   product_id: '...',
+     *     page_url: '...',
+     *     price: '...',
+     *     availability: '...',
+     *     old_price: '...',}
+     */
+    public function torobApi()
+    {
+        $products = Product::paginate(100);
+
+        $data = [];
+
+        foreach ($products as $product) {
+            $data[] = [
+                'product_id' => $product->id,
+                'page_url' => route('product', $product->slug),
+                'price' => $product->price,
+                'availability' => $product->availability,
+                'old_price' => $product->price,
+            ];
+        }
+
+        return response()->json($data);
+    }
 }

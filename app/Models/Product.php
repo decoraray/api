@@ -60,6 +60,7 @@ class Product extends Model
         return $this->hasOne(Rating::class);
     }
 
+    // relations
     public function images()
     {
         return $this->hasMany(Image::class);
@@ -90,9 +91,20 @@ class Product extends Model
         return $this->belongsTo(Tag::class);
     }
 
+    // attributes
     public function getAveragePriceAttribute()
     {
         return round($this->variations->avg('price'));
+    }
+
+    public function getPriceAttribute()
+    {
+        return $this->variations->min('price');
+    }
+
+    public function getAvailabilityAttribute()
+    {
+        return $this->variations->sum('stock') > 0 ? 'instock' : 'out of stock';
     }
 
     public function updateAveragePrice()
@@ -106,6 +118,7 @@ class Product extends Model
         return $this->variations->pluck('color')->unique();
     }
 
+    // scopes
     public function scopePopular($query)
     {
         $query->where('active', 1)->orderBy('id', 'desc');
@@ -132,7 +145,6 @@ class Product extends Model
         $query->where('tag_id', 'like', $tag);
     }
 
-    // sort by price asc
     public function scopeSort($query)
     {
         if (request()->has('sort')) {
