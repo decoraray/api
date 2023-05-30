@@ -41,6 +41,7 @@ Route::prefix('v1')
         Route::post('/register', 'AuthController@smsRegister')->name('sms-register');
         Route::post('/sms-verify', 'AuthController@smsVerify')->name('sms-verify');
 
+
         // public shop routs
         Route::get('/initials', 'ShopController@initial')->name('initial');
         Route::post('/search', 'ShopController@search')->name('search');
@@ -68,7 +69,7 @@ Route::prefix('v1')
 
             // user routs
             Route::get('/user', 'AuthController@user')->name('user');
-
+            Route::post('/change-password', 'AuthController@ChangePassword')->name('change-password'); // TODO
             Route::post('/update', 'AuthController@update')->name('update');
 
             // purchase 
