@@ -215,4 +215,30 @@ class AuthController extends Controller
 
         return response()->json(new UserShowResource($user), 200);
     }
+
+    public function ChangePassword(Request $request)
+    {
+        // validate request
+        $request->validate([
+            'old_password' => 'required',
+            'new_password' => 'required|min:6',
+        ]);
+
+        $user = User::where('id', $request->user()->id)->first();
+
+        if (!Hash::check($request->old_password, $user->password)) {
+            return response([
+                'message' => ['These credentials do not match our records.']
+            ], 404);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        $response = [
+            'message' => 'Password changed successfully',
+        ];
+
+        return response($response, 200);
+    }
 }
