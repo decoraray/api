@@ -104,7 +104,7 @@ class Product extends Model
 
     public function getAvailabilityAttribute()
     {
-        return $this->variations->sum('stock') > 0 ? 'instock' : 'out of stock';
+        return $this->variations->sum('stock') > 0 ? 'instock' : 'outofstock';
     }
 
     public function updateAveragePrice()
