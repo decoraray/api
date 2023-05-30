@@ -49,6 +49,9 @@ Route::prefix('v1')
         Route::get('cities', 'AddressController@cities')->name('cities');
         Route::get('shippings', 'AddressController@shippings')->name('shippings');
 
+        // torob api
+        Route::get('/torob', 'ShopController@torobApi')->name('torob');
+
         // cart routs
         Route::get('/cart', 'CartController@index')->name('cart');
         Route::get('/cart/{uuid}', 'CartController@index')->name('cart');
