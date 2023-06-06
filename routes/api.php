@@ -96,6 +96,7 @@ Route::prefix('v1')
                 Route::resource('orders', 'OrderController')->only(['index', 'show']);
                 Route::patch('/orders/{order:uuid}', 'OrderController@update');
                 Route::get('/orders/uuid/{uuid}', 'OrderController@uuid');
+                Route::get('/orders/pdf/{uuid}', 'OrderController@downloadPdf');
 
                 Route::resource('colors', 'ColorController');
                 Route::post('colors/sample/{color}', 'ColorController@addSample');

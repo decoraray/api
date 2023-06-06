@@ -1,5 +1,5 @@
-<!DOCTYPE html rtl>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}"  dir="rtl" lang="fa">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,10 +13,8 @@
 
     </head>
 
-
-
     <body class="antialiased">
-        <h1>Invoice</h1>
+        <h1>فاکتور فروش</h1>
 
             {{-- "id" => 24
             "uuid" => "640b85437f487"
@@ -42,7 +40,7 @@
         <p>وضعیت: {{ $order->status }}</p>
         <p>مجموع: {{ $order->total }}</p>
 
-        <p>محصولات:</p>
+        <h2>محصولات:</h2>
         <table>
             <thead>
                 <tr>
@@ -83,10 +81,10 @@
         "deleted_at" => null
         "created_at" => null
         "updated_at" => "2023-02-27 19:23:13" --}}
-        <p>Customer Details:</p>
-        <p>Name: {{ $user->fullName }}</p>
-        <p>Email: {{ $user->email }}</p>
-        <p>Phone: {{ $user->phone }}</p>
+        <h2>مشخصات مشتری: </h2>
+        <p>نام: {{ $user->fullName }}</p>
+        <p>ایمیل: {{ $user->email }}</p>
+        <p>تلفن: {{ $user->phone }}</p>
 
 {{-- 
         "id" => 1
@@ -95,9 +93,9 @@
         "description" => "هزینه ارسال به شهرستات ، تا باربری تهران ۵۰/۰۰۰ هزار تومان می باشد."
         "created_at" => null
         "updated_at" => null --}}
-        <p>Shipping Details:</p>
-        <p>Name: {{ $shipping->name }}</p>
-        <p>Price: {{ $shipping->price }}</p>
+        <h2>ارسال:</h2>
+        <p>نام گیرنده: {{ $shipping->name }}</p>
+        <p>هزینه: {{ $shipping->price }}</p>
 
         {{-- "id" => 27
         "uuid" => "63ea8bea87bc5"
@@ -116,11 +114,11 @@
         "card_pan" => "23456"
         "ref_id" => "6ba99a6" --}}
         @if(isset($products))
-            <p>Payment Details:</p>
-            <p>Method: {{ $payment->method }}</p>
-            <p>Transaction ID: {{ $payment->uuid }}</p>
+            <p>مشخصات پرداخت:</p>
+            <p>روش پرداخت: {{ $payment->method }}</p>
+            <p>مبلغ پرداخت: {{ $payment->amount }}</p>
+            <p>شناسه پرداخت: {{ $payment->uuid }}</p>
         @endif
-
 
     </body>
 </html>
