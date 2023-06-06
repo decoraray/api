@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use PDF;
 use App\Models\Order;
 use App\Models\Shipping;
 use App\Enums\OrderStatus;
@@ -44,6 +45,32 @@ class OrderController extends Controller
     {
         $order = Order::where('uuid', $request->uuid)->firstOrFail();
         return new OrderShowAdminResource($order);
+    }
+
+    public function downloadPdf(Request $request)
+    {
+        $order = Order::where('uuid', $request->uuid)->firstOrFail();
+
+        $data = [
+            'order' => $order,
+            'user' => $order->user,
+            'shipping' => $order->shipping,
+        ];
+
+        // view()->share('admin.order.invoice', $data);
+        return view('admin.order.invoice')->with($data);
+
+        // rtl support
+        $pdf = PDF::loadView('admin.order.invoice', $data)
+            ->setOptions(
+                [
+                    'dpi' => 96,
+                    'defaultFont' => 'sans-serif',
+                    'isHtml5ParserEnabled', true,
+                ]
+            )
+            ->setPaper('a4', 'portrait');
+        return $pdf->download($request->uuid . '.pdf');
     }
 
     public function search(Request $request)
