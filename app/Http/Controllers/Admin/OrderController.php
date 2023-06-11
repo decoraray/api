@@ -41,12 +41,14 @@ class OrderController extends Controller
         return new OrderShowAdminResource($order);
     }
 
+    // search by uuid
     public function uuid(Request $request)
     {
         $order = Order::where('uuid', $request->uuid)->firstOrFail();
         return new OrderShowAdminResource($order);
     }
 
+    // download pdf invoice
     public function downloadPdf(Request $request)
     {
         $order = Order::where('uuid', $request->uuid)->firstOrFail();
