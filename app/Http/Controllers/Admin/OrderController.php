@@ -71,12 +71,25 @@ class OrderController extends Controller
 
         // Generate the PDF using Laravel Snappy
         $snappy = \PDF::loadHTML($pdfContent);
+
         $snappy->setOptions([
-            'dpi' => 96,
-            'defaultFont' => 'sans-serif',
-            'isHtml5ParserEnabled' => true, // Fixed a typo
+            'encoding' => 'utf-8',  // Set the encoding to UTF-8
+            'no-outline' => true,  // Disable the outline (table of contents) in the PDF
+            'images' => true,  // If true, try to load external images (jpeg, png, gif)
+
+            'margin-top' => 10,
+            'margin-right' => 10,
+            'margin-bottom' => 10,
+            'margin-left' => 10,
+
+            'page-size' => 'A4',
+            'orientation' => 'portrait',
+
+            // rtl support
+            'enable-smart-shrinking' => true,
+
         ]);
-        $snappy->setPaper('a4', 'portrait');
+
         $pdfContent = $snappy->output();
 
         // Return the PDF as a download response
