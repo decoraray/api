@@ -59,21 +59,33 @@ class OrderController extends Controller
             'shipping' => $order->shipping,
         ];
 
-        // view()->share('admin.order.invoice', $data);
-        return view('admin.order.invoice')->with($data);
+        // Prepare the data for the view
+        $viewData = [
+            'admin.order.invoice',
+            $data
+        ];
 
-        // rtl support
-        $pdf = PDF::loadView('admin.order.invoice', $data)
-            ->setOptions(
-                [
-                    'dpi' => 96,
-                    'defaultFont' => 'sans-serif',
-                    'isHtml5ParserEnabled', true,
-                ]
-            )
-            ->setPaper('a4', 'portrait');
-        return $pdf->download($request->uuid . '.pdf');
+        // Render the view and share the data (optional)
+        // view()->share('admin.order.invoice', $data);
+        $pdfContent = view('admin.order.invoice')->with($data)->render();
+
+        // Generate the PDF using Laravel Snappy
+        $snappy = \PDF::loadHTML($pdfContent);
+        $snappy->setOptions([
+            'dpi' => 96,
+            'defaultFont' => 'sans-serif',
+            'isHtml5ParserEnabled' => true, // Fixed a typo
+        ]);
+        $snappy->setPaper('a4', 'portrait');
+        $pdfContent = $snappy->output();
+
+        // Return the PDF as a download response
+        return response($pdfContent, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $request->uuid . '.pdf"',
+        ]);
     }
+
 
     public function search(Request $request)
     {
