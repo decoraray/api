@@ -59,44 +59,37 @@ class OrderController extends Controller
             'shipping' => $order->shipping,
         ];
 
-        // Prepare the data for the view
-        $viewData = [
-            'admin.order.invoice',
-            $data
-        ];
+        $pdf = PDF::loadView('admin.order.invoice', $data);
 
-        // Render the view and share the data (optional)
-        // view()->share('admin.order.invoice', $data);
-        $pdfContent = view('admin.order.invoice')->with($data)->render();
-
-        // Generate the PDF using Laravel Snappy
-        $snappy = \PDF::loadHTML($pdfContent);
-
-        $snappy->setOptions([
-            'encoding' => 'utf-8',  // Set the encoding to UTF-8
-            'no-outline' => true,  // Disable the outline (table of contents) in the PDF
-            'images' => true,  // If true, try to load external images (jpeg, png, gif)
-
-            'margin-top' => 10,
-            'margin-right' => 10,
-            'margin-bottom' => 10,
-            'margin-left' => 10,
-
-            'page-size' => 'A4',
-            'orientation' => 'portrait',
-
-            // rtl support
-            'enable-smart-shrinking' => true,
-
+        $pdf->setOptions([
+            'defaultFont' => 'sans-serif',
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true,
         ]);
 
-        $pdfContent = $snappy->output();
+        $pdf->setPaper('a4', 'portrait');
+
+        $file = $pdf->download('pdf_file.pdf');
 
         // Return the PDF as a download response
-        return response($pdfContent, 200, [
+        return response($file, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $request->uuid . '.pdf"',
         ]);
+    }
+
+    // get data for print on cilent side
+    public function print(Request $request)
+    {
+        $order = Order::where('uuid', $request->uuid)->firstOrFail();
+
+        $data = [
+            'order' => $order,
+            'user' => $order->user,
+            'shipping' => $order->shipping,
+        ];
+
+        return new OrderShowAdminResource($order);
     }
 
 
