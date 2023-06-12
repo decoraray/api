@@ -187,7 +187,6 @@ return [
          * Package Service Providers...
          */
         Spatie\Permission\PermissionServiceProvider::class,
-        Barryvdh\Snappy\ServiceProvider::class,
 
         /*
          * Application Service Providers...
