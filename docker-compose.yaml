@@ -1,7 +1,7 @@
 version: '3.8'
-services: 
+services:
     main:
-        build: 
+        build:
             context: .
             dockerfile: Dockerfile
         container_name: shop-app
@@ -40,12 +40,12 @@ services:
         container_name: shop-nginx
         restart: unless-stopped
         ports:
-        - 8000:80
+            - 8000:80
         volumes:
-        - ./:/var/www
-        - ./docker-compose/nginx:/etc/nginx/conf.d/
+            - ./:/var/www
+            - ./docker-compose/nginx:/etc/nginx/conf.d/
         networks:
-        - shop-network
+            - shop-network
 
 networks:
     shop-network:
