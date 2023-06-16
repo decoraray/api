@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('shippings', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->integer('price');
+            $table->integer('default_price');
             $table->string('description')->nullable();
             $table->timestamps();
         });

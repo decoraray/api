@@ -18,4 +18,10 @@ class Shipping extends Model
     {
         return $this->belongsToMany(City::class, 'city_shipping')->withPivot('override_price');
     }
+
+    // get price attribute
+    public function getPriceAttribute()
+    {
+        return ($this->pivot && $this->pivot->override_price) ? $this->pivot->override_price : $this->default_price;
+    }
 }

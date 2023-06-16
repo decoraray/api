@@ -23,4 +23,16 @@ class City extends Model
     {
         return $this->belongsToMany(Shipping::class, 'city_shipping')->withPivot('override_price');;
     }
+
+    // door payment availability 
+    public function getDoorPaymentAttribute()
+    {
+        $dorPaymentCityIds = [360, 279];
+
+        if (in_array($this->id, $dorPaymentCityIds)) {
+            return true;
+        }
+
+        return false;
+    }
 }

@@ -119,10 +119,26 @@ class AddressController extends Controller
         if (!request()->city_id) {
             $shippings = Shipping::all();
         } else {
-            $city = City::find(request()->city_id);
-            $shippings = $city->shippings;
+            $cityShippings = City::find(request()->city_id)->shippings;
+            $shippings = $cityShippings->isEmpty() ? Shipping::all() : $cityShippings;
         }
 
         return ShippingResource::collection($shippings);
+    }
+
+    public function paymentMethods()
+    {
+        $paymentMethods = [
+            'online' => 'آنلاین',
+            'cash' => 'پرداخت در محل',
+            'partial' => 'پرداخت بیعانه'
+        ];
+
+        if (!request()->city_id) {
+            $shippings = Shipping::all();
+        } else {
+            $city = City::find(request()->city_id);
+            $shippings = $city->shippings;
+        }
     }
 }

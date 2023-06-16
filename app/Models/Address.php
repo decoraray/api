@@ -26,4 +26,11 @@ class Address extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    // dor payment availability based on city
+    public function getDoorPaymentAttribute()
+    {
+        $city = City::where('id', $this->city_id)->first();
+        return $city->door_payment;
+    }
 }

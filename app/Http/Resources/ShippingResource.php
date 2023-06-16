@@ -17,7 +17,8 @@ class ShippingResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
-            'price' => ($this->pivot && $this->pivot->override_price) ? $this->pivot->override_price : $this->price,
+            'description' => $this->description,
+            'price' => $this->price,
         ];
     }
 }
