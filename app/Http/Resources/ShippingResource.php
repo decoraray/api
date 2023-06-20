@@ -19,6 +19,7 @@ class ShippingResource extends JsonResource
             'name' => $this->name,
             'description' => $this->description,
             'price' => $this->price,
+            'additional_percent' => $this->additional_percent,
         ];
     }
 }
