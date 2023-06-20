@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->integer('default_price');
+            $table->float('additional_percent');
             $table->string('description')->nullable();
             $table->timestamps();
         });

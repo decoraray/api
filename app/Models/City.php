@@ -21,7 +21,12 @@ class City extends Model
 
     public function shippings()
     {
-        return $this->belongsToMany(Shipping::class, 'city_shipping')->withPivot('override_price');;
+        return $this->belongsToMany(Shipping::class, 'city_shipping')->withPivot('override_price');
+    }
+
+    public function getShippingAttribute()
+    {
+        return $this->shippings->first() ?? Shipping::where('id', 1)->first();
     }
 
     // door payment availability 

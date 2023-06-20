@@ -18,10 +18,9 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('parent')->nullable();
             $table->string('title');
+            $table->string('slug')->unique()->nullable();
             $table->unsignedBigInteger('sort')->default(0);
             $table->softDeletes();
-            // $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-            // $table->foreign('parent')->references('id')->on('cities')->onDelete('cascade');
             $table->timestamps();
         });
     }

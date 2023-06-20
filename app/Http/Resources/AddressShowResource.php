@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\City;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class AddressShowResource extends JsonResource
@@ -24,6 +25,7 @@ class AddressShowResource extends JsonResource
             'county' => $this->county,
             'uuid' => $this->uuid,
             'door_payment' => $this->door_payment,
+            'shipping' => new ShippingResource($this->shipping),
         ];
     }
 }

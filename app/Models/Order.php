@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Order extends Model
 {
@@ -81,5 +82,62 @@ class Order extends Model
             default:
                 return $this->total;
         }
+    }
+
+    public static function createFromRequest($request)
+    {
+
+        $addressId = $request->address_id;
+
+        $paymentMethod = $request->payment_method;
+
+        $user = auth()->user();
+
+        $address = Address::where('uuid', $addressId)->first();
+
+        $cart = $user->cart;
+
+        $shipping = City::where('id', $address->city_id)->first()->shipping;
+
+        // create order
+        $order = Order::make([
+            'user_id' => $user->id,
+            'uuid' => uniqid(),
+            'address' => $address->address,
+            'city' => $address->city,
+            'county' => $address->county,
+            'postal_code' => $address->postal_code,
+            'phone' => $address->phone,
+            'status' => OrderStatus::PENDING,
+            // 'total' => $cart->total + $shipping->price,
+            'payment_method' => $paymentMethod,
+            'discount_amount' => $cart->discountAmount,
+            'discount_id' => $cart->discount_id,
+            'address_id' => $address->id,
+            'shipping_id' => $shipping->id,
+        ]);
+
+        // add items to order
+        $shippingPrice = $shipping->price;
+        for ($i = 0; $i < $cart->variations->count(); $i++) {
+
+            Item::create([
+                'title' => $cart->variations[$i]->product->title,
+                'slug' => $cart->variations[$i]->product->slug,
+                'order_id' => $order->id,
+                'product_id' => $cart->variations[$i]->product->id,
+                'variation_id' => $cart->variations[$i]->id,
+                'quantity' => $cart->variations[$i]->pivot->quantity,
+                'price' => $cart->variations[$i]->price,
+            ]);
+            $shippingPrice += $shipping->price * $shipping->additional_percent / 100;
+        }
+
+        // calculate payable amount
+        $order->total = $cart->total + $shippingPrice;
+
+        $order->save();
+
+        return $order;
     }
 }

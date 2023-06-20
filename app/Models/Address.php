@@ -33,4 +33,10 @@ class Address extends Model
         $city = City::where('id', $this->city_id)->first();
         return $city->door_payment;
     }
+
+    public function getShippingAttribute()
+    {
+        $city = City::where('id', $this->city_id)->first();
+        return $city->shipping;
+    }
 }

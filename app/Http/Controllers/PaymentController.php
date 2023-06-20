@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cart;
+use App\Models\City;
 use App\Models\Item;
 use App\Models\Order;
 use App\Models\Address;
@@ -34,13 +35,17 @@ class PaymentController extends Controller
             ], 400);
         }
 
-        $order = $this->createOrder($request);
+        // $order = $this->createOrder($request);
+        $order = Order::createFromRequest($request);
 
         $paymentMethod = $request->payment_method;
         if ($paymentMethod == 'cash') {
             $order->update([
                 'status' => OrderStatus::PENDING,
             ]);
+
+            $cart->clear();
+
             return response()->json(
                 ['url' => ''],
                 201
@@ -59,7 +64,7 @@ class PaymentController extends Controller
     {
 
         $addressId = $request->address_id;
-        $shipping_id = $request->shipping_id;
+        // $shipping_id = $request->shipping_id;
         $paymentMethod = $request->payment_method;
 
         $user = auth()->user();
@@ -68,8 +73,10 @@ class PaymentController extends Controller
 
         $cart = $user->cart;
 
-        $shipping = Shipping::find($shipping_id);
+        // $shipping = Shipping::find($shipping_id);
+        $shipping = City::where('id', $address->city_id)->first()->shipping;
 
+        // create order
         $order = Order::create([
             'user_id' => $user->id,
             'uuid' => uniqid(),
@@ -84,9 +91,10 @@ class PaymentController extends Controller
             'discount_amount' => $cart->discountAmount,
             'discount_id' => $cart->discount_id,
             'address_id' => $address->id,
-            'shipping_id' => $shipping_id,
+            'shipping_id' => $shipping->id,
         ]);
 
+        // add items to order
         for ($i = 0; $i < $cart->variations->count(); $i++) {
             Item::create([
                 'title' => $cart->variations[$i]->product->title,
@@ -98,6 +106,10 @@ class PaymentController extends Controller
                 'price' => $cart->variations[$i]->price,
             ]);
         }
+
+        // calculate payable amount
+
+
 
         $cart->clear();
 
@@ -120,12 +132,13 @@ class PaymentController extends Controller
         ]);
     }
 
-    public function orders()
-    {
-        $user = auth()->user();
-        $orders = $user->orders;
-        return response()->json(OrderShowResource::collection($orders));
-    }
+    // show orders for user 
+    // public function orders()
+    // {
+    //     $user = auth()->user();
+    //     $orders = $user->orders;
+    //     return response()->json(OrderShowResource::collection($orders));
+    // }
 
     public function verify(Request $request)
     {
@@ -149,6 +162,7 @@ class PaymentController extends Controller
             $payment->order->update([
                 'status' => OrderStatus::PAID,
             ]);
+            $payment->user->cart->clear();
         } else {
             return Redirect::to(config('app.front_url') . '/payments/error/');
         }

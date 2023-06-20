@@ -31,7 +31,7 @@ Route::prefix('v1')
         // maintenance routs 
         // Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
         // Route::get('/port-products', 'App\Http\Controllers\Admin\ProductController@importProducts');
-        Route::get('/update-categories', 'App\Http\Controllers\Admin\ProductController@updateCategories');
+        // Route::get('/update-categories', 'App\Http\Controllers\Admin\ProductController@updateCategories');
 
         // auth routs
         Route::post('/email-login', 'AuthController@emailLogin')->name('email-login');
