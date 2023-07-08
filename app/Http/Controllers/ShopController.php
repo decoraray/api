@@ -141,7 +141,7 @@ class ShopController extends Controller
     public function allProducts()
     {
         // just te available ones 
-        $products = Product::active()->get(['slug', 'updated_at']);
+        $products = Product::HasActiveVariation()->get(['slug', 'updated_at']);
 
         $data = [];
 
