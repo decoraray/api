@@ -25,6 +25,7 @@ class ProductListResource extends JsonResource
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
             'images' =>  $this->images->isNotEmpty() ? ImageShowResource::collection($this->images) : null,
             'thumbnail' => $this->images->isNotEmpty() ? $this->thumbnail->imagePath  : null,
+            'updated_at' => $this->updated_at,
         ];
     }
 }
