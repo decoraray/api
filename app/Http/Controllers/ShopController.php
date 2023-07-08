@@ -140,8 +140,17 @@ class ShopController extends Controller
     //   allProducts slugs
     public function allProducts()
     {
-        $products = Product::pluck('slug');
+        $products = Product::all(['slug', 'updated_at']);
 
-        return response()->json($products);
+        $data = [];
+
+        foreach ($products as $product) {
+            $data[] = [
+                'slug' => $product->slug,
+                'updated_at' => $product->updated_at,
+            ];
+        }
+
+        return response()->json($data);
     }
 }
