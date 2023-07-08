@@ -140,7 +140,8 @@ class ShopController extends Controller
     //   allProducts slugs
     public function allProducts()
     {
-        $products = Product::all(['slug', 'updated_at']);
+        // just te available ones 
+        $products = Product::active()->get(['slug', 'updated_at']);
 
         $data = [];
 
