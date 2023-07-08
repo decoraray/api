@@ -27,6 +27,8 @@ Route::prefix('v1')
         Route::get('/products/{slugOrId}', 'ShopController@show')->name('product');
         Route::get('/categories/{category:slug}', 'ShopController@listByCategory')->name('category');
         Route::get('/categories/{category:slug}/{product:slug}', 'ShopController@listByCategory');
+        Route::get('/all-products', 'ShopController@allProducts')->name('all-products');
+
 
         // maintenance routs 
         // Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');

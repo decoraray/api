@@ -136,4 +136,12 @@ class ShopController extends Controller
 
         return response()->json($data);
     }
+
+    //   allProducts slugs
+    public function allProducts()
+    {
+        $products = Product::pluck('slug');
+
+        return response()->json($products);
+    }
 }
