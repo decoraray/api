@@ -23,7 +23,7 @@ Route::prefix('v1')
         });
 
         // slug links for SEO 
-        Route::get('/products', 'ShopController@list')->name('products');
+        Route::get('/products', 'ShopController@products')->name('products');
         Route::get('/products/{slugOrId}', 'ShopController@show')->name('product');
         Route::get('/categories/{category:slug}', 'ShopController@listByCategory')->name('category');
         Route::get('/categories/{category:slug}/{product:slug}', 'ShopController@listByCategory');
@@ -42,7 +42,6 @@ Route::prefix('v1')
         Route::post('/login', 'AuthController@smsLogin')->name('sms-login');
         Route::post('/register', 'AuthController@smsRegister')->name('sms-register');
         Route::post('/sms-verify', 'AuthController@smsVerify')->name('sms-verify');
-
 
         // public shop routs
         Route::get('/initials', 'ShopController@initial')->name('initial');

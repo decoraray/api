@@ -25,15 +25,25 @@ class ShopController extends Controller
     }
 
     // get product list
-    public function list()
+    public function products(Request $request)
     {
-        return response()->json(
-            ProductListResource::collection(
-                Product::active()
-                    ->take(50)
-                    ->get()
+        $data = Product::active()
+            ->hasActiveVariation()
+            ->byCategory($request->category)
+            ->byTag($request->tag)
+            ->Sort()
+            ->when($request->product, function ($query) use ($request) {
+                return $query->where('id', '<>', $request->product);
+            })
+            ->when(
+                $request->keyword && $request->keyword != 'null',
+                function ($query) use ($request) {
+                    return $query->where('title', 'like', "%{$request->keyword}%");
+                }
             )
-        );
+            ->paginate($request->per_page ?? 20);
+
+        return ProductListResource::collection($data)->response();
     }
 
     // search product
@@ -78,12 +88,6 @@ class ShopController extends Controller
         );
     }
 
-    // popular products
-    public function popular()
-    {
-        return response()->json(ProductListResource::collection(Product::active()->popular()->get()));
-    }
-
     // product detail
     public function show($slugOrId)
     {
@@ -110,8 +114,8 @@ class ShopController extends Controller
         return response()->json(CategoryResource::collection(Category::parents()->get()));
     }
 
-
     /**
+     * IT IS FOR TOROB API
      * {   product_id: '...',
      *     page_url: '...',
      *     price: '...',
@@ -137,7 +141,7 @@ class ShopController extends Controller
         return response()->json($data);
     }
 
-    //   allProducts slugs
+    //   allProducts slugs - IT IS FOR TOROB API
     public function allProducts()
     {
         // just te available ones 
