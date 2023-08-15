@@ -152,6 +152,7 @@ class Product extends Model
             'price_desc' => 'priceDesc',
             'newest' => 'newest',
             'oldest' => 'oldest',
+            'oldest' => 'newest',
         ];
 
         $sort = request()->get('sort', 'newest'); // Default to 'newest' if no sort parameter provided
