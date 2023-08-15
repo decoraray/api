@@ -147,16 +147,19 @@ class Product extends Model
 
     public function scopeSort($query)
     {
-        if (request()->has('sort')) {
-            if (request()->get('sort') == 'price_asc') {
-                $query->priceAsc();
-            } elseif (request()->get('sort') == 'price_desc') {
-                $query->priceDesc();
-            } elseif (request()->get('sort') == 'newest') {
-                $query->newest();
-            } elseif (request()->get('sort') == 'oldest') {
-                $query->oldest();
-            };
+        $sortOptions = [
+            'price_asc' => 'priceAsc',
+            'price_desc' => 'priceDesc',
+            'newest' => 'newest',
+            'oldest' => 'oldest',
+        ];
+
+        $sort = request()->get('sort', 'newest'); // Default to 'newest' if no sort parameter provided
+
+        if (array_key_exists($sort, $sortOptions)) {
+            $query->{$sortOptions[$sort]}();
+        } else {
+            $query->newest(); // Default to sorting by newest
         }
     }
 
