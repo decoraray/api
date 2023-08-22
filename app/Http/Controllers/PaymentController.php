@@ -133,12 +133,12 @@ class PaymentController extends Controller
     }
 
     // show orders for user 
-    // public function orders()
-    // {
-    //     $user = auth()->user();
-    //     $orders = $user->orders;
-    //     return response()->json(OrderShowResource::collection($orders));
-    // }
+    public function orders()
+    {
+        $user = auth()->user();
+        $orders = $user->orders;
+        return response()->json(OrderShowResource::collection($orders));
+    }
 
     public function verify(Request $request)
     {
