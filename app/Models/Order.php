@@ -109,13 +109,15 @@ class Order extends Model
             'postal_code' => $address->postal_code,
             'phone' => $address->phone,
             'status' => OrderStatus::PENDING,
-            // 'total' => $cart->total + $shipping->price,
+            'total' => 0,
             'payment_method' => $paymentMethod,
             'discount_amount' => $cart->discountAmount,
             'discount_id' => $cart->discount_id,
             'address_id' => $address->id,
             'shipping_id' => $shipping->id,
         ]);
+
+        $order->save();
 
         // add items to order
         $shippingPrice = $shipping->price;
@@ -124,7 +126,7 @@ class Order extends Model
             Item::create([
                 'title' => $cart->variations[$i]->product->title,
                 'slug' => $cart->variations[$i]->product->slug,
-                'order_id' => $order->id,
+                'order_id' => $order->id, // order must be saved to have id 
                 'product_id' => $cart->variations[$i]->product->id,
                 'variation_id' => $cart->variations[$i]->id,
                 'quantity' => $cart->variations[$i]->pivot->quantity,
@@ -136,7 +138,7 @@ class Order extends Model
         // calculate payable amount
         $order->total = $cart->total + $shippingPrice;
 
-        $order->save();
+        $order->update();
 
         return $order;
     }

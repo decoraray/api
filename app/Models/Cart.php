@@ -140,7 +140,10 @@ class Cart extends Model
                 'user_id' => auth()->id(),
             ]);
 
-            $cart->uuid =  $cart->uuid ?? uniqid();
+            if (!$cart->uuid) {
+                $cart->uuid = uniqid();
+                $cart->update();
+            }
 
             return $cart;
         } else {
