@@ -37,7 +37,7 @@ class OrderShowResource extends JsonResource
             'payment_method' => $this->payment_method,
             'payableAmount' => $this->payableAmount,
             'discount_amount' => $this->discount_amount,
-            'items' => OrderItemResource::collection($this->items),
+            'items' => $this->items ? OrderItemResource::collection($this->items) : [],
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
