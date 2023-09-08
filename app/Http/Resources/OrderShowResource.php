@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Enums\OrderStatus;
+use App\Enums\PaymentMethods;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class OrderShowResource extends JsonResource
@@ -20,7 +21,7 @@ class OrderShowResource extends JsonResource
         } else {
             $status = $this->status;
         }
-
+        // dd(PaymentMethods::fromName('cash')->value);
         return [
             'uuid' => $this->uuid,
             'address' => $this->address,
@@ -34,7 +35,7 @@ class OrderShowResource extends JsonResource
             'shipping_price' => $this->shipping->price,
             'items_total' => $this->items->sum('price'),
             'total' => $this->total,
-            'payment_method' => $this->payment_method,
+            'payment_method' => PaymentMethods::fromName($this->payment_method)->value, // its "cash , partial , online " in the db 
             'payableAmount' => $this->payableAmount,
             'discount_amount' => $this->discount_amount,
             'items' => $this->items ? OrderItemResource::collection($this->items) : [],
