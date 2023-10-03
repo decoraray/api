@@ -18,6 +18,7 @@ class UserShowResource extends JsonResource
             'name' => $this->name . ' ' . $this->surname,
             'email' => $this->email,
             'phone' => (string)$this->national_code . (string)$this->phone,
+            'roles' => $this->roles->pluck('name'),
             'address' => $this->addresses ? AddressShowResource::collection($this->addresses) : null,
             'cart' => $this->cart ? new CartShowResource($this->cart) : null,
         ];
