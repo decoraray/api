@@ -36,6 +36,7 @@ Route::prefix('v1')
         // Route::get('/update-categories', 'App\Http\Controllers\Admin\ProductController@updateCategories');
 
         // auth routs
+        Route::post('admin/login', 'AuthController@emailLogin')->name('admin-login');
         Route::post('/email-login', 'AuthController@emailLogin')->name('email-login');
         Route::post('/register', 'AuthController@register')->name('email-register');
         Route::post('/forgot-password', 'AuthController@forgotPassword')->name('forgot-password'); // TODO
@@ -82,10 +83,8 @@ Route::prefix('v1')
             // address 
             Route::resource('address', 'AddressController');
 
-            // admin routs
+            // SuperAdmin routs
             Route::prefix('admin')->middleware(['role:SuperAdmin'])->namespace('Admin')->group(function () {
-
-                Route::post('login', 'AuthController@emailLogin');
 
                 Route::resource('products', 'ProductController');
                 Route::post('image', 'ImageController@imageStore');
