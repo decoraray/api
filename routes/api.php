@@ -84,6 +84,9 @@ Route::prefix('v1')
 
             // admin routs
             Route::prefix('admin')->middleware(['role:SuperAdmin'])->namespace('Admin')->group(function () {
+
+                Route::post('login', 'AuthController@emailLogin');
+
                 Route::resource('products', 'ProductController');
                 Route::post('image', 'ImageController@imageStore');
                 Route::delete('image', 'ImageController@imageDelete');
