@@ -98,6 +98,7 @@ class Order extends Model
         $cart = $user->cart;
 
         $shipping = City::where('id', $address->city_id)->first()->shipping;
+        $shippingPrice = $shipping->price + ($shipping->price * ($cart->totalQuantity - 1) * $shipping->additional_percent / 100);
 
         // create order
         $order = Order::make([
@@ -109,7 +110,7 @@ class Order extends Model
             'postal_code' => $address->postal_code,
             'phone' => $address->phone,
             'status' => OrderStatus::PENDING,
-            'total' => 0,
+            'total' =>  $cart->total + $shippingPrice,
             'payment_method' => $paymentMethod,
             'discount_amount' => $cart->discountAmount,
             'discount_id' => $cart->discount_id,
@@ -120,25 +121,17 @@ class Order extends Model
         $order->save();
 
         // add items to order
-        $shippingPrice = $shipping->price;
         for ($i = 0; $i < $cart->variations->count(); $i++) {
-
             Item::create([
                 'title' => $cart->variations[$i]->product->title,
                 'slug' => $cart->variations[$i]->product->slug,
-                'order_id' => $order->id, // order must be saved to have id 
+                'order_id' => $order->id, // order must be saved to have id
                 'product_id' => $cart->variations[$i]->product->id,
                 'variation_id' => $cart->variations[$i]->id,
                 'quantity' => $cart->variations[$i]->pivot->quantity,
                 'price' => $cart->variations[$i]->price,
             ]);
-            $shippingPrice += $shipping->price * $shipping->additional_percent / 100;
         }
-
-        // calculate payable amount
-        $order->total = $cart->total + $shippingPrice;
-
-        $order->update();
 
         return $order;
     }
