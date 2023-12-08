@@ -17,6 +17,7 @@ class ProductCartResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->product->title,
+            'slug' => $this->product->slug,
             'price' => $this->price,
             'category' => $this->product->category ? $this->product->category->name : null,
             'color' => $this->color ? $this->color->name : null,
