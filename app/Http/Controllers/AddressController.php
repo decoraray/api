@@ -46,8 +46,8 @@ class AddressController extends Controller
         $data = $request->validated();
         $data['title'] = $request->title();
         $data['user_id'] = auth()->user()->id;
-        $data['city'] = City::find($data['city_id'])->title;
-        $data['county'] = City::find($data['city_id'])->parent()->first()->title;
+        $data['city'] = $request->city();
+        $data['county'] = $request->county();
         $data['uuid'] = uniqid();
 
         $address = Address::create($data);
@@ -89,8 +89,8 @@ class AddressController extends Controller
     {
         $address = Address::where('uuid', $uuid)->first() ?? abort(404);
         $data = $request->validated();
-        $data['city'] = City::find($data['city_id'])->title;
-        $data['county'] = City::find($data['city_id'])->parent()->first()->title;
+        $data['city'] = $request->city();
+        $data['county'] = $request->county();
         $address->update($data);
         return response()->json(new AddressShowResource($address), 200);
     }

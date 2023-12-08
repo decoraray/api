@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\City;
 use Illuminate\Foundation\Http\FormRequest;
 
 class AddressCreateRequest extends FormRequest
@@ -36,6 +37,16 @@ class AddressCreateRequest extends FormRequest
     // get title from request or set a default value
     public function title()
     {
-        return $this->title ?? 'آدرس' . auth()->user()->addresses()->count() + 1;
+        return $this->title ?? 'آدرس ' . auth()->user()->addresses()->count() + 1 . ' '. $this->city();
+    }
+
+    public function city()
+    {
+        return City::find($data['city_id'])->title;
+    }
+
+    public function county()
+    {
+        return City::find($data['city_id'])->parent()->first()->title;
     }
 }
