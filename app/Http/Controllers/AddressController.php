@@ -44,10 +44,12 @@ class AddressController extends Controller
     public function store(AddressCreateRequest $request)
     {
         $data = $request->validated();
+        $data['title'] = $data['title'] ?? 'آدرس' . auth()->user()->addresses()->count() + 1;
         $data['user_id'] = auth()->user()->id;
         $data['city'] = City::find($data['city_id'])->title;
         $data['county'] = City::find($data['city_id'])->parent()->first()->title;
         $data['uuid'] = uniqid();
+
         $address = Address::create($data);
 
         return response()->json(new AddressShowResource($address), 201);
