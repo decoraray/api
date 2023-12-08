@@ -24,12 +24,18 @@ class AddressCreateRequest extends FormRequest
     public function rules()
     {
         return [
-            'title' => 'required|string|max:255',
+            'title' => 'nullable|string|max:255',
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:255',
             'address' => 'required|string|max:255',
             'postal_code' => 'nullable|string|max:255',
             'city_id' => 'nullable|integer|exists:cities,id|gt:31', // 31 is the biggest county id
         ];
+    }
+
+    // get title from request or set a default value
+    public function title()
+    {
+        return $this->title ?? 'آدرس' . auth()->user()->addresses()->count() + 1;
     }
 }
