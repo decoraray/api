@@ -42,11 +42,11 @@ class AddressCreateRequest extends FormRequest
 
     public function city()
     {
-        return City::find($data['city_id'])->title;
+        return City::find($this->city_id)->title;
     }
 
     public function county()
     {
-        return City::find($data['city_id'])->parent()->first()->title;
+        return City::find($this->city_id)->county->title;
     }
 }
