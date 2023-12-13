@@ -39,4 +39,10 @@ class Address extends Model
         $city = City::where('id', $this->city_id)->first();
         return $city->shipping;
     }
+
+    // return empty string if postal code is null
+    public function getPostalCodeAttribute($value)
+    {
+        return $value ?? '';
+    }
 }
