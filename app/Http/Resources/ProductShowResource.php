@@ -26,7 +26,9 @@ class ProductShowResource extends JsonResource
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
             'images' => $this->images ? ImageShowResource::collection($this->images) : null,
             'thumbnail' => $this->images->isNotEmpty() ? $this->thumbnail->imagePath  : null,
-            'price' => $this->price,
+            'old_price' => $this->oldPrice,
+            'discount' => $this->deal ? $this->deal->discount : null,
+            'price' => $this->averagePrice,
         ];
     }
 }

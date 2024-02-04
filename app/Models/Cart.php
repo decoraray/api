@@ -82,7 +82,7 @@ class Cart extends Model
         $total = 0;
         for ($i = 0; $i < count($this->variationsIds()); $i++) {
             $total += $this->variations()->find($this->variationsIds()[$i])->pivot->quantity
-                * $this->variations()->find($this->variationsIds()[$i])->price;
+                * $this->variations()->find($this->variationsIds()[$i])->calculatedPrice;
         }
         return $total;
     }

@@ -24,6 +24,7 @@ return new class extends Migration
             $table->string('rating_id')->nullable();
             $table->string('dimensions')->nullable();
             $table->foreignId('tag_id')->nullable()->constrained('tags');
+            $table->foreignId('deal_id')->nullable()->constrained('deals');
             $table->timestamps();
         });
     }

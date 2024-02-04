@@ -132,8 +132,8 @@ class ShopController extends Controller
             $data[] = [
                 'product_id' => $product->id,
                 'page_url' => route('product', $product->slug),
-                'price' => $product->price,
                 'availability' => $product->availability,
+                'price' => $product->discountPrice,
                 'old_price' => $product->price,
             ];
         }

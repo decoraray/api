@@ -33,4 +33,20 @@ class Variation extends Model
     {
         return $this->belongsTo(Color::class);
     }
+
+    // get oldPrice attribute
+    public function getOldPriceAttribute()
+    {
+        return $this->price;
+    }
+
+    // get calculatedPrice attribute
+    public function getCalculatedPriceAttribute()
+    {
+        $discount = 0;
+        if ($this->product->deal) {
+            $discount = $this->price * $this->product->deal->discount / 100;
+        }
+        return $this->price - $discount;
+    }
 }

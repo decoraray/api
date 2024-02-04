@@ -91,15 +91,38 @@ class Product extends Model
         return $this->belongsTo(Tag::class);
     }
 
+    public function deal()
+    {
+        return $this->belongsTo(Deal::class);
+    }
+
     // attributes
-    public function getAveragePriceAttribute()
+    public function getOldAveragePriceAttribute()
     {
         return round($this->variations->avg('price'));
     }
 
+    public function getOldPriceAttribute()
+    {
+        return $this->variations->min('oldPrice');
+    }
+
+    public function getAveragePriceAttribute()
+    {
+        $discount = 0;
+        if ($this->deal) {
+            $discount = $this->oldAveragePrice * $this->deal->discount / 100;
+        }
+        return $this->oldAveragePrice - $discount;
+    }
+
     public function getPriceAttribute()
     {
-        return $this->variations->min('price');
+        $discount = 0;
+        if ($this->deal) {
+            $discount = $this->oldAveragePrice * $this->deal->discount / 100;
+        }
+        return $this->oldPrice - $discount;
     }
 
     public function getAvailabilityAttribute()
