@@ -14,6 +14,7 @@ class Item extends Model
         'slug',
         'description',
         'price',
+        'discount',
         'product_id',
         'variation_id',
         'order_id',

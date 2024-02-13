@@ -20,7 +20,9 @@ class OrderItemResource extends JsonResource
             'quantity' => $this->quantity,
             'image' => $this->product?->images->isNotEmpty() ? $this->product->thumbnail->imagePath : null,
             'description' => $this->description,
-            'price' => $this->price,
+            'price' => $this->calculatePrice,
+            'old_price' => $this->oldPrice,
+            'discount' => $this->discount,
             'color' => $this->variation?->color->name,
             'product_id' => $this->product?->id,
         ];
