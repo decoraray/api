@@ -20,7 +20,7 @@ class ProductListResource extends JsonResource
             'title' => $this->title,
             'slug' => $this->slug,
             'old_price' => $this->oldAveragePrice,
-            'discount' => $this->deal ? $this->deal->discount : null,
+            'discount' => $this->deal ? $this->deal->discount : 0,
             'price' => $this->averagePrice,
             'description' => Str::limit($this->description, 50),
             'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,

@@ -20,9 +20,11 @@ class ProductAdminListResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'code' => $this->code,
+            'classifier' => $this->classifier,
             'title' => $this->title,
             'slug' => $this->slug,
+            'old_price' => $this->oldAveragePrice,
+            'discount' => $this->deal ? $this->deal->discount : 0,
             'price' => $this->averagePrice,
             'dimensions' => $this->dimensions,
             'variation_count' => $this->variations->count(),

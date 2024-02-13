@@ -16,7 +16,9 @@ class VariationShowAdminResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'price' => $this->price,
+            'old_price' => $this->oldPrice,
+            'discount' => $this->product->deal ? $this->product->deal->discount : null,
+            'price' => $this->calculatedPrice,
             'color' => $this->color->name,
             'sample' => $this->color->sample == null ? null : $this->color->path,
             'stock' => $this->stock,
