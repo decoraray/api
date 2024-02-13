@@ -28,11 +28,6 @@ class Cart extends Model
         });
     }
 
-    public function discount()
-    {
-        return $this->belongsTo(Discount::class);
-    }
-
     public function variations()
     {
         return $this->belongsToMany(Variation::class)
@@ -96,6 +91,18 @@ class Cart extends Model
         return $total;
     }
 
+    public function discount()
+    {
+        $old_total = 0;
+        for ($i = 0; $i < count($this->variationsIds()); $i++) {
+            $old_total += $this->variations()->find($this->variationsIds()[$i])->pivot->quantity
+                * $this->variations()->find($this->variationsIds()[$i])->oldPrice;
+        }
+
+        return $old_total - $this->total();
+    }
+
+
     public function clear()
     {
         $this->variations()->detach();
@@ -118,19 +125,14 @@ class Cart extends Model
         return $this->totalQuantity();
     }
 
+    public function getDiscountAttribute()
+    {
+        return $this->discount();
+    }
+
     public function getIsEmptyAttribute()
     {
         return $this->isEmpty();
-    }
-
-    public function getDiscountAttribute()
-    {
-        return $this->discount()->exists() ? $this->discount->percent : 0;
-    }
-
-    public function getDiscountAmountAttribute()
-    {
-        return $this->discount()->exists() ? $this->total() * $this->discount->percent / 100 : 0;
     }
 
     public static function getOrCreate(?string $uuid = null)
