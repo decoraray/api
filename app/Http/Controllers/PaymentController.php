@@ -103,7 +103,7 @@ class PaymentController extends Controller
                 'product_id' => $cart->variations[$i]->product->id,
                 'variation_id' => $cart->variations[$i]->id,
                 'quantity' => $cart->variations[$i]->pivot->quantity,
-                'price' => $cart->variations[$i]->price,
+                'price' => $cart->variations[$i]->calculatePrice(),
             ]);
         }
 

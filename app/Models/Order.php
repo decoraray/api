@@ -130,6 +130,8 @@ class Order extends Model
                 'variation_id' => $cart->variations[$i]->id,
                 'quantity' => $cart->variations[$i]->pivot->quantity,
                 'price' => $cart->variations[$i]->calculatedPrice,
+                'discount' => $cart->variations[$i]->product->deal ? $cart->variations[$i]->product->deal->discount : 0,
+                'description' => $cart->variations[$i]->product->deal ? $cart->variations[$i]->product->deal->description : '',
             ]);
         }
 

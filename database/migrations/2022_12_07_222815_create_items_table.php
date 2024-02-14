@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('title');
             $table->string('slug');
             $table->integer('price');
+            $table->float('discount')->nullable();
             $table->string('description')->nullable();
             $table->integer('quantity');
             $table->foreignId('product_id')->nullable()->constrained()->unsigned()->onDelete('set null');

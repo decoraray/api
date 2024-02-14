@@ -27,7 +27,7 @@ class ProductShowResource extends JsonResource
             'images' => $this->images ? ImageShowResource::collection($this->images) : null,
             'thumbnail' => $this->images->isNotEmpty() ? $this->thumbnail->imagePath  : null,
             'old_price' => $this->oldPrice,
-            'discount' => $this->deal ? $this->deal->discount : null,
+            'discount' => $this->deal ? $this->deal->discount : 0,
             'price' => $this->averagePrice,
         ];
     }

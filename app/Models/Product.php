@@ -93,7 +93,7 @@ class Product extends Model
 
     public function deal()
     {
-        return $this->belongsTo(Deal::class);
+        return $this->belongsTo(Deal::class)->where('active', 1);
     }
 
     // attributes

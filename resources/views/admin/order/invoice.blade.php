@@ -48,6 +48,7 @@
                     <th>تعداد</th>
                     <th>رنگ</th>
                     <th>قیمت</th>
+                    <th>توضیحات</th>
                 </tr>
             </thead>
             <tbody>
@@ -57,6 +58,7 @@
                         <td>{{ $item->quantity }}</td>
                         <td>{{ $item->variation->color->name}}</td>
                         <td>{{ $item->price }}</td>
+                        <td>{{ $item->description }}</td>
                     </tr>
                 @endforeach
             </tbody>
