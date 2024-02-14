@@ -135,6 +135,11 @@ class Cart extends Model
         return $this->isEmpty();
     }
 
+    public function getDiscountAmountAttribute()
+    {
+        return $this->discount();
+    }
+
     public static function getOrCreate(?string $uuid = null)
     {
         if (auth()->check()) {
