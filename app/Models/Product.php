@@ -96,6 +96,11 @@ class Product extends Model
         return $this->belongsTo(Deal::class)->where('active', 1);
     }
 
+    public function comments()
+    {
+        return $this->hasMany(Comment::class);
+    }
+
     // attributes
     public function getOldAveragePriceAttribute()
     {
