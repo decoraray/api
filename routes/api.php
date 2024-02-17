@@ -48,9 +48,9 @@ Route::prefix('v1')
         Route::get('/initials', 'ShopController@initial')->name('initial');
         Route::post('/search', 'ShopController@search')->name('search');
         Route::get('/categories', 'ShopController@categories')->name('categories');
-        Route::post('/rate/{product}', 'ShopController@rating')->name('rate');
         Route::get('cities', 'AddressController@cities')->name('cities');
         Route::get('shippings', 'AddressController@shippings')->name('shippings');
+        Route::get('comments', 'CommentController@index')->name('comments');
 
         // torob api
         Route::get('/torob', 'ShopController@torobApi')->name('torob');
@@ -73,6 +73,10 @@ Route::prefix('v1')
             Route::get('/user', 'AuthController@user')->name('user');
             Route::post('/change-password', 'AuthController@ChangePassword')->name('change-password'); // TODO
             Route::post('/update', 'AuthController@update')->name('update');
+
+            // rating and comments
+            Route::post('/rate/{product}', 'ShopController@rating')->name('rate');
+            Route::resource('comments', 'CommentController')->only(['store', 'destroy']);
 
             // purchase 
             Route::post('/checkout', 'PaymentController@checkout');
