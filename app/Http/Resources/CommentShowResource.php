@@ -15,11 +15,20 @@ class CommentShowResource extends JsonResource
     public function toArray($request)
     {
         $mine = (auth()->user() && auth()->user()->id === $this->user_id) ? true : false;
+
         return [
+            'name' => $this->obfuscateName($this->user),
             'content' => $this->content,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'mine' => $mine,
             'id' => $mine ? $this->id : null,
         ];
+    }
+
+    private function obfuscateName($user)
+    {
+        $shortFirstName = substr($user->name, 0, 3);
+        $shortLastName = substr($user->surname, 0, 1);
+        return $shortFirstName . '...' . ' ' . $shortLastName . '...';
     }
 }
