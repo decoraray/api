@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cart;
-use App\Models\Rating;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -94,18 +93,6 @@ class ShopController extends Controller
         $product = Product::where('id', $slugOrId)->orWhere('slug', $slugOrId)->firstOrFail();
 
         return response()->json(new ProductShowResource($product));
-    }
-
-    // give rating to product
-    public function rating(Product $product)
-    {
-        $rating = $product->rating ?? Rating::make(['rating' => 0, 'count' => 0]);
-        $rating->rate(request('rating'));
-        $product->rating()->save($rating);
-
-        return response()->json([
-            'message' => 'success'
-        ]);
     }
 
     // get category list

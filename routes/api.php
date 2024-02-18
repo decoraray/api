@@ -75,7 +75,7 @@ Route::prefix('v1')
             Route::post('/update', 'AuthController@update')->name('update');
 
             // rating and comments
-            Route::post('/rate/{product}', 'ShopController@rating')->name('rate');
+            Route::post('/rate/{product}', 'CommentController@rating')->name('rate');
             Route::resource('comments', 'CommentController')->only(['store', 'destroy']);
 
             // purchase 

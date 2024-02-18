@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Rating;
 use App\Models\Comment;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -37,6 +38,18 @@ class CommentController extends Controller
             'user_id' => auth()->user()->id,
         ]);
         return response()->json(['message' => 'Comment created successfully'], 201);
+    }
+
+    // give rating to product
+    public function rating(Product $product)
+    {
+        $rating = $product->rating ?? Rating::make(['rating' => 0, 'count' => 0]);
+        $rating->rate(request('rating'));
+        $product->rating()->save($rating);
+
+        return response()->json([
+            'message' => 'success'
+        ]);
     }
 
     public function destroy(Comment $comment)
