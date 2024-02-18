@@ -17,7 +17,7 @@ class CommentShowResource extends JsonResource
         $mine = (auth()->user() && auth()->user()->id === $this->user_id) ? true : false;
 
         return [
-            'name' => $this->obfuscateName($this->user),
+            // 'name' => $this->obfuscateName($this->user),
             'content' => $this->content,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'mine' => $mine,
