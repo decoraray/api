@@ -28,9 +28,9 @@ class CommentShowResource extends JsonResource
     private function obfuscateName($user)
     {
         $shortFirstName = mb_substr($user->name, 0, 3);
-        $shortLastName = mb_substr($user->surname, 0, 1);
+        $shortLastName = mb_substr($user->surname, 0, 2);
 
-        return   $shortFirstName . ' ' . $shortLastName;
+        return  $user->name . ' ' . $shortLastName;
 
         // $textDirection = $this->getTextDirection($user->name);
 
