@@ -17,7 +17,7 @@ class CommentShowResource extends JsonResource
         $mine = (auth()->user() && auth()->user()->id === $this->user_id) ? true : false;
 
         return [
-            // 'name' => $this->user ? $this->obfuscateName($this->user) : ' ',
+            'name' => $this->user ? $this->obfuscateName($this->user) : ' ',
             'content' => $this->content,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'mine' => $mine,
@@ -27,8 +27,23 @@ class CommentShowResource extends JsonResource
 
     private function obfuscateName($user)
     {
-        $shortFirstName = substr($user->name, 0, 3);
-        $shortLastName = substr($user->surname, 0, 1);
-        return $shortFirstName . '...' . ' ' . $shortLastName . '...';
+        $shortFirstName = mb_substr($user->name, 0, 3);
+        $shortLastName = mb_substr($user->surname, 0, 1);
+
+        $textDirection = $this->getTextDirection($user->name);
+        if ($textDirection === 'rtl') {
+            return  '..' . $shortFirstName . '.. ' . $shortLastName;
+        } else {
+            return $shortLastName . '.. ' . $shortFirstName . '..';
+        }
+    }
+
+    private function getTextDirection($text)
+    {
+        if (preg_match('/[\p{Arabic}]/u', $text)) {
+            return 'rtl';
+        } else {
+            return 'ltr';
+        }
     }
 }
