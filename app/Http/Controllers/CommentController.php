@@ -11,7 +11,14 @@ use App\Http\Resources\CommentShowResource;
 
 class CommentController extends Controller
 {
+    // for user
     public function index(Request $request)
+    {
+        return CommentShowResource::collection(auth()->user()->comments)->response();
+    }
+
+    // for product
+    public function all(Request $request)
     {
         if (!$request->product_id) {
             return response()->json(['message' => 'Product id is required'], 422);

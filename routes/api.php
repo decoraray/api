@@ -50,7 +50,7 @@ Route::prefix('v1')
         Route::get('/categories', 'ShopController@categories')->name('categories');
         Route::get('cities', 'AddressController@cities')->name('cities');
         Route::get('shippings', 'AddressController@shippings')->name('shippings');
-        Route::get('comments', 'CommentController@index')->name('comments');
+        Route::get('comments', 'CommentController@all')->name('comments');
 
         // torob api
         Route::get('/torob', 'ShopController@torobApi')->name('torob');
@@ -76,7 +76,7 @@ Route::prefix('v1')
 
             // rating and comments
             Route::post('/rate/{product}', 'CommentController@rating')->name('rate');
-            Route::resource('comments', 'CommentController')->only(['store', 'destroy']);
+            Route::resource('comment', 'CommentController')->only(['store', 'destroy', 'index']);
 
             // purchase 
             Route::post('/checkout', 'PaymentController@checkout');
