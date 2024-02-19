@@ -29,7 +29,7 @@ class ProductShowResource extends JsonResource
             'old_price' => $this->oldPrice,
             'discount' => $this->deal ? $this->deal->discount : 0,
             'price' => $this->averagePrice,
-            'comments' => $this->comments ? CommentShowResource::collection($this->comments->take(3)) : null,
+            'comments' => $this->comments ? CommentShowResource::collection($this->comments->take(6)) : null,
         ];
     }
 }
