@@ -30,7 +30,7 @@ class CommentShowResource extends JsonResource
         $shortFirstName = mb_substr($user->name, 0, 3);
         $shortLastName = mb_substr($user->surname, 0, 2);
 
-        return  $user->name . ' ' . $shortLastName;
+        return  $user->name . ' ' . $shortLastName . '..';
 
         // $textDirection = $this->getTextDirection($user->name);
 
