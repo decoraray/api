@@ -30,6 +30,7 @@ class ProductShowResource extends JsonResource
             'discount' => $this->deal ? $this->deal->discount : 0,
             'price' => $this->averagePrice,
             'comments' => $this->comments ? CommentShowResource::collection($this->comments->take(6)) : null,
+            'comments_count' => $this->comments->count(),
         ];
     }
 }
