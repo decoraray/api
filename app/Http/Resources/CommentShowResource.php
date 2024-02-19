@@ -27,26 +27,7 @@ class CommentShowResource extends JsonResource
 
     private function obfuscateName($user)
     {
-        $shortFirstName = mb_substr($user->name, 0, 3);
         $shortLastName = mb_substr($user->surname, 0, 2);
-
         return  $user->name . ' ' . $shortLastName . '..';
-
-        // $textDirection = $this->getTextDirection($user->name);
-
-        // if ($textDirection === 'rtl') {
-        //     return  '..' . $shortFirstName . '.. ' . $shortLastName;
-        // } else {
-        //     return $shortLastName . '.. ' . $shortFirstName . '..';
-        // }
-    }
-
-    private function getTextDirection($text)
-    {
-        if (preg_match('/[\p{Arabic}]/u', $text)) {
-            return 'rtl';
-        } else {
-            return 'ltr';
-        }
     }
 }
