@@ -30,13 +30,15 @@ class CommentShowResource extends JsonResource
         $shortFirstName = mb_substr($user->name, 0, 3);
         $shortLastName = mb_substr($user->surname, 0, 1);
 
-        $textDirection = $this->getTextDirection($user->name);
+        return   $shortFirstName . ' ' . $shortLastName;
 
-        if ($textDirection === 'rtl') {
-            return  '..' . $shortFirstName . '.. ' . $shortLastName;
-        } else {
-            return $shortLastName . '.. ' . $shortFirstName . '..';
-        }
+        // $textDirection = $this->getTextDirection($user->name);
+
+        // if ($textDirection === 'rtl') {
+        //     return  '..' . $shortFirstName . '.. ' . $shortLastName;
+        // } else {
+        //     return $shortLastName . '.. ' . $shortFirstName . '..';
+        // }
     }
 
     private function getTextDirection($text)
