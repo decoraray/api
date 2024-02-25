@@ -20,7 +20,7 @@ class CartShowResource extends JsonResource
             'items' => ProductCartResource::collection($this->variations),
             'total' => $this->total,
             'count' => $this->totalQuantity,
-            'discountAmount' => $this->discountAmount,
+            'discount_amount' => $this->discountAmount,
             'discount_id' => $this->discount_id,
             'discount' => $this->discount,
             'isEmpty' => $this->isEmpty,

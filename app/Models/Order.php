@@ -72,15 +72,16 @@ class Order extends Model
     public function getPayableAmount()
     {
         $method = $this->payment_method;
+        $payable = $this->total - $this->discount_amount;
         switch ($method) {
             case 'online':
-                return round($this->total);
+                return round($payable);
             case 'partial':
-                return round($this->total * 0.3);
+                return round($payable * 0.3);
             case 'door':
-                return $this->total;
+                return $payable;
             default:
-                return $this->total;
+                return $payable;
         }
     }
 
