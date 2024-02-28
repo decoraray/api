@@ -52,18 +52,55 @@ paths:
 
   /admin/deals:
     get:
+      tags:
+        - Deals
       summary: Returns a list of deals.
       description: deals are predefined and can be used for many products.
       security:
         - BearerAuth: []
       responses:
-        "200": # status code
+        "200":
           description: A JSON array of user deals
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  type: object
+                  type: integer
         "401":
           $ref: "#/components/responses/UnauthorizedError"
+
+  /admin/deals/{dealId}/add:
+    post:
+      tags:
+        - Deals
+      summary: Gets list of products, and adds them the selected deal
+      description: the list of products should be an array
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: dealId
+          in: path
+          required: true
+          description: deals are pre defined
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                products:
+                  type: array
+                  items:
+                    type: integer
+              required:
+                - products
+            example:
+              products: [84, 82]
+      responses:
+        "200":
+          description: list updated with deal
