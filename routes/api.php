@@ -22,6 +22,17 @@ Route::prefix('v1')
             return 'health';
         });
 
+        // documentation
+        Route::get('/documentation', function () {
+            return response()->file(resource_path('documentation/api-docs.yaml'));
+        });
+        // swagger
+        Route::get('/swagger', function () {
+            return response()->file(public_path('swagger/index.html'));
+
+            // return view('swagger.index');
+        });
+
         // slug links for SEO 
         Route::get('/products', 'ShopController@products')->name('products');
         Route::get('/products/{slugOrId}', 'ShopController@show')->name('product');
@@ -30,7 +41,7 @@ Route::prefix('v1')
         Route::get('/all-products', 'ShopController@allProducts')->name('all-products');
 
 
-        // maintenance routs 
+        // maintenance routs
         // Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
         // Route::get('/port-products', 'App\Http\Controllers\Admin\ProductController@importProducts');
         // Route::get('/update-categories', 'App\Http\Controllers\Admin\ProductController@updateCategories');

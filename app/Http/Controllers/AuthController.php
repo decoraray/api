@@ -17,6 +17,15 @@ use App\Http\Resources\UserShowResource;
 
 class AuthController extends Controller
 {
+    /**
+     * @SWG\Get(
+     *     path="/users",
+     *     summary="Get a list of users",
+     *     tags={"Users"},
+     *     @SWG\Response(response=200, description="Successful operation"),
+     *     @SWG\Response(response=400, description="Invalid request")
+     * )
+     */
     public function emailLogin(LoginRequest $request)
     {
         $user = User::where('email', $request->email)->first();
