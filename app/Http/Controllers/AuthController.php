@@ -17,15 +17,6 @@ use App\Http\Resources\UserShowResource;
 
 class AuthController extends Controller
 {
-    /**
-     * @SWG\Get(
-     *     path="/users",
-     *     summary="Get a list of users",
-     *     tags={"Users"},
-     *     @SWG\Response(response=200, description="Successful operation"),
-     *     @SWG\Response(response=400, description="Invalid request")
-     * )
-     */
     public function emailLogin(LoginRequest $request)
     {
         $user = User::where('email', $request->email)->first();
@@ -48,14 +39,6 @@ class AuthController extends Controller
                 'message' => ['These credentials do not match our records.']
             ], 404);
         }
-
-        // if ($user->phone == '9363468923') {
-        //     $user->one_time_password = '000000';
-        //     $user->one_time_password_created_at = now();
-        //     return response([
-        //         'message' => 'Check your sms',
-        //     ], 200);
-        // }
 
         $user->generateOneTimePassword();
 
@@ -98,12 +81,6 @@ class AuthController extends Controller
                 'message' => ['These credentials do not match our records.']
             ], 404);
         }
-
-        // if ($user->phone == '9363468923') {
-        //     $user->phone_verified_at = now();
-        //     $user->save();
-        //     return $this->login($user, $request->getUuid());
-        // }
 
         $passed = $user->verifyOneTimePassword($request->password);
         if (!$passed) {
