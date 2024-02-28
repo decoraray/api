@@ -53,10 +53,23 @@ class DealController extends Controller
         $deal->delete();
     }
 
+    public function addDeal(Request $request, $id)
+    {
+        $numbers = $request->products;
+        if (!is_array($numbers)) {
+            $parts = explode(",", $request->products);
+            $numbers = array_map('intval', $parts);
+        }
+        $this->updateProducts($numbers, $id);
+    }
+
     private function updateProducts($products, $id)
     {
         foreach ($products as $productId) {
             $product = Product::find($productId);
+            if ($product == null) {
+                continue;
+            }
             $product->deal_id = $id;
             $product->save();
         }

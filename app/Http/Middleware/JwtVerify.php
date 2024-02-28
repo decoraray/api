@@ -27,7 +27,7 @@ class JwtVerify
             return response()->json([
                 'status' => 0,
                 'reply' => 'Unauthorized'
-            ]);
+            ], 401);
         }
 
         try {
