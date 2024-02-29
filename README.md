@@ -31,3 +31,7 @@ docker exec -it <container ID> sh
 
 Inside the container command line, we can start the server using the usual:
 php artisan serve
+
+# Documents 
+https://api.decoraray.ir/swagger/index.html
+https://api.decoraray.ir/api/v1/documentation
