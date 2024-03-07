@@ -29,8 +29,6 @@ Route::prefix('v1')
         // swagger
         Route::get('/swagger', function () {
             return response()->file(public_path('swagger/index.html'));
-
-            // return view('swagger.index');
         });
 
         // slug links for SEO 
@@ -40,6 +38,7 @@ Route::prefix('v1')
         Route::get('/categories/{category:slug}/{product:slug}', 'ShopController@listByCategory');
         Route::get('/all-products', 'ShopController@allProducts')->name('all-products');
 
+        Route::get('/image', 'ImageController@get')->name('image'); // image resize
 
         // maintenance routs
         // Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
@@ -102,8 +101,8 @@ Route::prefix('v1')
             Route::prefix('admin')->middleware(['role:SuperAdmin'])->namespace('Admin')->group(function () {
 
                 Route::resource('products', 'ProductController');
-                Route::post('image', 'ImageController@imageStore');
-                Route::delete('image', 'ImageController@imageDelete');
+                Route::post('image', 'ImageController@imageStore'); // admin image upload
+                Route::delete('image', 'ImageController@imageDelete'); // admin image delete
 
                 Route::resource('variations', 'VariationController');
                 Route::post('products/{product}/variations', 'VariationController@arrayStore');
