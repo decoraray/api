@@ -25,6 +25,7 @@ class CartShowResource extends JsonResource
             'discount' => $this->discount,
             'isEmpty' => $this->isEmpty,
             'uuid' => $this->uuid,
+            'thumbnail' => $this->imagePath,
         ];
     }
 }

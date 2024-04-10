@@ -18,6 +18,7 @@ class CategoryLightShowResource extends JsonResource
             'id' => $this->id,
             'slug' => $this->slug,
             'name' => $this->name,
+            'thumbnail' => $this->imagePath,
         ];
     }
 }
