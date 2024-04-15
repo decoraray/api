@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\Post;
 use App\Models\Image;
 use App\Models\Category;
 use Illuminate\Http\Request;
@@ -31,6 +32,12 @@ class ImageController extends Controller
             $category = Category::find($request->category_id);
             $category->image = $image_path;
             $category->save();
+        }
+
+        if ($request->post_id) {
+            $post = Post::find($request->post_id);
+            $post->image = $image_path;
+            $post->save();
         }
 
         return response(Response::HTTP_CREATED);
