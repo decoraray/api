@@ -9,11 +9,6 @@ class Payment extends Model
 {
     use HasFactory;
 
-    function __construct()
-    {
-        //
-    }
-
     protected $fillable = [
         'uuid',
         'amount',

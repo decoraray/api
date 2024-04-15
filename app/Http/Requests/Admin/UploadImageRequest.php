@@ -40,8 +40,8 @@ class UploadImageRequest extends FormRequest
         return [
             // each image is required, must be an image, must be one of the listed extensions, and must be less than 8MB
             'images.*' => 'required|image|mimes:jpg,png,jpeg,gif,svg,webp|max:8192',
-            'product_id' => 'required_without:category_id|integer|exists:products,id',
-            'category_id' => 'required_without:product_id|integer|exists:categories,id',
+            // 'product_id' => 'required_without:category_id|integer|exists:products,id',
+            // 'category_id' => 'required_without:product_id|integer|exists:categories,id',
         ];
     }
 }
