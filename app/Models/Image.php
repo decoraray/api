@@ -23,7 +23,6 @@ class Image extends Model
     public function getImagePathAttribute()
     {
         return config('app.url') . '/storage/' . $this->image;
-        // return asset('storage/' . $this->image);
     }
 
     // delete the image from the storage

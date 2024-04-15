@@ -14,7 +14,9 @@ class Comment extends Model
         'status',
         'image',
         'Product_id',
-        'user_id'
+        'user_id',
+        'email',
+        'name'
     ];
 
     public function product()

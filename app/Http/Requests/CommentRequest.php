@@ -41,6 +41,8 @@ class CommentRequest extends FormRequest
             'content' => 'required',
             'image' => 'nullable',
             'product_id' => 'required|exists:products,id',
+            'email' => 'nullable|email',
+            'name' => 'nullable',
         ];
     }
 

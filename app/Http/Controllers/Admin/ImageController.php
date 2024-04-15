@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Image;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\Response;
 use App\Http\Requests\Admin\UploadImageRequest;
 
@@ -13,6 +13,7 @@ class ImageController extends Controller
 {
     public function imageStore(UploadImageRequest $request)
     {
+
         $images = $request->file('images');
 
         foreach ($images as $image) {
@@ -21,8 +22,15 @@ class ImageController extends Controller
 
             Image::create([
                 'image' => $image_path,
-                'product_id' => $request->product_id
+                'product_id' => $request->product_id ?? null,
             ]);
+        }
+
+        // if category_id is set, update category image
+        if ($request->category_id) {
+            $category = Category::find($request->category_id);
+            $category->image = $image_path;
+            $category->save();
         }
 
         return response(Response::HTTP_CREATED);

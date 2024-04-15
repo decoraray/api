@@ -46,4 +46,9 @@ class Category extends Model
     {
         return $query->whereNull('parent_id');
     }
+
+    public function getImagePathAttribute()
+    {
+        return $this->image ? config('app.url') . '/storage/' . $this->image : null;
+    }
 }
