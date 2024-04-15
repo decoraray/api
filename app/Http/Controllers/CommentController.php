@@ -43,6 +43,8 @@ class CommentController extends Controller
             'image' => $request->image,
             'Product_id' => $request->getProductId(),
             'user_id' => auth()->user()->id,
+            'email' => auth()->user()->email ?? $request->email,
+            'name' => auth()->user()->name ?? $request->name,
         ]);
         return response()->json(['message' => 'Comment created successfully'], 201);
     }

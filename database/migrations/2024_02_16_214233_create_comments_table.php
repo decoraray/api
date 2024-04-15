@@ -18,6 +18,8 @@ return new class extends Migration
             $table->text('content');
             $table->string('status')->default('pending');
             $table->string('image')->nullable();
+            $table->string('email')->nullable();
+            $table->string('name')->nullable();
 
             $table->foreignId('Product_id')->constrained('products')->onDelete('cascade');
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
