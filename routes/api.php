@@ -31,14 +31,17 @@ Route::prefix('v1')
             return response()->file(public_path('swagger/index.html'));
         });
 
-        // slug links for SEO 
+        // slug links for SEO
         Route::get('/products', 'ShopController@products')->name('products');
         Route::get('/products/{slugOrId}', 'ShopController@show')->name('product');
         Route::get('/categories/{category:slug}', 'ShopController@listByCategory')->name('category');
         Route::get('/categories/{category:slug}/{product:slug}', 'ShopController@listByCategory');
         Route::get('/all-products', 'ShopController@allProducts')->name('all-products');
 
+
         Route::get('/image', 'ImageController@get')->name('image'); // image resize
+
+        Route::resource('blog', 'PostController')->only(['index', 'show']);
 
         // maintenance routs
         Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
