@@ -41,7 +41,7 @@ Route::prefix('v1')
         Route::get('/image', 'ImageController@get')->name('image'); // image resize
 
         // maintenance routs
-        // Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
+        Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
         // Route::get('/port-products', 'App\Http\Controllers\Admin\ProductController@importProducts');
         // Route::get('/update-categories', 'App\Http\Controllers\Admin\ProductController@updateCategories');
 
