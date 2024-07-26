@@ -76,7 +76,7 @@ class ProductController extends Controller
         if ($request->thumbnail) {
             $image = Image::find($request->thumbnail);
             if ($image) {
-                $product->thumbnail = $image->id;
+                $product->thumbnail_id = $image->id;
             }
         }
 
