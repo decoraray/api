@@ -12,6 +12,7 @@ use App\Http\Requests\Admin\CreateProductRequest;
 use App\Http\Resources\Admin\ProductAdminListResource;
 use App\Http\Resources\Admin\ProductShowAdminResource;
 use App\Models\Category;
+use App\Models\Image;
 
 class ProductController extends Controller
 {
@@ -72,6 +73,13 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
+        if ($request->thumbnail) {
+            $image = Image::find($request->thumbnail);
+            if ($image) {
+                $product->thumbnail_id = $image->id;
+            }
+        }
+
         $product->update($request->all());
 
         if ($request->categories) {

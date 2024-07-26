@@ -17,6 +17,7 @@ return new class extends Migration
             $table->id();
             $table->string('title');
             $table->string('slug')->nullable();
+            $table->unsignedBigInteger('thumbnail_id')->nullable();
             $table->integer('average_price')->nullable();
             $table->string('classifier')->nullable();
             $table->text('description')->nullable();
