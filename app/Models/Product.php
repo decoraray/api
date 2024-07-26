@@ -23,6 +23,7 @@ class Product extends Model
         'slug',
         'dimensions',
         'average_price',
+        'thumbnail',
     ];
 
     public function categories()
