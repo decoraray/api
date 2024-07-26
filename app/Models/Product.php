@@ -23,7 +23,7 @@ class Product extends Model
         'slug',
         'dimensions',
         'average_price',
-        'thumbnail',
+        'thumbnail_id',
     ];
 
     public function categories()
@@ -69,10 +69,9 @@ class Product extends Model
 
     public function getThumbnailAttribute()
     {
-        $image_id = $this->thumbnail; // get thumbnail from product
 
-        if ($image_id) {
-            return Image::find($image_id)->first();
+        if ($this->thumbnail_id) {
+            return Image::find($this->thumbnail_id)->first();
         }
 
         return $this->hasMany(Image::class)->orderBy('id', 'desc')->first();
