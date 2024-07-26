@@ -68,6 +68,12 @@ class Product extends Model
 
     public function getThumbnailAttribute()
     {
+        $image_id = $this->thumbnail; // get thumbnail from product
+
+        if ($image_id) {
+            return Image::find($image_id);
+        }
+
         return $this->hasMany(Image::class)->orderBy('id', 'desc')->first();
     }
 
