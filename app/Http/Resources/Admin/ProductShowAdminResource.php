@@ -32,6 +32,7 @@ class ProductShowAdminResource extends JsonResource
             'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
             'images' => $this->images ? ImageShowResource::collection($this->images) : null,
+            'images_ids' => $this->images->pluck('id'),
             'thumbnail' => $this->images->isNotEmpty() ? $this->thumbnail->imagePath  : null,
         ];
     }
