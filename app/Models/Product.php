@@ -71,7 +71,7 @@ class Product extends Model
     {
 
         if ($this->thumbnail_id) {
-            return Image::find($this->thumbnail_id)->first();
+            return Image::find($this->thumbnail_id);
         }
 
         return $this->hasMany(Image::class)->orderBy('id', 'desc')->first();
