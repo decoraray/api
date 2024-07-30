@@ -30,6 +30,7 @@ class OrderListAdminResource extends JsonResource
             'payment_method' => PaymentMethods::fromName($this->payment_method)->value, // its "cash , partial , online " in the db 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'description' => $this->description,
         ];
     }
 }
