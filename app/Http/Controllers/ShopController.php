@@ -27,7 +27,7 @@ class ShopController extends Controller
     public function products(Request $request)
     {
         $data = Product::active()
-            ->hasActiveVariation()
+            // ->hasActiveVariation()
             ->byCategory($request->category)
             ->byTag($request->tag)
             ->Sort()
@@ -37,9 +37,14 @@ class ShopController extends Controller
             ->when(
                 $request->keyword && $request->keyword != 'null',
                 function ($query) use ($request) {
-                    $cleanedKeyword = str_replace(' ', '', $request->keyword); // Remove spaces from keyword
-                    return $query->whereRaw('REPLACE(title, " ", "") LIKE ?', ["%{$cleanedKeyword}%"]);
-                    // return $query->where('title', 'like', "%{$request->keyword}%");
+
+                    $spilitKeyword = explode(' ', $request->keyword);
+                    // search by each word
+                    foreach ($spilitKeyword as $word) {
+                        $query->where('title', 'like', "%{$word}%");
+                    }
+                    $query->orWhereRaw('REPLACE(title, " ", "") LIKE ?', ["%{$request->keyword}%"]);
+                    return $query->where('title', 'like', "%{$request->keyword}%");
                 }
             )
             ->paginate($request->per_page ?? 20);
