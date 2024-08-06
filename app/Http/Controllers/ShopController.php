@@ -37,7 +37,9 @@ class ShopController extends Controller
             ->when(
                 $request->keyword && $request->keyword != 'null',
                 function ($query) use ($request) {
-                    return $query->where('title', 'like', "%{$request->keyword}%");
+                    $cleanedKeyword = str_replace(' ', '', $request->keyword); // Remove spaces from keyword
+                    return $query->whereRaw('REPLACE(title, " ", "") LIKE ?', ["%{$cleanedKeyword}%"]);
+                    // return $query->where('title', 'like', "%{$request->keyword}%");
                 }
             )
             ->paginate($request->per_page ?? 20);
@@ -79,7 +81,9 @@ class ShopController extends Controller
                     ->when(
                         $request->search && $request->search != 'null',
                         function ($query) use ($request) {
-                            return $query->where('title', 'like', "%{$request->search}%");
+                            $cleanedKeyword = str_replace(' ', '', $request->keyword); // Remove spaces from keyword
+                            return $query->whereRaw('REPLACE(title, " ", "") LIKE ?', ["%{$cleanedKeyword}%"]);
+                            // return $query->where('title', 'like', "%{$request->keyword}%");
                         }
                     )
                     ->paginate($request->per_page ?? 20)
