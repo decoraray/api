@@ -40,6 +40,7 @@ class OrderShowAdminResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'payments' => $this->payments ? PaymentShowAdminResource::collection($this->payments) : null,
+            'description' => $this->description,
         ];
     }
 }

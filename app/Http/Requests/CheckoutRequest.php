@@ -28,6 +28,7 @@ class CheckoutRequest extends FormRequest
             // 'shipping_id' => 'required|exists:shippings,id', 
             'payment_method' => 'required|in:online,cash,partial', // TODO : make it dynamic
             'gateway' => 'required_if:payment_method,online|in:payping', // TODO : make it dynamic
+            'description' => 'nullable|string',
         ];
     }
 }

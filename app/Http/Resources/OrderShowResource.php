@@ -41,6 +41,7 @@ class OrderShowResource extends JsonResource
             'items' => $this->items ? OrderItemResource::collection($this->items) : [],
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'description' => $this->description,
         ];
     }
 }
