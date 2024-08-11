@@ -11,7 +11,7 @@ class DealController extends Controller
 {
     public function index()
     {
-        return Deal::all();
+        return Deal::paginate(40);
     }
 
     //store
