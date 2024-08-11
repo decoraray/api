@@ -9,9 +9,9 @@ use App\Http\Controllers\Controller;
 
 class DealController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Deal::paginate(40);
+        return Deal::paginate($request->per_page);
     }
 
     //store
