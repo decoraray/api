@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Hash;
+use App\Http\Resources\UserShowResource;
 
 
 class UserController extends Controller
@@ -16,7 +18,7 @@ class UserController extends Controller
 
     public function show(User $user)
     {
-        return $user;
+        return response()->json(new UserShowResource($user), 200);
     }
 
     public function store(Request $request)
@@ -28,7 +30,14 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        $user->update($request->all());
+        // Only update fields that are present in the request
+        $user->update([
+            'name' => $request->input('name', $user->name),
+            'surname' => $request->input('surname', $user->surname),
+            'email' => $request->input('email', $user->email),
+            'phone' => $request->input('phone', $user->phone),
+            'password' => Hash::make($request->input('password', $user->password)),
+        ]);
 
         return response()->json($user, 200);
     }
