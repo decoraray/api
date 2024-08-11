@@ -79,6 +79,8 @@ Route::prefix('v1')
         // verify payment
         Route::post('/payment-verify', 'PaymentController@verify')->name('payment-verify');
 
+
+
         // routs after auth ( jwt )
         Route::group(['middleware' => 'App\Http\Middleware\JwtVerify'], function () {
 
@@ -97,8 +99,20 @@ Route::prefix('v1')
             Route::post('/pay', 'PaymentController@pay');
             // Route::post('/pay-validate', 'PaymentController@payValidate');
 
-            // address 
+            // address
             Route::resource('address', 'AddressController');
+
+            // Admin routs
+            Route::prefix('admin')->middleware(['role:Admin'])->namespace('Admin')->group(function () {
+
+                Route::resource('products', 'ProductController')->only(['index', 'show']);
+                Route::resource('variations', 'VariationController')->only(['index', 'show']);
+                Route::resource('categories', 'CategoryController')->only(['index', 'show']);
+                Route::resource('discount', 'DiscountController')->only(['index', 'show']);
+                Route::resource('deals', 'DealController')->only(['index', 'show']);
+                Route::resource('orders', 'OrderController')->only(['index', 'show']);
+                Route::resource('colors', 'ColorController')->only(['index', 'show']);
+            });
 
             // SuperAdmin routs
             Route::prefix('admin')->middleware(['role:SuperAdmin'])->namespace('Admin')->group(function () {
@@ -123,6 +137,8 @@ Route::prefix('v1')
 
                 Route::resource('colors', 'ColorController');
                 Route::post('colors/sample/{color}', 'ColorController@addSample');
+
+                Route::resource('users', 'UserController');
             });
         });
     });
