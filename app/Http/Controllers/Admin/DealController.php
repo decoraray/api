@@ -15,16 +15,16 @@ class DealController extends Controller
     }
 
     //store
+    // request date :  2024-08-12
     public function store(Request $request)
     {
-
         // request contains deal id:
         $deal = new Deal();
         $deal->slug = $request->slug;
         $deal->description = $request->description;
         $deal->discount = $request->discount;
-        $deal->start_date = $request->start;
-        $deal->end_date = $request->end;
+        $deal->start_date = date('Y-m-d', strtotime($request->start));
+        $deal->end_date = date('Y-m-d', strtotime($request->end));
         $deal->save();
 
         // request contains products array:
@@ -38,8 +38,8 @@ class DealController extends Controller
         $deal->slug = $request->slug;
         $deal->description = $request->description;
         $deal->discount = $request->discount;
-        $deal->start_date = $request->start;
-        $deal->end_date = $request->end;
+        $deal->start_date = date('Y-m-d', strtotime($request->start));
+        $deal->end_date = date('Y-m-d', strtotime($request->end));
         $deal->save();
 
         // request contains products array:
