@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Carbon\Carbon;
 use App\Models\Deal;
 use App\Models\Product;
 use Illuminate\Http\Request;
@@ -15,16 +16,26 @@ class DealController extends Controller
     }
 
     //store
-    // request date :  2024-08-12
+    // request date : start and end time format 2024-08-12
     public function store(Request $request)
     {
+        // validate start date and end date
+        $request->validate([
+            'slug' => 'required',
+            'description' => 'required',
+            'discount' => 'required',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+        ]);
+
         // request contains deal id:
         $deal = new Deal();
         $deal->slug = $request->slug;
         $deal->description = $request->description;
         $deal->discount = $request->discount;
-        $deal->start_date = date('Y-m-d', strtotime($request->start));
-        $deal->end_date = date('Y-m-d', strtotime($request->end));
+        $deal->start_date = $request->start_date ? Carbon::parse($request->start_date)->format('Y-m-d') : null;
+        $deal->end_date = $request->end_date ? Carbon::parse($request->end_date)->format('Y-m-d') : null;
+
         $deal->save();
 
         // request contains products array:
