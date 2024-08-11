@@ -43,6 +43,7 @@ class ShopController extends Controller
                     foreach ($spilitKeyword as $word) {
                         $query->where('title', 'like', "%{$word}%");
                     }
+                    $query->orWhere('title', 'like', "%{$request->keyword}%");
                     $query->orWhereRaw('REPLACE(title, " ", "") LIKE ?', ["%{$request->keyword}%"]);
                     return $query->where('title', 'like', "%{$request->keyword}%");
                 }

@@ -14,7 +14,7 @@ class DealController extends Controller
         return Deal::all();
     }
 
-    //store 
+    //store
     public function store(Request $request)
     {
 
@@ -55,16 +55,18 @@ class DealController extends Controller
 
     public function addDeal(Request $request, $id)
     {
-        $numbers = $request->products;
-        if (!is_array($numbers)) {
-            $parts = explode(",", $request->products);
-            $numbers = array_map('intval', $parts);
-        }
-        $this->updateProducts($numbers, $id);
+        $this->updateProducts($request->products, $id);
     }
 
     private function updateProducts($products, $id)
     {
+        if ($products == null) {
+            return;
+        }
+        if (!is_array($products)) {
+            $parts = explode(",", $products);
+            $products = array_map('intval', $parts);
+        }
         foreach ($products as $productId) {
             $product = Product::find($productId);
             if ($product == null) {
