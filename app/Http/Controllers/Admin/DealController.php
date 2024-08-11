@@ -11,7 +11,7 @@ class DealController extends Controller
 {
     public function index(Request $request)
     {
-        return Deal::paginate($request->per_page);
+        return Deal::paginate($request->per_page ?? 40);
     }
 
     //store
