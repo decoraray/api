@@ -45,14 +45,18 @@ class DealController extends Controller
     // update
     public function update(Request $request, $id)
     {
-        $deal = Deal::find($id);
-        $deal->slug = $request->slug;
-        $deal->description = $request->description;
-        $deal->discount = $request->discount;
-        $deal->start_date = date('Y-m-d', strtotime($request->start));
-        $deal->end_date = date('Y-m-d', strtotime($request->end));
-        $deal->save();
 
+        $deal = Deal::find($id);
+
+        // Only update fields that are present in the request
+        $deal->update([
+            'slug' => $request->input('slug', $deal->slug),
+            'active' => $request->input('active', $deal->active),
+            'description' => $request->input('description', $deal->description),
+            'discount' => $request->input('discount', $deal->discount),
+            'start_date' => $request->has('start') ? date('Y-m-d', strtotime($request->start)) : $deal->start_date,
+            'end_date' => $request->has('end') ? date('Y-m-d', strtotime($request->end)) : $deal->end_date,
+        ]);
         // request contains products array:
         $this->updateProducts($request->products, $id);
     }
