@@ -16,9 +16,14 @@ class UserController extends Controller
         return User::all();
     }
 
-    public function show(Request $request)
+    public function showByUuid(Request $request)
     {
         $user = User::where('uuid', $request->uuid)->firstOrFail();
+        return response()->json(new UserShowResource($user), 200);
+    }
+
+    public function show(User $user)
+    {
         return response()->json(new UserShowResource($user), 200);
     }
 
