@@ -138,7 +138,7 @@ Route::prefix('v1')
                 Route::resource('colors', 'ColorController');
                 Route::post('colors/sample/{color}', 'ColorController@addSample');
 
-                Route::resource('users', 'UserController');
+                Route::resource('users', 'UserController')->except(['show']);
                 Route::get('users/{uuid} , UserController@showByUuid');
             });
         });
