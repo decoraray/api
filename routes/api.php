@@ -138,8 +138,8 @@ Route::prefix('v1')
                 Route::resource('colors', 'ColorController');
                 Route::post('colors/sample/{color}', 'ColorController@addSample');
 
-                Route::resource('users', 'UserController');
                 Route::post('users/{uuid} , UserController@show');
+                Route::resource('users', 'UserController');
             });
         });
     });
