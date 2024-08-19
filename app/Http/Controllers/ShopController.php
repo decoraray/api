@@ -26,8 +26,12 @@ class ShopController extends Controller
     // get product list
     public function products(Request $request)
     {
+
+        // $data = Product::search($request->keyword)->options([
+        //     'query_by' => 'title,slug'
+        // ])->get();
+
         $data = Product::active()
-            // ->hasActiveVariation()
             ->byCategory($request->category)
             ->byTag($request->tag)
             ->Sort()
@@ -35,17 +39,11 @@ class ShopController extends Controller
                 return $query->where('id', '<>', $request->product);
             })
             ->when(
-                $request->keyword && $request->keyword != 'null',
+                $request->search && $request->search != 'null',
                 function ($query) use ($request) {
-
-                    $spilitKeyword = explode(' ', $request->keyword);
-                    // search by each word
-                    foreach ($spilitKeyword as $word) {
-                        $query->where('title', 'like', "%{$word}%");
-                    }
-                    $query->orWhere('title', 'like', "%{$request->keyword}%");
-                    $query->orWhereRaw('REPLACE(title, " ", "") LIKE ?', ["%{$request->keyword}%"]);
-                    return $query->where('title', 'like', "%{$request->keyword}%");
+                    $cleanedKeyword = str_replace(' ', '', $request->keyword); // Remove spaces from keyword
+                    return $query->whereRaw('REPLACE(title, " ", "") LIKE ?', ["%{$cleanedKeyword}%"]);
+                    // return $query->where('title', 'like', "%{$request->keyword}%");
                 }
             )
             ->paginate($request->per_page ?? 20);

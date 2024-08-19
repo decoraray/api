@@ -29,6 +29,26 @@ class Product extends Model
         'thumbnail_id',
     ];
 
+
+    /**
+     * Get the indexable data array for the model.
+     *
+     * @return array<string, mixed>
+     */
+    public function toSearchableArray()
+    {
+        return array_merge($this->toArray(), [
+            'id' => (string) $this->id,
+            'created_at' => $this->created_at->timestamp,
+            'updated_at' => $this->updated_at->timestamp,
+            'synonyms' => [
+                ['words' => [' ', ''], 'synonym' => ''],
+                ['words' => [' ', ''], 'synonym' => ''],
+            ]
+        ]);
+    }
+
+
     public function categories()
     {
         return $this->belongsToMany(Category::class);
