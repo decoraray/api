@@ -6,7 +6,7 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 
 
-class Saman implements GatewayInterface
+class SamanDriver implements GatewayInterface
 {
     private $merchantID;
     private $callback;
