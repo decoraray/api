@@ -4,13 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Laravel\Scout\Searchable;
 
 
 class Product extends Model
 {
     use HasFactory;
-    use Searchable;
 
     /**
      * The attributes that are mass assignable.
@@ -28,26 +26,6 @@ class Product extends Model
         'average_price',
         'thumbnail_id',
     ];
-
-
-    /**
-     * Get the indexable data array for the model.
-     *
-     * @return array<string, mixed>
-     */
-    public function toSearchableArray()
-    {
-        return array_merge($this->toArray(), [
-            'id' => (string) $this->id,
-            'created_at' => $this->created_at->timestamp,
-            'updated_at' => $this->updated_at->timestamp,
-            'synonyms' => [
-                ['words' => [' ', ''], 'synonym' => ''],
-                ['words' => [' ', ''], 'synonym' => ''],
-            ]
-        ]);
-    }
-
 
     public function categories()
     {

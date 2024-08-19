@@ -39,11 +39,12 @@ class ShopController extends Controller
                 return $query->where('id', '<>', $request->product);
             })
             ->when(
-                $request->search && $request->search != 'null',
+                // $request->search && $request->search != 'null',
+                $request->keyword && $request->keyword != 'null',
                 function ($query) use ($request) {
-                    $cleanedKeyword = str_replace(' ', '', $request->keyword); // Remove spaces from keyword
-                    return $query->whereRaw('REPLACE(title, " ", "") LIKE ?', ["%{$cleanedKeyword}%"]);
-                    // return $query->where('title', 'like', "%{$request->keyword}%");
+                    // $cleanedKeyword = str_replace(' ', '', $request->keyword); // Remove spaces from keyword
+                    // return $query->whereRaw('REPLACE(title, " ", "") LIKE ?', ["%{$cleanedKeyword}%"]);
+                    return $query->where('title', 'like', "%{$request->keyword}%");
                 }
             )
             ->paginate($request->per_page ?? 20);
