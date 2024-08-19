@@ -6,12 +6,15 @@
     "license": "MIT",
     "require": {
         "php": "^8.0.2",
+        "algolia/algoliasearch-client-php": "^3.4",
+        "algolia/scout-extended": "^3.1",
         "barryvdh/laravel-dompdf": "^2.0",
         "firebase/php-jwt": "^6.3",
         "guzzlehttp/guzzle": "^7.2",
         "intervention/image-laravel": "^1.2",
         "laravel/framework": "^9.19",
         "laravel/sanctum": "^3.0",
+        "laravel/scout": "^10.11",
         "laravel/tinker": "^2.7",
         "paragonie/sodium_compat": "^1.19",
         "spatie/laravel-permission": "^5.9"
