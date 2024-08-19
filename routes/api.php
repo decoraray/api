@@ -32,7 +32,7 @@ Route::prefix('v1')
         });
 
         // slug links for SEO
-        Route::get('/products', 'ShopController@products')->name('products');
+        Route::get('/products', 'ShopController@search')->name('products');
         Route::get('/products/{slugOrId}', 'ShopController@show')->name('product');
         Route::get('/categories/{category:slug}', 'ShopController@listByCategory')->name('category');
         Route::get('/categories/{category:slug}/{product:slug}', 'ShopController@listByCategory');
@@ -44,9 +44,10 @@ Route::prefix('v1')
         Route::resource('blog', 'PostController')->only(['index', 'show']);
 
         // maintenance routs
-        Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
+        // Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
         // Route::get('/port-products', 'App\Http\Controllers\Admin\ProductController@importProducts');
         // Route::get('/update-categories', 'App\Http\Controllers\Admin\ProductController@updateCategories');
+        Route::get('/update-serch-title', 'Admin\ProductController@updateSearchTitle');
 
         // auth routs
         Route::post('admin/login', 'AuthController@emailLogin')->name('admin-login');
@@ -78,8 +79,6 @@ Route::prefix('v1')
 
         // verify payment
         Route::post('/payment-verify', 'PaymentController@verify')->name('payment-verify');
-
-
 
         // routs after auth ( jwt )
         Route::group(['middleware' => 'App\Http\Middleware\JwtVerify'], function () {

@@ -3,16 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Color;
+use App\Models\Image;
 use App\Models\Product;
+use App\Models\Category;
 use App\Models\Variation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Services\Search\ProductSearch;
 use App\Http\Requests\Admin\CreateProductRequest;
 use App\Http\Resources\Admin\ProductAdminListResource;
 use App\Http\Resources\Admin\ProductShowAdminResource;
-use App\Models\Category;
-use App\Models\Image;
 
 class ProductController extends Controller
 {
@@ -23,15 +24,8 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $products = Product::with('categories')
-            ->byCategory($request->category)
-            ->when(
-                $request->title && $request->title != 'null',
-                function ($query) use ($request) {
-                    return $query->where('title', 'like', "%{$request->title}%");
-                }
-            )
-            ->paginate(40);
+        $products = ProductSearch::search($request);
+
         return ProductAdminListResource::collection($products);
     }
 
@@ -165,6 +159,20 @@ class ProductController extends Controller
             $product->updateAveragePrice();
         }
         return 'done';
+    }
+
+    // TODO : one time use
+    public function updateSearchTitle()
+    {
+
+        $spaceLikeChars = [' ', '‌']; // Normal space and ZWNJ (Zero Width Non-Joiner)
+
+        Product::chunkById(100, function ($products) use ($spaceLikeChars) {
+            foreach ($products as $product) {
+                $product->search_title = str_replace($spaceLikeChars, '', $product->title);
+                $product->save();
+            }
+        });
     }
 
     // TODO : one time use

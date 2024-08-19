@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use App\Http\Requests\SearchRequest;
+use App\Services\Search\ProductSearch;
 use App\Http\Resources\CartShowResource;
 use App\Http\Resources\CategoryResource;
 use App\Http\Resources\ProductListResource;
@@ -23,33 +24,15 @@ class ShopController extends Controller
         ]);
     }
 
-    // get product list
-    public function products(Request $request)
+    // get product list by category - POST
+    public function search(SearchRequest $request)
     {
+        $cacheKey = 'products_' . md5(serialize($request->query()));
 
-        // $data = Product::search($request->keyword)->options([
-        //     'query_by' => 'title,slug'
-        // ])->get();
+        return cache()->remember($cacheKey,  60 * 2, function () use ($request) {
 
-        $data = Product::active()
-            ->byCategory($request->category)
-            ->byTag($request->tag)
-            ->Sort()
-            ->when($request->product, function ($query) use ($request) {
-                return $query->where('id', '<>', $request->product);
-            })
-            ->when(
-                // $request->search && $request->search != 'null',
-                $request->keyword && $request->keyword != 'null',
-                function ($query) use ($request) {
-                    // $cleanedKeyword = str_replace(' ', '', $request->keyword); // Remove spaces from keyword
-                    // return $query->whereRaw('REPLACE(title, " ", "") LIKE ?', ["%{$cleanedKeyword}%"]);
-                    return $query->where('title', 'like', "%{$request->keyword}%");
-                }
-            )
-            ->paginate($request->per_page ?? 20);
-
-        return ProductListResource::collection($data)->response();
+            return ProductSearch::search($request);
+        });
     }
 
     // search product
@@ -65,32 +48,6 @@ class ShopController extends Controller
                 Product::active()
                     ->hasActiveVariation()
                     ->byCategory($category)
-                    ->paginate($request->per_page ?? 20)
-            )
-        );
-    }
-
-    // get product list by category
-    public function search(SearchRequest $request)
-    {
-        return response()->json(
-            ProductListResource::collection(
-                Product::active()
-                    ->hasActiveVariation()
-                    ->byCategory($request->category)
-                    ->byTag($request->tag)
-                    ->Sort()
-                    ->when($request->product, function ($query) use ($request) {
-                        return $query->where('id', '<>', $request->product);
-                    })
-                    ->when(
-                        $request->search && $request->search != 'null',
-                        function ($query) use ($request) {
-                            $cleanedKeyword = str_replace(' ', '', $request->keyword); // Remove spaces from keyword
-                            return $query->whereRaw('REPLACE(title, " ", "") LIKE ?', ["%{$cleanedKeyword}%"]);
-                            // return $query->where('title', 'like', "%{$request->keyword}%");
-                        }
-                    )
                     ->paginate($request->per_page ?? 20)
             )
         );
