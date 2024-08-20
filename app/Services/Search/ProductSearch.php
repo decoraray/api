@@ -4,6 +4,10 @@ namespace App\Services\Search;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Database\Eloquent\Builder;
+
 
 
 class ProductSearch
@@ -14,7 +18,7 @@ class ProductSearch
     {
         $cacheKey = 'products_' . md5(serialize($request->query()));
 
-        return cache()->remember($cacheKey,  60 * 2, function () use ($request) {
+        return cache()->remember($cacheKey, 60, function () use ($request) {
             return self::getProductList($request);
         });
     }
@@ -25,18 +29,36 @@ class ProductSearch
     {
         $cleanedKeyword = self::cleanKeyword($request->keyword);
 
-        return Product::active()
-            ->hasActiveVariation()
-            ->byCategory($request->category)
-            ->byTag($request->tag)
-            ->when($request->product, function ($query) use ($request) {
-                return $query->where('id', '<>', $request->product);
-            })
-            ->when($cleanedKeyword, function ($query) use ($cleanedKeyword) {
-                return $query->where('search_title', 'like', "%$cleanedKeyword%");
-            })
-            ->Sort()
-            ->paginate($request->per_page ?? 20);
+        try {
+            return Product::search($cleanedKeyword)->options([
+                'query_by' => 'search_title'
+            ])
+                ->query(fn(Builder $query) => $query->active()
+                    ->hasActiveVariation()
+                    ->byCategory($request->category)
+                    ->byTag($request->tag)
+                    ->when($request->product, function ($query) use ($request) {
+                        return $query->where('id', '<>', $request->product);
+                    })
+                    ->Sort()
+                    ->paginate($request->per_page ?? 20))
+                ->get();
+        } catch (\Exception $e) {
+            // If the search fails, we will try to fetch the products using the regular query
+            Log::alert("message: " . $e->getMessage());
+            return Product::active()
+                ->hasActiveVariation()
+                ->byCategory($request->category)
+                ->byTag($request->tag)
+                ->when($request->product, function ($query) use ($request) {
+                    return $query->where('id', '<>', $request->product);
+                })
+                ->when($cleanedKeyword, function ($query) use ($cleanedKeyword) {
+                    return $query->where('search_title', 'like', "%$cleanedKeyword%");
+                })
+                ->Sort()
+                ->paginate($request->per_page ?? 20);
+        }
     }
 
     // Method to clean the keyword by removing spaces
