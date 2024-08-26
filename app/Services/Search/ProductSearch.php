@@ -4,7 +4,6 @@ namespace App\Services\Search;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -37,6 +36,9 @@ class ProductSearch
                         ->hasActiveVariation()
                         ->byCategory($request->category)
                         ->byTag($request->tag)
+                        ->when($request->product, function ($query) use ($request) {
+                            return $query->where('id', '<>', $request->product);
+                        })
                         ->when($request->product, function ($query) use ($request) {
                             return $query->where('id', '<>', $request->product);
                         })

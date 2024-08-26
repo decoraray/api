@@ -251,4 +251,18 @@ class Product extends Model
     {
         $query->orderBy('id', 'asc');
     }
+
+    // relatedProducts
+    public function relatedProducts()
+    {
+        // get 10 randome from same category and tag and not the same product
+
+        return Product::active()
+            ->byCategory($this->categories->first()->id)
+            ->byTag($this->tag_id)
+            ->where('id', '<>', $this->id)
+            ->inRandomOrder()
+            ->limit(10)
+            ->get();
+    }
 }
