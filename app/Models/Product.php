@@ -253,7 +253,7 @@ class Product extends Model
     }
 
     // relatedProducts
-    public function relatedProducts()
+    public function getRelatedProductsAttribute()
     {
         // get 10 randome from same category and tag and not the same product
 
