@@ -14,8 +14,27 @@ class PostController extends Controller
         return PostListResource::collection(Post::all());
     }
 
-    public function show($slug)
+    public function show($slug, $categorySlug = null)
     {
-        return new PostShowResource(Post::where('slug', $slug)->first());
+        // Start with the query for the post by slug
+        $query = Post::where('slug', $slug);
+
+        // If categorySlug is provided, filter by the category as well
+        if ($categorySlug) {
+            $query->whereHas('category', function ($q) use ($categorySlug) {
+                $q->where('slug', $categorySlug);
+            });
+        } else {
+            // Filter posts that do not have any category
+            $query->whereDoesntHave('category');
+        }
+
+        $post = $query->first();
+
+        if (!$post) {
+            return response()->json(['error' => 'Post not found'], 404);
+        }
+
+        return new PostShowResource($post);
     }
 }

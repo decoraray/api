@@ -14,12 +14,19 @@ class Post extends Model
         'slug',
         'subtitle',
         'image',
+        'video',
         'content',
         'writer',
+        'category_id'
     ];
 
     public function getImagePathAttribute()
     {
         return $this->image ? config('app.url') . '/storage/' . $this->image : null;
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class);
     }
 }

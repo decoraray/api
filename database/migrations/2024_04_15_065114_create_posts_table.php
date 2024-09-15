@@ -16,11 +16,13 @@ return new class extends Migration
         Schema::create('posts', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->string('slug')->unique();
+            $table->string('slug');
             $table->string('subtitle');
-            $table->text('content');
-            $table->string('image');
+            $table->text('content')->nullable();
+            $table->string('image')->nullable();
+            $table->string('videos')->nullable();
 
+            $table->foreignId('category_id')->nullable()->constrained('categories')->onDelete('cascade');
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });

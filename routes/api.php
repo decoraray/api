@@ -41,7 +41,8 @@ Route::prefix('v1')
 
         Route::get('/image', 'ImageController@get')->name('image'); // image resize
 
-        Route::resource('blog', 'PostController')->only(['index', 'show']);
+        Route::resource('blog', 'PostController')->only(['index']);
+        Route::get('/blog/{slug}/{categorySlug?}', 'PostController@show');
 
         // maintenance routs
         Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
@@ -139,6 +140,9 @@ Route::prefix('v1')
                 Route::post('colors/sample/{color}', 'ColorController@addSample');
 
                 Route::resource('users', 'UserController');
+
+                Route::resource('posts', 'PostController')->only(['index', 'store', 'update', 'delete']);
+                Route::get('/posts/{slug}/{categorySlug?}', 'PostController@show');
             });
         });
     });

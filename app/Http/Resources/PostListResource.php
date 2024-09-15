@@ -19,6 +19,7 @@ class PostListResource extends JsonResource
             'slug' => $this->slug,
             'subtitle' => $this->subtitle,
             'thumbnail' =>  $this->imagePath,
+            'category' => $this->category ? new CategoryLightShowResource($this->category) : null,
         ];
     }
 }

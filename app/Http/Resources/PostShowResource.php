@@ -20,8 +20,10 @@ class PostShowResource extends JsonResource
             'subtitle' => $this->subtitle,
             'content' => $this->content,
             'image' =>  $this->imagePath,
+            'video' => $this->video,
             'thumbnail' =>  $this->imagePath,
             'writer' => $this->writer ? $this->writer->name : 'Unknown',
+            'category' => $this->category ? new CategoryLightShowResource($this->category) : null,
         ];
     }
 }
