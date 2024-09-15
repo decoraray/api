@@ -139,13 +139,11 @@ Route::prefix('v1')
                 Route::post('colors/sample/{color}', 'ColorController@addSample');
 
                 Route::resource('users', 'UserController');
-<<<<<<< HEAD
 
                 Route::resource('posts', 'PostController')->only(['index', 'store', 'update', 'delete']);
                 Route::get('/posts/{slug}/{categorySlug?}', 'PostController@show');
-=======
+
                 Route::get('users/uuid/{uuid}', 'UserController@showByUuid');
->>>>>>> 5097e5672e6209f58a1baffbe22942b2d07ea0f1
             });
         });
     });
