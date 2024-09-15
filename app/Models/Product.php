@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Scout\Searchable;
+
 
 class Product extends Model
 {
     use HasFactory;
+    use Searchable;
 
     /**
      * The attributes that are mass assignable.
@@ -16,15 +19,46 @@ class Product extends Model
      */
     protected $fillable = [
         'title',
+        'slug',
+        'search_title',
         'tag',
         'description',
         'active',
         'code',
-        'slug',
         'dimensions',
         'average_price',
         'thumbnail_id',
     ];
+
+
+    /**
+     * Get the indexable data array for the model.
+     *
+     * @return array<string, mixed>
+     */
+    public function toSearchableArray()
+    {
+        return array_merge($this->toArray(), [
+            'id' => (string) $this->id,
+            'search_title' => $this->search_title,
+            'created_at' => $this->created_at->timestamp,
+        ]);
+    }
+
+    /**
+     * Set the search_title attribute whenever the title is set or updated.
+     *
+     * @param  string  $value
+     * @return void
+     */
+    public function setTitleAttribute($value)
+    {
+        $this->attributes['title'] = $value;
+
+        $spaceLikeChars = [' ', '‌']; // Normal space and ZWNJ (Zero Width Non-Joiner)
+
+        $this->attributes['search_title'] =  str_replace($spaceLikeChars, '', $value); // Remove spaces for the search_title
+    }
 
     public function categories()
     {

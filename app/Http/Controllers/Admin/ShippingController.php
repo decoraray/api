@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\SHipping;
+use App\Models\Shipping;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 
 
-class SHippingController extends Controller
+class ShippingController extends Controller
 {
     /**
      * Display a listing of the resource.

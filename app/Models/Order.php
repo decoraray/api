@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\OrderStatus;
+use App\Http\Requests\CheckoutRequest;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -30,6 +31,7 @@ class Order extends Model
         'discount_id',
         'address_id',
         'shipping_id',
+        'description',
     ];
 
     public function user()
@@ -85,7 +87,7 @@ class Order extends Model
         }
     }
 
-    public static function createFromRequest($request)
+    public static function createFromRequest(CheckoutRequest $request)
     {
 
         $addressId = $request->address_id;
@@ -117,6 +119,7 @@ class Order extends Model
             'discount_id' => $cart->discount_id,
             'address_id' => $address->id,
             'shipping_id' => $shipping->id,
+            'description' => $request->description,
         ]);
 
         $order->save();
