@@ -4,7 +4,6 @@ namespace App\Services\Search;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -23,7 +22,6 @@ class ProductSearch
         });
     }
 
-
     // Shared logic to fetch products based on common query criteria
     private static function getProductList($request)
     {
@@ -33,16 +31,20 @@ class ProductSearch
             return Product::search($cleanedKeyword)->options([
                 'query_by' => 'search_title'
             ])
-                ->query(fn(Builder $query) => $query->active()
-                    ->hasActiveVariation()
-                    ->byCategory($request->category)
-                    ->byTag($request->tag)
-                    ->when($request->product, function ($query) use ($request) {
-                        return $query->where('id', '<>', $request->product);
-                    })
-                    ->Sort()
-                    ->paginate($request->per_page ?? 20))
-                ->get();
+                ->query(
+                    fn(Builder $query) => $query->active()
+                        ->hasActiveVariation()
+                        ->byCategory($request->category)
+                        ->byTag($request->tag)
+                        ->when($request->product, function ($query) use ($request) {
+                            return $query->where('id', '<>', $request->product);
+                        })
+                        ->when($request->product, function ($query) use ($request) {
+                            return $query->where('id', '<>', $request->product);
+                        })
+                        ->Sort()
+                )
+                ->paginate($request->per_page ?? 20);
         } catch (\Exception $e) {
             // If the search fails, we will try to fetch the products using the regular query
             Log::alert("message: " . $e->getMessage());

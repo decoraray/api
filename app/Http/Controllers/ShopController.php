@@ -27,12 +27,9 @@ class ShopController extends Controller
     // get product list by category - POST
     public function search(SearchRequest $request)
     {
-        $cacheKey = 'products_' . md5(serialize($request->query()));
+        $products = ProductSearch::search($request);
 
-        return cache()->remember($cacheKey,  60 * 2, function () use ($request) {
-
-            return ProductSearch::search($request);
-        });
+        return ProductListResource::collection($products);
     }
 
     // search product

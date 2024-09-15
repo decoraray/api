@@ -38,12 +38,12 @@ class SearchRequest extends FormRequest
     public function rules()
     {
         return [
-            "category" => "",
-            "product" => "integer",
+            "category" => "nullable",
+            "product" => "nullable|integer",
             "page" => "integer",
-            "tag" => "integer",
+            "tag" => "nullable|integer",
             "sort" => "string|in:price_asc,price_desc,newest,oldest,default",
-            "count" => "integer",
+            "count" => "nullable|integer",
         ];
     }
 
