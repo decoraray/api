@@ -17,8 +17,9 @@ class PostListResource extends JsonResource
         return [
             'title' => $this->title,
             'slug' => $this->slug,
-            'subtitle' => $this->subtitle,
             'thumbnail' =>  $this->imagePath,
+            'status' => $this->status,
+            'created_at' => $this->created_at,
             'category' => $this->category ? new CategoryLightShowResource($this->category) : null,
         ];
     }
