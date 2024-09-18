@@ -23,7 +23,6 @@ return new class extends Migration
             $table->string('videos')->nullable();
             $table->boolean('status')->nullable();
 
-            $table->foreignId('category_id')->nullable()->constrained('categories')->onDelete('cascade');
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
         });

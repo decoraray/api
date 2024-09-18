@@ -46,12 +46,21 @@ class PostController extends Controller
         $post = new Post($request->all());
         $post->save();
 
+        $post->categories()->attach($request->categories);
+
         return new PostShowResource($post);
     }
 
     public function update(UpdatePostRequest $request, Post $post)
     {
         $post->update($request->all());
+
+        if ($request->categories) {
+            // if categoryes are array get all , else plunk ids and get them
+            $categories = is_array($request->categories) ? $request->categories : $request->categories->pluck('id');
+            $post->categories()->sync($categories);
+        }
+
         return new PostShowResource($post);
     }
 

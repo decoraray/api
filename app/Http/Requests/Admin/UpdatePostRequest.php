@@ -45,7 +45,8 @@ class UpdatePostRequest extends FormRequest
             'video' => ['nullable', 'string'],
             'content' => ['nullable', 'string'],
             'writer' => ['nullable', 'string'],
-            'category_id' => 'nullable|exists:categories,id',
+            'categories' => ['required', 'array'],
+            'categories.*' => ['required', 'integer', 'exists:categories,id'],
         ];
     }
 }

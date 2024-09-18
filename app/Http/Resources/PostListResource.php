@@ -21,7 +21,8 @@ class PostListResource extends JsonResource
             'thumbnail' =>  $this->imagePath,
             'status' => $this->status,
             'created_at' => $this->created_at,
-            'category' => $this->category ? new CategoryLightShowResource($this->category) : null,
+            'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,
+
         ];
     }
 }

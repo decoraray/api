@@ -26,8 +26,20 @@ class Post extends Model
         return $this->image ? config('app.url') . '/storage/' . $this->image : null;
     }
 
-    public function category()
+    public function categories()
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsToMany(Category::class);
+    }
+
+    public function scopeByCategory($query, $category)
+    {
+        if (!$category || $category == 'null') {
+            return;
+        }
+
+        $query->whereHas('categories', function ($query) use ($category) {
+            $query->where('category_id', $category)
+                ->orWhere('slug', 'like', "%$category%");
+        });
     }
 }

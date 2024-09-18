@@ -45,7 +45,8 @@ class CreatePostRequest extends FormRequest
             'video' => ['nullable', 'string'],
             'content' => ['string'],
             'writer' => ['nullable', 'string'],
-            'category_id' => 'nullable|exists:categories,id',
+            'categories' => ['required', 'array'],
+            'categories.*' => ['required', 'integer', 'exists:categories,id'],
         ];
     }
 }
