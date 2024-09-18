@@ -19,18 +19,7 @@ class PostController extends Controller
 
     public function show($slug, $categorySlug = null)
     {
-        // Start with the query for the post by slug
-        $query = Post::where('slug', $slug);
-
-        // If categorySlug is provided, filter by the category as well
-        if ($categorySlug) {
-            $query->whereHas('category', function ($q) use ($categorySlug) {
-                $q->where('slug', $categorySlug);
-            });
-        } else {
-            // Filter posts that do not have any category
-            $query->whereDoesntHave('category');
-        }
+        $query = Post::where('slug', $slug)->byCategory($categorySlug);
 
         $post = $query->first();
 
