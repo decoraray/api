@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Post;
+use App\Models\Image;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PostListResource;
 use App\Http\Resources\PostShowResource;
@@ -37,6 +38,25 @@ class PostController extends Controller
 
         $post->categories()->attach($request->categories);
 
+        if (request()->hasFile('images')) {
+            return response()->json([
+                'message' => 'No file was uploaded.'
+            ], 422);
+        }
+
+        $images = $request->file('images');
+        foreach ($images as $image) {
+            $image_path = $image->store('image', 'public');
+            Image::create([
+                'image' => $image_path,
+                'post_id' => $request->product_id ?? null,
+            ]);
+            $post->image = $image_path;
+            $post->save();
+
+            break; // TODO : it will end loop on first image, if post can support multiple images it will change 
+        }
+
         return new PostShowResource($post);
     }
 
@@ -50,12 +70,28 @@ class PostController extends Controller
             $post->categories()->sync($categories);
         }
 
+        $images = $request->file('images');
+        foreach ($images as $image) {
+            $image_path = $image->store('image', 'public');
+            Image::create([
+                'image' => $image_path,
+                'post_id' => $request->product_id ?? null,
+            ]);
+            $post->image = $image_path;
+            $post->save();
+
+            break; // TODO : it will end loop on first image, if post can support multiple images it will change 
+        }
+
         return new PostShowResource($post);
     }
 
     public function destroy(Post $post)
     {
         $post->delete();
+
+        // TODO : delete image too , 
+
         return response()->json(null, 204);
     }
 }
