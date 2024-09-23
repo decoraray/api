@@ -45,16 +45,18 @@ class PostController extends Controller
         }
 
         $images = $request->file('images');
-        foreach ($images as $image) {
-            $image_path = $image->store('image', 'public');
-            Image::create([
-                'image' => $image_path,
-                'post_id' => $request->product_id ?? null,
-            ]);
-            $post->image = $image_path;
-            $post->save();
+        if ($images != null) {
+            foreach ($images as $image) {
+                $image_path = $image->store('image', 'public');
+                Image::create([
+                    'image' => $image_path,
+                    'post_id' => $request->product_id ?? null,
+                ]);
+                $post->image = $image_path;
+                $post->save();
 
-            break; // TODO : it will end loop on first image, if post can support multiple images it will change 
+                break; // TODO : it will end loop on first image, if post can support multiple images it will change 
+            }
         }
 
         return new PostShowResource($post);
@@ -71,16 +73,18 @@ class PostController extends Controller
         }
 
         $images = $request->file('images');
-        foreach ($images as $image) {
-            $image_path = $image->store('image', 'public');
-            Image::create([
-                'image' => $image_path,
-                'post_id' => $request->product_id ?? null,
-            ]);
-            $post->image = $image_path;
-            $post->save();
+        if ($images != null) {
+            foreach ($images as $image) {
+                $image_path = $image->store('image', 'public');
+                Image::create([
+                    'image' => $image_path,
+                    'post_id' => $request->product_id ?? null,
+                ]);
+                $post->image = $image_path;
+                $post->save();
 
-            break; // TODO : it will end loop on first image, if post can support multiple images it will change 
+                break; // TODO : it will end loop on first image, if post can support multiple images it will change 
+            }
         }
 
         return new PostShowResource($post);
