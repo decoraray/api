@@ -35,26 +35,19 @@ class PaymentController extends Controller
 
         $order = Order::createFromRequest($request);
 
-        dump($order->getPayableAmount());
-
         $order = $this->campaignService->applyCampaign($order);
-
-        dd($order->getPayableAmount());
 
         $paymentMethod = $request->payment_method;
         if ($paymentMethod == 'cash') {
             $order->update([
                 'status' => OrderStatus::PENDING,
             ]);
-
             $cart->clear();
-
             return response()->json(
                 ['url' => ''],
                 201
             );
         }
-
         $payment = $this->createPayment($request, $order);
 
         return response()->json(

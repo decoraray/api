@@ -22,12 +22,12 @@ class CampaignService
 
         $payable = $order->total - $order->discount_amount;
 
-        if ($payable > $steps[2]) {
-            $order->discount_amount = $payable * $discounts[3] / 100;
-        } elseif ($payable > $steps[1]) {
+        if ($payable > $steps[1]) {
             $order->discount_amount = $payable * $discounts[2] / 100;
-        } else {
+        } elseif ($payable > $steps[0]) {
             $order->discount_amount = $payable * $discounts[1] / 100;
+        } else {
+            $order->discount_amount = $payable * $discounts[0] / 100;
         }
 
         $order->save();
