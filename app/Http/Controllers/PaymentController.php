@@ -35,7 +35,6 @@ class PaymentController extends Controller
 
         $order = Order::createFromRequest($request);
 
-        dd($order);
         $paymentMethod = $request->payment_method;
         if ($paymentMethod == 'cash') {
             $order->update([
