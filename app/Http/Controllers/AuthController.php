@@ -42,7 +42,7 @@ class AuthController extends Controller
 
         $user->generateOneTimePassword();
 
-        // SmsIr::verify($user->phone, $user->one_time_password);
+        SmsIr::verify($user->phone, $user->one_time_password);
 
         $response = [
             'message' => 'Check your sms',
