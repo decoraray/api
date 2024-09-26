@@ -6,8 +6,7 @@ use App\Models\Order;
 
 class CampaignService
 {
-
-    public function applyCampaign($order): Order
+    public static function calculate($payable)
     {
         $steps = [
             10000000,
@@ -20,18 +19,15 @@ class CampaignService
             30
         ];
 
-        $payable = $order->total - $order->discount_amount;
-
-        if ($payable > $steps[1]) {
-            $order->discount_amount = $payable * $discounts[2] / 100;
-        } elseif ($payable > $steps[0]) {
-            $order->discount_amount = $payable * $discounts[1] / 100;
+        $campaign_amount = 0;
+        if ($payable >= $steps[1]) {
+            $campaign_amount = $payable * $discounts[2] / 100;
+        } elseif ($payable >= $steps[0]) {
+            $campaign_amount = $payable * $discounts[1] / 100;
         } else {
-            $order->discount_amount = $payable * $discounts[0] / 100;
+            $campaign_amount = $payable * $discounts[0] / 100;
         }
 
-        $order->save();
-
-        return $order;
+        return $campaign_amount;
     }
 }

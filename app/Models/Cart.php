@@ -2,8 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\Campaign\CampaignService;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Cart extends Model
 {
@@ -82,6 +83,7 @@ class Cart extends Model
         return $total;
     }
 
+    // total will be calculated with discounted amounts.
     public function totalQuantity()
     {
         $total = 0;
@@ -98,10 +100,13 @@ class Cart extends Model
             $old_total += $this->variations()->find($this->variationsIds()[$i])->pivot->quantity
                 * $this->variations()->find($this->variationsIds()[$i])->oldPrice;
         }
-
         return $old_total - $this->total();
     }
 
+    public function campaign()
+    {
+        return CampaignService::calculate($this->total());
+    }
 
     public function clear()
     {
@@ -138,6 +143,11 @@ class Cart extends Model
     public function getDiscountAmountAttribute()
     {
         return $this->discount();
+    }
+
+    public function getCampaignAmountAttribute()
+    {
+        return $this->campaign();
     }
 
     public static function getOrCreate(?string $uuid = null)
