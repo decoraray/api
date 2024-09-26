@@ -11,11 +11,13 @@ use App\Http\Requests\CheckoutRequest;
 use App\Services\Payment\PaymentService;
 use Illuminate\Support\Facades\Redirect;
 use App\Http\Resources\OrderShowResource;
+use App\Services\Campaign\CampaignService;
 
 class PaymentController extends Controller
 {
     public function __construct(
         protected PaymentService $paymentService,
+        protected CampaignService $campaignService,
     ) {
         //
     }
@@ -33,20 +35,18 @@ class PaymentController extends Controller
 
         $order = Order::createFromRequest($request);
 
+        dd($order);
         $paymentMethod = $request->payment_method;
         if ($paymentMethod == 'cash') {
             $order->update([
                 'status' => OrderStatus::PENDING,
             ]);
-
             $cart->clear();
-
             return response()->json(
                 ['url' => ''],
                 201
             );
         }
-
         $payment = $this->createPayment($request, $order);
 
         return response()->json(

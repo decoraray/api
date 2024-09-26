@@ -23,6 +23,7 @@ class CartShowResource extends JsonResource
             'discount_amount' => $this->discountAmount,
             'discount_id' => $this->discount_id,
             'discount' => $this->discount,
+            'campaign_amount' => $this->campaignAmount,
             'isEmpty' => $this->isEmpty,
             'uuid' => $this->uuid,
             'thumbnail' => $this->imagePath,
