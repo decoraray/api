@@ -55,9 +55,9 @@ class Product extends Model
     {
         $this->attributes['title'] = $value;
 
-        $spaceLikeChars = [' ', '‌']; // Normal space and ZWNJ (Zero Width Non-Joiner)
+        $spaceLikeChars = [' ', '‌', "\t", "\n", "\r", "\0", "\x0B"]; // Normal space and ZWNJ (Zero Width Non-Joiner)
 
-        $this->attributes['search_title'] =  str_replace($spaceLikeChars, '', $value); // Remove spaces for the search_title
+        $this->attributes['search_title'] = strtolower(str_replace($spaceLikeChars, '', $value)); // Remove spaces for the search_title
     }
 
     public function categories()
