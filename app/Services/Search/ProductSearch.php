@@ -39,8 +39,8 @@ class ProductSearch
                         ->when($request->product, function ($query) use ($request) {
                             return $query->where('id', '<>', $request->product);
                         })
-                        ->when($request->product, function ($query) use ($request) {
-                            return $query->where('id', '<>', $request->product);
+                        ->when($cleanedKeyword, function ($query) use ($cleanedKeyword) {
+                            return $query->where('search_title', 'like', "%$cleanedKeyword%");
                         })
                         ->Sort()
                 )
