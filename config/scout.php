@@ -188,6 +188,9 @@ return [
                             'name' => 'search_title',
                             'type' => 'string',
                             'facet' => false, // Ensure this is not a facet
+                            "tokenization" => "ngram",
+                            "nGramLengths" => [3, 4, 5] // Adjust lengths as needed
+
                         ],
                         [
                             'name' => 'created_at',
