@@ -18,9 +18,9 @@ class PostController extends Controller
         return PostListResource::collection(Post::all());
     }
 
-    public function show($slug, $categorySlug = null)
+    public function show($id, $categorySlug = null)
     {
-        $query = Post::where('slug', $slug)->byCategory($categorySlug);
+        $query = Post::where('id', $id)->byCategory($categorySlug);
 
         $post = $query->first();
 
