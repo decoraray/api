@@ -105,7 +105,7 @@ class Cart extends Model
 
     public function campaign()
     {
-        return CampaignService::calculate($this->total());
+        return CampaignService::calculate($this->total() - $this->discount());
     }
 
     public function clear()
