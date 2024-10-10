@@ -259,7 +259,7 @@ class Product extends Model
 
     public function scopeByTitle($query)
     {
-        $query->orderBy('title', 'asc');
+        $query->orderBy('title', 'desc');
     }
 
     // relatedProducts
