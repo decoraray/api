@@ -113,7 +113,7 @@ class Order extends Model
             'postal_code' => $address->postal_code,
             'phone' => $address->phone,
             'status' => OrderStatus::PENDING,
-            'total' =>  $cart->total - $cart->campaignAmount + $shippingPrice,
+            'total' =>  $cart->total + $shippingPrice,
             'payment_method' => $paymentMethod,
             'discount_amount' => $cart->discountAmount + $cart->campaignAmount,
             'discount_id' => $cart->discount_id,

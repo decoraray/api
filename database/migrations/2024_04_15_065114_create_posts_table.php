@@ -21,6 +21,7 @@ return new class extends Migration
             $table->text('content')->nullable();
             $table->string('image')->nullable();
             $table->string('videos')->nullable();
+            $table->string('writer')->nullable();
             $table->boolean('status')->nullable();
 
             $table->foreignId('user_id')->nullable()->constrained('users')->onDelete('set null');

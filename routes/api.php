@@ -140,8 +140,7 @@ Route::prefix('v1')
 
                 Route::resource('users', 'UserController');
 
-                Route::resource('posts', 'PostController')->only(['index', 'store', 'update', 'delete', 'show']);
-                // Route::get('/posts/{id}/{categorySlug?}', 'PostController@showBySlug');
+                Route::resource('posts', 'PostController');
 
                 Route::get('users/uuid/{uuid}', 'UserController@showByUuid');
             });

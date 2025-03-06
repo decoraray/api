@@ -213,6 +213,11 @@ class Product extends Model
         $query->where('tag_id', 'like', $tag);
     }
 
+
+    /**
+     * The method will look up the sort parameter from the request. If it matches one of the keys in $sortOptions,
+     * it will call the corresponding scope method (priceAsc, priceDesc, newest, or oldest) on the query.
+     */
     public function scopeSort($query)
     {
         $sortOptions = [
@@ -220,7 +225,7 @@ class Product extends Model
             'price_desc' => 'priceDesc',
             'newest' => 'newest',
             'oldest' => 'oldest',
-            'oldest' => 'newest',
+            'by_title' => 'byTitle',
         ];
 
         $sort = request()->get('sort', 'newest'); // Default to 'newest' if no sort parameter provided
@@ -250,6 +255,11 @@ class Product extends Model
     public function scopeOldest($query)
     {
         $query->orderBy('id', 'asc');
+    }
+
+    public function scopeByTitle($query)
+    {
+        $query->orderBy('title', 'desc');
     }
 
     // relatedProducts

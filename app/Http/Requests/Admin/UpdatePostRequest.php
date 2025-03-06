@@ -41,12 +41,12 @@ class UpdatePostRequest extends FormRequest
             'title' => ['string', 'max:255'],
             'slug' => ['string', 'max:255'],
             'subtitle' => ['string'],
-            'image' => ['nullable', 'string'],
+            'images' => ['nullable', 'array'],
             'video' => ['nullable', 'string'],
             'content' => ['nullable', 'string'],
             'writer' => ['nullable', 'string'],
-            'categories' => ['required', 'array'],
-            'categories.*' => ['required', 'integer', 'exists:categories,id'],
+            'categories' => ['nullable', 'array'],
+            'categories.*' => ['nullable', 'integer', 'exists:categories,id'],
         ];
     }
 }

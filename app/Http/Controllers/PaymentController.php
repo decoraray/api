@@ -11,13 +11,11 @@ use App\Http\Requests\CheckoutRequest;
 use App\Services\Payment\PaymentService;
 use Illuminate\Support\Facades\Redirect;
 use App\Http\Resources\OrderShowResource;
-use App\Services\Campaign\CampaignService;
 
 class PaymentController extends Controller
 {
     public function __construct(
         protected PaymentService $paymentService,
-        protected CampaignService $campaignService,
     ) {
         //
     }

@@ -23,7 +23,7 @@ class PostShowResource extends JsonResource
             'image' =>  $this->imagePath,
             'video' => $this->video,
             'thumbnail' =>  $this->imagePath,
-            'writer' => $this->writer ? $this->writer->name : 'Unknown',
+            'writer' => $this->writer ? $this->writer : 'Unknown',
             'status' => $this->status,
             'created_at' => $this->created_at,
             'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,

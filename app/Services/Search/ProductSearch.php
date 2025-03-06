@@ -25,6 +25,7 @@ class ProductSearch
     // Shared logic to fetch products based on common query criteria
     private static function getProductList($request)
     {
+        $request->keyword = $request->keyword ?? $request->title;
         $cleanedKeyword = self::cleanKeyword($request->keyword);
 
         return Product::active()

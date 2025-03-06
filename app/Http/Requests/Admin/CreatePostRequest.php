@@ -40,13 +40,13 @@ class CreatePostRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'slug' => ['string', 'max:255'],
-            'subtitle' => ['required', 'string'],
-            'image' => ['nullable', 'string'],
+            'subtitle' => ['nullable', 'string'],
+            'images' => ['nullable', 'array'],
             'video' => ['nullable', 'string'],
             'content' => ['string'],
             'writer' => ['nullable', 'string'],
-            'categories' => ['required', 'array'],
-            'categories.*' => ['required', 'integer', 'exists:categories,id'],
+            'categories' => ['nullable', 'array'],
+            'categories.*' => ['nullable', 'integer', 'exists:categories,id'],
         ];
     }
 }

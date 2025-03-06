@@ -17,8 +17,7 @@ class Post extends Model
         'video',
         'content',
         'writer',
-        'status',
-        'category_id'
+        'status'
     ];
 
     public function getImagePathAttribute()
