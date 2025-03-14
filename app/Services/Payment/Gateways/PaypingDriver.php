@@ -25,7 +25,7 @@ class PaypingDriver implements GatewayInterface
         $refId = $this->getRefId($payment);
 
         // step 2 
-        return $this->url . '/v2/pay/gotoipg/' . $refId;
+        return $this->url . '/v3/pay/gotoipg/' . $refId;
     }
 
     private function getRefId($payment)
@@ -42,7 +42,7 @@ class PaypingDriver implements GatewayInterface
             'Authorization' => 'Bearer ' . $this->token,
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
-        ])->post($this->url . '/v2/pay', [
+        ])->post($this->url . '/v3/pay', [
             'payerName' => $user->name,
             'amount' => $amount,
             'payerIdentity' => $payment->user->mobile,
@@ -67,7 +67,7 @@ class PaypingDriver implements GatewayInterface
         //     "gateway" => "payping"
         //     ]
 
-        // response of '/v2/pay/verify' 
+        // response of '/v3/pay/verify' 
         // array:4 [▼ // app/Services/Payment/Gateways/PaypingDriver.php:67
         //     "amount" => 1000
         //     "cardNumber" => "603799******6680"
@@ -85,7 +85,7 @@ class PaypingDriver implements GatewayInterface
             'Authorization' => 'Bearer ' . $this->token,
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
-        ])->post($this->url . '/v2/pay/verify', [
+        ])->post($this->url . '/v3/pay/verify', [
             'RefId' => $payment->ref_id,
             'amount' => $amount
         ]);
