@@ -25,7 +25,7 @@ class PaypingDriver implements GatewayInterface
         $refId = $this->getRefId($payment);
 
         // step 2 
-        return $this->url . '/v3/pay/gotoipg/' . $refId;
+        return $this->url . '/v3/pay/start/' . $refId;
     }
 
     private function getRefId($payment)
@@ -51,7 +51,7 @@ class PaypingDriver implements GatewayInterface
             'description' => 'پرداخت از طریق سایت',
         ])->throw()->json();
 
-        return $response['code'];
+        return $response['paymentCode'];
     }
 
     public function verify($payment)
@@ -86,8 +86,8 @@ class PaypingDriver implements GatewayInterface
             'Content-Type' => 'application/json',
             'Accept' => 'application/json',
         ])->post($this->url . '/v3/pay/verify', [
-            'RefId' => $payment->ref_id,
-            'amount' => $amount
+            'paymentRefId' => $payment->ref_id,
+            // 'amount' => $amount
         ]);
 
         if ($response->successful() && $response['amount'] == $amount) {
