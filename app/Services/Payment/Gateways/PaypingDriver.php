@@ -49,6 +49,7 @@ class PaypingDriver implements GatewayInterface
             'returnUrl' => $this->callback,
             'clientRefId' => $payment->uuid,
             'description' => 'پرداخت از طریق سایت',
+            'nationalCode' => '2790029792',
         ])->throw()->json();
 
         return $response['paymentCode'];
