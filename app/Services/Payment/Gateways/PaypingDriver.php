@@ -11,14 +11,11 @@ class PaypingDriver implements GatewayInterface
     private $callback;
     private $url;
 
-
     public function __construct()
     {
         $this->token = config('services.payping.token');
         $this->url = config('services.payping.url');
-
         $this->callback = config('app.url') . '/api/v1/payment-verify?gateway=payping';
-        // $this->callback = config('services.callback');
     }
 
     public function Pay(Payment $payment): string

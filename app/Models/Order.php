@@ -100,7 +100,7 @@ class Order extends Model
 
         $cart = $user->cart;
 
-        $shipping = City::where('id', $address->city_id)->first()->shipping;
+        $shipping = City::where('id', $address->city_id)->first()->shipping; // gets overided by user in the db if exists
         $shippingPrice = $shipping->price + ($shipping->price * ($cart->totalQuantity - 1) * $shipping->additional_percent / 100);
 
         // create order
