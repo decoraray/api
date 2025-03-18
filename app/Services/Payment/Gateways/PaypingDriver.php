@@ -4,6 +4,7 @@ namespace App\Services\Payment\Gateways;
 
 use App\Models\Payment;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class PaypingDriver implements GatewayInterface
 {
@@ -90,6 +91,8 @@ class PaypingDriver implements GatewayInterface
             'paymentRefId' => $payment->ref_id,
             // 'amount' => $amount
         ]);
+
+        Log::info('Payment verification response received', $response->json());
 
         if ($response->successful() && $response['amount'] == $amount) {
             $payment->update([

@@ -84,8 +84,6 @@ class PaymentController extends Controller
         $data = json_decode($request->data, true); // Decode JSON string into an array
         $payment = Payment::where('uuid', $data['clientRefId'])->first();
 
-        // $payment = Payment::where('uuid', $request->data->clientrefid)->first();
-
         if (empty($payment)) {
             return response()->json([
                 'message' => 'payment not found',
@@ -93,9 +91,9 @@ class PaymentController extends Controller
         }
 
         $payment->update([
-            'card_number' => $request->cardnumber,
-            'card_pan' => $request->cardhashpan,
-            'ref_id' =>  $request->refid,
+            'card_number' => $data['cardNumber'],
+            'card_pan' => $data['cardHashPan'],
+            'ref_id' => $data['paymentRefId'],
         ]);
 
         $payment = $this->paymentService->verify($payment, $request->gateway);
