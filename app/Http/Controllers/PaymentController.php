@@ -81,7 +81,9 @@ class PaymentController extends Controller
     {
         Log::info('Payment verification request received', $request->all());
 
-        $payment = Payment::where('uuid', $request->clientrefid)->first();
+        $payment = Payment::where('uuid', $request->data['clientRefId'])->first();
+
+        // $payment = Payment::where('uuid', $request->data->clientrefid)->first();
 
         if (empty($payment)) {
             return response()->json([
