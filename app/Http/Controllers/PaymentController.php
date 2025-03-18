@@ -11,6 +11,7 @@ use App\Http\Requests\CheckoutRequest;
 use App\Services\Payment\PaymentService;
 use Illuminate\Support\Facades\Redirect;
 use App\Http\Resources\OrderShowResource;
+use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
@@ -78,6 +79,8 @@ class PaymentController extends Controller
 
     public function verify(Request $request)
     {
+        Log::info('Payment verification request received', $request->all());
+
         $payment = Payment::where('uuid', $request->clientrefid)->first();
 
         if (empty($payment)) {
