@@ -79,7 +79,7 @@ class Order extends Model
             case 'online':
                 return round($payable);
             case 'partial':
-                return round($payable * 0.3);
+                return round($payable * 0.6);
             case 'door':
                 return $payable;
             default:
