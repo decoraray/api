@@ -81,7 +81,29 @@ class PaymentController extends Controller
     {
         Log::info('Payment verification request received', $request->all());
 
-        $data = json_decode($request->data, true); // Decode JSON string into an array
+        $data = null;
+
+        // Case 1: Correct format - "data" is a stringified JSON
+        if ($request->has('data')) {
+            $raw = $request->input('data');
+            $data = is_array($raw) ? $raw : json_decode($raw, true);
+        }
+
+        // Case 2: Incorrect format - first key is a JSON string
+        if ($data === null) {
+            $keys = array_keys($request->all());
+            if (!empty($keys)) {
+                $raw = $keys[0];
+                $data = json_decode($raw, true);
+            }
+        }
+
+        // Check if decoding worked
+        if (!is_array($data)) {
+            Log::error('Failed to decode payment data', ['raw_data' => $raw ?? null]);
+            return response()->json(['message' => 'invalid payment data'], 400);
+        }
+
         $payment = Payment::where('uuid', $data['clientRefId'])->first();
 
         if (empty($payment)) {
