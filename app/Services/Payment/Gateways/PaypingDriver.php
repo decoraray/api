@@ -89,7 +89,7 @@ class PaypingDriver implements GatewayInterface
             'Accept' => 'application/json',
         ])->post($this->url . '/v3/pay/verify', [
             'paymentRefId' => $payment->ref_id,
-            // 'amount' => $amount
+            'amount' => $amount
         ]);
 
         Log::info('Payment verification response received', $response->json());
