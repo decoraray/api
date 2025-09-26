@@ -23,6 +23,7 @@ class Payment extends Model
         'ref_id',
         'card_number',
         'card_pan',
+        'error',
     ];
 
     public function user()
