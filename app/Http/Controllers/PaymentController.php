@@ -117,7 +117,7 @@ class PaymentController extends Controller
                 'card_number' => $data['cardNumber'],
                 'card_pan' => $data['cardHashPan'],
                 'payment_code' => $data['paymentCode'],
-                // 'ref_id' => $data['paymentRefId'], // this is not used in payping
+                'ref_id' => $data['paymentRefId']
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to update payment', ['error' => $e->getMessage()]);
