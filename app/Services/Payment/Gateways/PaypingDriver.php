@@ -25,6 +25,10 @@ class PaypingDriver implements GatewayInterface
         // step 1 
         $refId = $this->getRefId($payment);
 
+        $payment->update([
+            'ref_id' => $refId,
+        ]);
+
         // step 2 
         return $this->url . '/v3/pay/start/' . $refId;
     }
@@ -50,7 +54,7 @@ class PaypingDriver implements GatewayInterface
             'returnUrl' => $this->callback,
             'clientRefId' => $payment->uuid,
             'description' => 'پرداخت از طریق سایت',
-            'nationalCode' => '2790029792',
+            'nationalCode' => '',
         ])->throw()->json();
 
         return $response['paymentCode'];
@@ -89,6 +93,7 @@ class PaypingDriver implements GatewayInterface
             'Accept' => 'application/json',
         ])->post($this->url . '/v3/pay/verify', [
             'paymentRefId' => $payment->ref_id,
+            'paymentCode' => $payment->payment_code,
             'amount' => $amount
         ]);
 

@@ -21,6 +21,7 @@ class Payment extends Model
         'status',
         'gateway',
         'ref_id',
+        'payment_code',
         'card_number',
         'card_pan',
         'error',
