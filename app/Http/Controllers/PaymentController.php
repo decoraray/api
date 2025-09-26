@@ -112,15 +112,25 @@ class PaymentController extends Controller
             ], 400);
         }
 
-        $payment->update([
-            'card_number' => $data['cardNumber'],
-            'card_pan' => $data['cardHashPan'],
-            'ref_id' => $data['paymentRefId'],
-        ]);
+        try {
+            $payment->update([
+                'card_number' => $data['cardNumber'],
+                'card_pan' => $data['cardHashPan'],
+                'ref_id' => $data['paymentRefId'],
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Failed to update payment', ['error' => $e->getMessage()]);
+            $payment->update([
+                'status' => 'failed',
+                'error' => $e->getMessage(),
+            ]);
+            return Redirect::to(config('app.front_url') . '/payments/error/');
+        }
 
         $payment = $this->paymentService->verify($payment, $request->gateway);
 
         if ($payment->status == 'paid') {
+
             $payment->order->update([
                 'status' => OrderStatus::PAID,
             ]);
