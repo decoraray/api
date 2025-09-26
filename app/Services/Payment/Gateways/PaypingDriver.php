@@ -92,13 +92,18 @@ class PaypingDriver implements GatewayInterface
             'amount' => $amount
         ]);
 
-        Log::info('Payment verification response received', $response->json());
+        Log::info('Payment Payping verification response received', $response->json());
 
         if ($response->successful() && $response['amount'] == $amount) {
             $payment->update([
                 'status' => 'paid',
                 'card_number' => $response['cardNumber'],
                 'card_pan' => $response['cardHashPan'],
+            ]);
+        } else {
+            $payment->update([
+                'status' => 'failed',
+                'error' => $response->json(),
             ]);
         }
 
