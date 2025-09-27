@@ -144,12 +144,14 @@ class Product extends Model
     // attributes
     public function getOldAveragePriceAttribute()
     {
-        return round($this->variations->avg('price'));
+        $avgPrice = $this->variations->avg('price');
+        return $avgPrice ? round($avgPrice) : 0;
     }
 
     public function getOldPriceAttribute()
     {
-        return $this->variations->min('oldPrice');
+        $minPrice = $this->variations->min('oldPrice');
+        return $minPrice ?: 0;
     }
 
     public function getAveragePriceAttribute()

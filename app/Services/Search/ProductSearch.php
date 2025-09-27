@@ -28,8 +28,7 @@ class ProductSearch
         $request->keyword = $request->keyword ?? $request->title;
         $cleanedKeyword = self::cleanKeyword($request->keyword);
 
-        return Product::active()
-            ->hasActiveVariation()
+        $query = Product::active()
             ->byCategory($request->category)
             ->byTag($request->tag)
             ->when($request->product, function ($query) use ($request) {
@@ -37,8 +36,15 @@ class ProductSearch
             })
             ->when($cleanedKeyword, function ($query) use ($cleanedKeyword) {
                 return $query->where('search_title', 'like', "%$cleanedKeyword%");
-            })
-            ->Sort()
+            });
+
+        // Only apply hasActiveVariation filter for non-admin requests
+        // Admin should see all products, including those without variations
+        if (!$request->is('api/v1/admin/*')) {
+            $query->hasActiveVariation();
+        }
+
+        return $query->Sort()
             ->paginate($request->per_page ?? 20);
 
         // try {
