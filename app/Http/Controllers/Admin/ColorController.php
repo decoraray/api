@@ -41,20 +41,25 @@ class ColorController extends Controller
 
     public function update(UpdateColorRequest $request, Color $color)
     {
-
         $updateData = [
             'name' => $request->name ?? $color->name,
             'slug' => $request->slug ?? $color->slug,
             'hex' => $request->hex ?? $color->hex,
         ];
 
-        // Handle sample file upload if provided
+        // Handle sample file upload or removal
         if ($request->hasFile('sample')) {
             // Delete old sample if exists
             if ($color->sample) {
                 Storage::disk('public')->delete($color->sample);
             }
             $updateData['sample'] = $request->file('sample')->store('samples', 'public');
+        } elseif ($request->has('sample') && ($request->input('sample') === '' || $request->input('sample') === null)) {
+            // Handle sample removal (empty string indicates removal)
+            if ($color->sample) {
+                Storage::disk('public')->delete($color->sample);
+            }
+            $updateData['sample'] = null;
         }
 
         $color->update($updateData);

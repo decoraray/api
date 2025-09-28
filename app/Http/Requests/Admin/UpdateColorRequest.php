@@ -40,7 +40,7 @@ class UpdateColorRequest extends FormRequest
         return [
             'name' => ['string', 'max:255'],
             'slug' => ['string', 'max:255'],
-            'sample' => 'image|mimes:jpg,png,jpeg,gif,svg,webp|max:8192',
+            'sample' => 'nullable|image|mimes:jpg,png,jpeg,gif,svg,webp|max:8192',
             'hex' => ['string', 'max:255'],
         ];
     }
