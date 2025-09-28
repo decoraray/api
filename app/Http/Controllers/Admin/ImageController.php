@@ -14,8 +14,8 @@ class ImageController extends Controller
 {
     public function imageStore(UploadImageRequest $request)
     {
-
-        $images = $request->file('images');
+        // Handle both 'images' and 'images[]' field names
+        $images = $request->file('images') ?? $request->file('images[]');
 
         foreach ($images as $image) {
 

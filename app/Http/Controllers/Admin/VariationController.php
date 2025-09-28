@@ -15,12 +15,32 @@ class VariationController extends Controller
     public function arrayStore(Request $request, Product $product)
     {
         $variations = $request->all();
+
+        // Validate that we have variations
+        if (empty($variations)) {
+            return response()->json(['message' => 'No variations provided'], 400);
+        }
+
+        // Validate each variation
+        foreach ($variations as $index => $variation) {
+            if (empty($variation['color']) || empty($variation['price'])) {
+                return response()->json([
+                    'message' => "Variation at index {$index} is missing required fields (color, price)"
+                ], 422);
+            }
+        }
+
+        // Delete existing variations and create new ones
         $product->variations()->delete();
+
         foreach ($variations as $variation) {
             $color = Color::findOrCreate($variation['color']);
             $variation['color_id'] = $color->id;
             $product->variations()->create($variation);
         }
+
+        // Update product average price
+        $product->updateAveragePrice();
 
         return new ProductShowResource($product);
     }
