@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ColorShowResource;
 use App\Http\Requests\Admin\CreateColorRequest;
 use App\Http\Requests\Admin\UpdateColorRequest;
+use Illuminate\Support\Facades\Storage;
 
 class ColorController extends Controller
 {
@@ -23,12 +24,14 @@ class ColorController extends Controller
 
     public function store(CreateColorRequest $request)
     {
-        Color::create([
+        $color = Color::create([
             'name' => $request->name,
             'slug' => $request->slug ?? $request->name,
             'sample' => $request->hasFile('sample') ? $request->file('sample')->store('samples', 'public') : null,
             'hex' => $request->hex ?? '#000000',
         ]);
+
+        return new ColorShowResource($color);
     }
 
     public function show(Color $color)
@@ -37,21 +40,26 @@ class ColorController extends Controller
         return new ColorShowResource($color);
     }
 
-    public function update(Request $request, Color $color)
+    public function update(UpdateColorRequest $request, Color $color)
     {
+        $updateData = [
+            'name' => $request->name,
+            'slug' => $request->slug ?? $request->name,
+            'hex' => $request->hex,
+        ];
 
-        // TODO: Add
-        // maintenance mode
-        return response()->json([
-            'message' => 'This feature is not available yet. Please try again later.'
-        ], 500);
+        // Handle sample file upload if provided
+        if ($request->hasFile('sample')) {
+            // Delete old sample if exists
+            if ($color->sample) {
+                Storage::disk('public')->delete($color->sample);
+            }
+            $updateData['sample'] = $request->file('sample')->store('samples', 'public');
+        }
 
-        // $color->update([
-        //     'name' => $request->name,
-        //     'slug' => $request->slug ?? $request->name,
-        //     'sample' => $request->hasFile('sample') ? $request->file('sample')->store('samples', 'public') : null,
-        //     'hex' => $request->hex,
-        // ]);
+        $color->update($updateData);
+
+        return new ColorShowResource($color);
     }
 
     public function destroy(Color $color)
