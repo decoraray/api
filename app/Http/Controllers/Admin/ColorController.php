@@ -43,6 +43,16 @@ class ColorController extends Controller
 
     public function update(UpdateColorRequest $request, Color $color)
     {
+        // Debug: Log the received data
+        Log::info('Update Color Request Data:', [
+            'name' => $request->name,
+            'slug' => $request->slug,
+            'hex' => $request->hex,
+            'has_sample' => $request->hasFile('sample'),
+            'all_data' => $request->all(),
+            'raw_content' => $request->getContent()
+        ]);
+
         $updateData = [
             'name' => $request->name ?? $color->name,
             'slug' => $request->slug ?? $color->slug,
