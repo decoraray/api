@@ -9,6 +9,7 @@ use App\Http\Resources\ColorShowResource;
 use App\Http\Requests\Admin\CreateColorRequest;
 use App\Http\Requests\Admin\UpdateColorRequest;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class ColorController extends Controller
 {
@@ -43,9 +44,9 @@ class ColorController extends Controller
     public function update(UpdateColorRequest $request, Color $color)
     {
         $updateData = [
-            'name' => $request->name,
-            'slug' => $request->slug ?? $request->name,
-            'hex' => $request->hex,
+            'name' => $request->name ?? $color->name,
+            'slug' => $request->slug ?? $color->slug,
+            'hex' => $request->hex ?? $color->hex,
         ];
 
         // Handle sample file upload if provided

@@ -41,7 +41,7 @@ class UpdateColorRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'slug' => ['string', 'max:255'],
             'sample' => 'image|mimes:jpg,png,jpeg,gif,svg,webp|max:8192',
-            'hex' => ['required', 'string', 'max:255'],
+            'hex' => ['string', 'max:255'],
         ];
     }
 }
