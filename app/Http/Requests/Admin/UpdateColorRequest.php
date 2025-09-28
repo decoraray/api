@@ -38,7 +38,7 @@ class UpdateColorRequest extends FormRequest
     public function rules()
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['string', 'max:255'],
             'slug' => ['string', 'max:255'],
             'sample' => 'image|mimes:jpg,png,jpeg,gif,svg,webp|max:8192',
             'hex' => ['string', 'max:255'],
