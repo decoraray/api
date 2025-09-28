@@ -24,13 +24,6 @@ class UpdateColorRequest extends FormRequest
      */
     protected function failedValidation(Validator|\Illuminate\Contracts\Validation\Validator $validator)
     {
-        // Debug: Log validation failure
-        \Log::info('UpdateColorRequest Validation Failed:', [
-            'errors' => $validator->errors(),
-            'data' => $this->all(),
-            'files' => $this->files->all()
-        ]);
-
         throw new HttpResponseException(response()->json([
             'errors' => $validator->errors(),
             'status' => true

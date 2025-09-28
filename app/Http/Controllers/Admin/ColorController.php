@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Color;
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ColorShowResource;
 use App\Http\Requests\Admin\CreateColorRequest;
 use App\Http\Requests\Admin\UpdateColorRequest;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 
 class ColorController extends Controller
 {
@@ -43,15 +41,6 @@ class ColorController extends Controller
 
     public function update(UpdateColorRequest $request, Color $color)
     {
-        // Debug: Log the received data
-        Log::info('Update Color Request Data:', [
-            'name' => $request->name,
-            'slug' => $request->slug,
-            'hex' => $request->hex,
-            'has_sample' => $request->hasFile('sample'),
-            'all_data' => $request->all(),
-            'raw_content' => $request->getContent()
-        ]);
 
         $updateData = [
             'name' => $request->name ?? $color->name,
