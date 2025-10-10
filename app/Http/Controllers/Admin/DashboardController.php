@@ -20,25 +20,25 @@ class DashboardController extends Controller
         $totalCategories = Category::count();
         $totalOrders = Order::count();
         $totalUsers = User::count();
-        
+
         // Get order statistics
         $pendingOrders = Order::where('status', 'pending')->count();
         $processingOrders = Order::where('status', 'processing')->count();
         $completedOrders = Order::where('status', 'completed')->count();
-        
+
         // Get revenue statistics
         $totalRevenue = Order::where('status', '!=', 'cancelled')
-            ->sum('total_price');
-        
+            ->sum('total');
+
         $todayRevenue = Order::where('status', '!=', 'cancelled')
             ->whereDate('created_at', today())
-            ->sum('total_price');
-        
+            ->sum('total');
+
         $thisMonthRevenue = Order::where('status', '!=', 'cancelled')
             ->whereYear('created_at', now()->year)
             ->whereMonth('created_at', now()->month)
-            ->sum('total_price');
-        
+            ->sum('total');
+
         // Get recent orders (last 10)
         $recentOrders = Order::with('user')
             ->orderBy('created_at', 'desc')
@@ -49,12 +49,12 @@ class DashboardController extends Controller
                     'id' => $order->id,
                     'uuid' => $order->uuid,
                     'user_name' => $order->user ? $order->user->name : 'مهمان',
-                    'total_price' => $order->total_price,
+                    'total_price' => $order->total,
                     'status' => $order->status,
                     'created_at' => $order->created_at->format('Y-m-d H:i'),
                 ];
             });
-        
+
         // Get low stock products (stock < 5)
         $lowStockProducts = Variation::with('product')
             ->where('stock', '<', 5)
@@ -70,16 +70,16 @@ class DashboardController extends Controller
                     'stock' => $variation->stock,
                 ];
             });
-        
+
         // Get out of stock products
         $outOfStockCount = Variation::where('stock', 0)->count();
-        
+
         // Get orders by status
         $ordersByStatus = Order::select('status', DB::raw('count(*) as count'))
             ->groupBy('status')
             ->get()
             ->pluck('count', 'status');
-        
+
         // Get monthly revenue for last 6 months
         $monthlyRevenue = [];
         for ($i = 5; $i >= 0; $i--) {
@@ -87,14 +87,14 @@ class DashboardController extends Controller
             $revenue = Order::where('status', '!=', 'cancelled')
                 ->whereYear('created_at', $month->year)
                 ->whereMonth('created_at', $month->month)
-                ->sum('total_price');
-            
+                ->sum('total');
+
             $monthlyRevenue[] = [
                 'month' => $month->format('M Y'),
                 'revenue' => $revenue,
             ];
         }
-        
+
         return response()->json([
             'statistics' => [
                 'products' => $totalProducts,
@@ -118,4 +118,3 @@ class DashboardController extends Controller
         ]);
     }
 }
-
