@@ -117,6 +117,8 @@ Route::prefix('v1')
             // SuperAdmin routs
             Route::prefix('admin')->middleware(['role:SuperAdmin'])->namespace('Admin')->group(function () {
 
+                Route::get('dashboard/statistics', 'DashboardController@statistics');
+
                 Route::resource('products', 'ProductController');
                 Route::post('image', 'ImageController@imageStore'); // admin image upload
                 Route::delete('image', 'ImageController@imageDelete'); // admin image delete
