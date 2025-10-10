@@ -13,7 +13,11 @@ class UserController extends Controller
 {
     public function index()
     {
-        return User::all();
+        $users = User::with('roles')
+            ->orderBy('created_at', 'desc')
+            ->paginate(15);
+
+        return response()->json($users);
     }
 
     public function showByUuid(Request $request)
