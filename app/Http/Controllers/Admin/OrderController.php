@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
-use PDF;
+use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use App\Models\Order;
 use App\Models\Shipping;
 use App\Enums\OrderStatus;
@@ -16,10 +16,18 @@ use App\Http\Resources\Admin\ShippingListAdminResource;
 class OrderController extends Controller
 {
 
-    public function index()
+    public function index(Request $request)
     {
+        $query = Order::query();
+
+        // Search by UUID if search parameter is provided
+        if ($request->has('search') && !empty($request->search)) {
+            $searchTerm = $request->search;
+            $query->where('uuid', 'like', "%{$searchTerm}%");
+        }
+
         return OrderListAdminResource::collection(
-            Order::orderBy('created_at', 'desc')->paginate(40)
+            $query->orderBy('created_at', 'desc')->paginate(40)
         )->additional([
             'status_names' => OrderStatus::values(),
             'shipping_methods' => ShippingListAdminResource::collection(Shipping::all()),
