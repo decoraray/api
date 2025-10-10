@@ -17,13 +17,20 @@ class ImageController extends Controller
         // Handle both 'images' and 'images[]' field names
         $images = $request->file('images') ?? $request->file('images[]');
 
-        foreach ($images as $image) {
+        // Get the maximum sort value for this product
+        $maxSort = 0;
+        if ($request->product_id) {
+            $maxSort = Image::where('product_id', $request->product_id)->max('sort') ?? 0;
+        }
 
+        foreach ($images as $image) {
+            $maxSort++;
             $image_path = $image->store('image', 'public');
 
             Image::create([
                 'image' => $image_path,
                 'product_id' => $request->product_id ?? null,
+                'sort' => $maxSort,
             ]);
         }
 
@@ -69,5 +76,33 @@ class ImageController extends Controller
         return response()->json([
             'url' => $url
         ]);
+    }
+
+    public function reorderImages(Request $request)
+    {
+        $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'images' => 'required|array',
+            'images.*' => 'required|string', // Image URLs
+        ]);
+
+        $images = Image::where('product_id', $request->product_id)->get();
+
+        foreach ($request->images as $index => $imageUrl) {
+            // Extract path from URL
+            $path = explode('storage/', $imageUrl)[1] ?? null;
+
+            if ($path) {
+                $image = $images->firstWhere('image', $path);
+                if ($image) {
+                    $image->sort = $index + 1;
+                    $image->save();
+                }
+            }
+        }
+
+        return response()->json([
+            'message' => 'Images reordered successfully'
+        ], Response::HTTP_OK);
     }
 }

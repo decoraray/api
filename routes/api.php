@@ -120,6 +120,7 @@ Route::prefix('v1')
                 Route::resource('products', 'ProductController');
                 Route::post('image', 'ImageController@imageStore'); // admin image upload
                 Route::delete('image', 'ImageController@imageDelete'); // admin image delete
+                Route::post('images/reorder', 'ImageController@reorderImages'); // admin image reorder
 
                 Route::resource('variations', 'VariationController');
                 Route::post('products/{product}/variations', 'VariationController@arrayStore');
