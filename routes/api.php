@@ -140,6 +140,7 @@ Route::prefix('v1')
 
                 Route::resource('colors', 'ColorController');
                 Route::post('colors/sample/{color}', 'ColorController@addSample');
+                Route::get('colors/{color}/products', 'ColorController@productsWithVariations');
 
                 Route::resource('users', 'UserController');
 

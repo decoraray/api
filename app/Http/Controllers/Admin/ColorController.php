@@ -84,4 +84,41 @@ class ColorController extends Controller
             'sample' => request()->file('sample')->store('samples', 'public'),
         ]);
     }
+
+    /**
+     * Get products that have variations with the specified color.
+     *
+     * @param  Color  $color
+     * @return \Illuminate\Http\Response
+     */
+    public function productsWithVariations(Color $color)
+    {
+        $products = \DB::table('products as p')
+            ->select('p.*', 'v.id as variation_id', 'v.color_id', 'v.size', 'v.stock', 'v.price', 'v.weight', 'v.active')
+            ->join('variations as v', 'v.product_id', '=', 'p.id')
+            ->where('v.color_id', $color->id)
+            ->get()
+            ->groupBy('id')
+            ->map(function ($variations) {
+                $product = $variations->first();
+                return [
+                    'id' => $product->id,
+                    'title' => $product->title,
+                    'slug' => $product->slug,
+                    'variations' => $variations->map(function ($variation) {
+                        return [
+                            'id' => $variation->variation_id,
+                            'size' => $variation->size,
+                            'stock' => $variation->stock,
+                            'price' => $variation->price,
+                            'weight' => $variation->weight,
+                            'active' => $variation->active,
+                        ];
+                    })->values()
+                ];
+            })
+            ->values();
+
+        return response()->json($products);
+    }
 }
