@@ -112,6 +112,7 @@ Route::prefix('v1')
                 Route::resource('deals', 'DealController')->only(['index', 'show']);
                 Route::resource('orders', 'OrderController')->only(['index', 'show']);
                 Route::resource('colors', 'ColorController')->only(['index', 'show']);
+                Route::resource('materials', 'MaterialController')->only(['index', 'show']);
             });
 
             // SuperAdmin routs
@@ -141,6 +142,8 @@ Route::prefix('v1')
                 Route::resource('colors', 'ColorController');
                 Route::post('colors/sample/{color}', 'ColorController@addSample');
                 Route::get('colors/{color}/products', 'ColorController@productsWithVariations');
+
+                Route::resource('materials', 'MaterialController');
 
                 Route::resource('users', 'UserController');
 
