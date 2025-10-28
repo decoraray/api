@@ -44,6 +44,8 @@ class CreateProductRequest extends FormRequest
             'description' => 'required',
             'categories' => ['required', 'array'],
             'categories.*' => ['required', 'integer', 'exists:categories,id'],
+            'colors' => ['array'],
+            'colors.*' => ['integer', 'exists:colors,id'],
         ];
     }
 }
