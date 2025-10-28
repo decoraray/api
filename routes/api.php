@@ -13,14 +13,15 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
+// Public health check route (no authentication required)
+Route::get('/health', 'App\Http\Controllers\HealthController@check')->name('public-health');
+
 //version 1
 Route::prefix('v1')
     ->middleware('App\Http\Middleware\Authenticate')
     ->namespace('App\Http\Controllers')->group(function () {
 
-        Route::get('/', function () {
-            return 'health';
-        });
+        Route::get('/', 'HealthController@check')->name('health');
 
         // documentation
         Route::get('/documentation', function () {
