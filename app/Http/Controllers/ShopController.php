@@ -38,6 +38,7 @@ class ShopController extends Controller
 
         if ($product) {
             $product = Product::where('id', $product)->orWhere('slug', $product)->firstOrFail();
+            $product->load(['variations.colors', 'variations.color', 'variations.material']);
             return response()->json(new ProductShowResource($product));
         }
         return response()->json(
@@ -54,6 +55,7 @@ class ShopController extends Controller
     public function show($slugOrId)
     {
         $product = Product::where('id', $slugOrId)->orWhere('slug', $slugOrId)->firstOrFail();
+        $product->load(['variations.colors', 'variations.color', 'variations.material']);
 
         return response()->json(new ProductShowResource($product));
     }

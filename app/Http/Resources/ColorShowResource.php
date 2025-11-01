@@ -14,6 +14,11 @@ class ColorShowResource extends JsonResource
      */
     public function toArray($request)
     {
+        // Handle null resource gracefully
+        if ($this->resource === null) {
+            return null;
+        }
+
         return [
             'id' => $this->id,
             'name' =>  $this->name,

@@ -17,6 +17,7 @@ class Variation extends Model
     protected $fillable = [
         'product_id',
         'color_id',
+        'material_id',
         'size',
         'stock',
         'weight',
@@ -32,6 +33,16 @@ class Variation extends Model
     public function color()
     {
         return $this->belongsTo(Color::class);
+    }
+
+    public function colors()
+    {
+        return $this->belongsToMany(Color::class, 'color_variation');
+    }
+
+    public function material()
+    {
+        return $this->belongsTo(Material::class);
     }
 
     // get oldPrice attribute

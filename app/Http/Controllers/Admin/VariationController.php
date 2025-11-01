@@ -23,9 +23,14 @@ class VariationController extends Controller
 
         // Validate each variation
         foreach ($variations as $index => $variation) {
-            if (empty($variation['color']) || empty($variation['price'])) {
+            if (empty($variation['colors']) || !is_array($variation['colors']) || count($variation['colors']) === 0) {
                 return response()->json([
-                    'message' => "Variation at index {$index} is missing required fields (color, price)"
+                    'message' => "Variation at index {$index} is missing required fields (colors array)"
+                ], 422);
+            }
+            if (empty($variation['price'])) {
+                return response()->json([
+                    'message' => "Variation at index {$index} is missing required fields (price)"
                 ], 422);
             }
         }
@@ -33,10 +38,29 @@ class VariationController extends Controller
         // Delete existing variations and create new ones
         $product->variations()->delete();
 
-        foreach ($variations as $variation) {
-            $color = Color::findOrCreate($variation['color']);
-            $variation['color_id'] = $color->id;
-            $product->variations()->create($variation);
+        foreach ($variations as $variationData) {
+            // Normalize material_id and size - convert empty strings to null
+            $materialId = !empty($variationData['material_id']) ? $variationData['material_id'] : null;
+            $size = !empty($variationData['size']) && trim($variationData['size']) !== '' ? trim($variationData['size']) : null;
+
+            $variation = $product->variations()->create([
+                'product_id' => $product->id,
+                'color_id' => null, // Keep for backward compatibility, but use colors relationship
+                'material_id' => $materialId,
+                'size' => $size,
+                'stock' => $variationData['stock'] ?? 0,
+                'weight' => $variationData['weight'] ?? null,
+                'price' => $variationData['price'],
+                'active' => $variationData['active'] ?? true,
+            ]);
+
+            // Handle multiple colors
+            $colorIds = [];
+            foreach ($variationData['colors'] as $colorName) {
+                $color = Color::findOrCreate($colorName);
+                $colorIds[] = $color->id;
+            }
+            $variation->colors()->sync($colorIds);
         }
 
         // Update product average price
@@ -47,18 +71,38 @@ class VariationController extends Controller
 
     public function store(Request $request)
     {
-        $color = Color::findOrCreate($request->color);
+        // Normalize material_id and size - convert empty strings to null
+        $materialId = !empty($request->material_id) ? $request->material_id : null;
+        $size = !empty($request->size) && trim($request->size) !== '' ? trim($request->size) : null;
 
         $variation = new Variation();
 
         $variation->product_id = $request->product_id;
-        $variation->color_id = $color->id;
+        $variation->material_id = $materialId;
+        $variation->size = $size;
         $variation->stock = $request->stock;
         $variation->weight = $request->weight;
         $variation->price = $request->price;
         $variation->active = $request->active;
-        $variation->size = $request->size;
         $variation->save();
+
+        // Handle multiple colors
+        $colorIds = [];
+        if ($request->has('colors') && is_array($request->colors) && count($request->colors) > 0) {
+            foreach ($request->colors as $colorName) {
+                $color = Color::findOrCreate($colorName);
+                $colorIds[] = $color->id;
+            }
+        } elseif ($request->has('color')) {
+            // Backward compatibility: single color as string
+            $color = Color::findOrCreate($request->color);
+            $variation->color_id = $color->id; // Keep for backward compatibility
+            $colorIds[] = $color->id;
+        }
+
+        if (!empty($colorIds)) {
+            $variation->colors()->sync($colorIds);
+        }
 
         // TODO: be more clever!
         // update product average price
@@ -70,10 +114,40 @@ class VariationController extends Controller
 
     public function update(Request $request, Variation $variation)
     {
-        $color = Color::findOrCreate($request->color);
-        $request->merge(['color_id' => $color->id]);
+        // Normalize material_id and size - convert empty strings to null
+        $updateData = $request->except(['colors', 'color']);
 
-        $variation->update($request->all());
+        if (isset($updateData['material_id']) && empty($updateData['material_id'])) {
+            $updateData['material_id'] = null;
+        }
+
+        if (isset($updateData['size']) && (!empty($updateData['size']) && trim($updateData['size']) !== '')) {
+            $updateData['size'] = trim($updateData['size']);
+        } elseif (isset($updateData['size'])) {
+            $updateData['size'] = null;
+        }
+
+        // Update variation fields
+        $variation->update($updateData);
+
+        // Handle multiple colors
+        $colorIds = [];
+        if ($request->has('colors') && is_array($request->colors) && count($request->colors) > 0) {
+            foreach ($request->colors as $colorName) {
+                $color = Color::findOrCreate($colorName);
+                $colorIds[] = $color->id;
+            }
+        } elseif ($request->has('color')) {
+            // Backward compatibility: single color as string
+            $color = Color::findOrCreate($request->color);
+            $variation->color_id = $color->id; // Keep for backward compatibility
+            $colorIds[] = $color->id;
+        }
+
+        if (!empty($colorIds)) {
+            $variation->colors()->sync($colorIds);
+        }
+
         return $variation;
     }
 
