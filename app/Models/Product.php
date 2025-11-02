@@ -121,11 +121,6 @@ class Product extends Model
         return $this->hasMany(Material::class);
     }
 
-    public function colors()
-    {
-        return $this->belongsToMany(Color::class);
-    }
-
     public function variations()
     {
         return $this->hasMany(Variation::class);

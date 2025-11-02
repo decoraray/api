@@ -43,11 +43,6 @@ class ProductController extends Controller
         // add the product to the request categories
         $product->categories()->attach($request->categories);
 
-        // add the product to the request colors if provided
-        if ($request->has('colors') && is_array($request->colors)) {
-            $product->colors()->attach($request->colors);
-        }
-
         return new ProductShowAdminResource($product);
     }
 
@@ -85,12 +80,6 @@ class ProductController extends Controller
             // if categoryes are array get all , else plunk ids and get them
             $categories = is_array($request->categories) ? $request->categories : $request->categories->pluck('id');
             $product->categories()->sync($categories);
-        }
-
-        if ($request->has('colors')) {
-            // if colors are array get all , else plunk ids and get them
-            $colors = is_array($request->colors) ? $request->colors : $request->colors->pluck('id');
-            $product->colors()->sync($colors);
         }
 
         return new ProductShowAdminResource($product);
