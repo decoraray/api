@@ -37,7 +37,9 @@ class ProductController extends Controller
      */
     public function store(CreateProductRequest $request)
     {
-        $product = new Product($request->all());
+        // Exclude colors from creation since colors are now handled through variations
+        $productData = $request->except(['colors']);
+        $product = new Product($productData);
         $product->save();
 
         // add the product to the request categories
@@ -74,7 +76,9 @@ class ProductController extends Controller
             }
         }
 
-        $product->update($request->all());
+        // Exclude colors from update since colors are now handled through variations
+        $updateData = $request->except(['colors']);
+        $product->update($updateData);
 
         if ($request->categories) {
             // if categoryes are array get all , else plunk ids and get them

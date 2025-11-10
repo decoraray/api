@@ -44,8 +44,7 @@ class CreateProductRequest extends FormRequest
             'description' => 'required',
             'categories' => ['required', 'array'],
             'categories.*' => ['required', 'integer', 'exists:categories,id'],
-            'colors' => ['array'],
-            'colors.*' => ['integer', 'exists:colors,id'],
+            // Colors are now handled through variations, not directly on products
         ];
     }
 }
