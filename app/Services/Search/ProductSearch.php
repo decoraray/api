@@ -44,7 +44,7 @@ class ProductSearch
             $query->hasActiveVariation();
         }
 
-        return $query->Sort()
+        return $query->Sort($request->sort ?? 'title')
             ->paginate($request->per_page ?? 20);
 
         // try {
