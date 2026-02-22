@@ -104,8 +104,8 @@ class PaypingDriver implements GatewayInterface
             } else {
                 $payment->update([
                     'status' => 'paid',
-                    'card_number' => $response['cardNumber'],
-                    'card_pan' => $response['cardHashPan'],
+                    'card_number' => $response['cardNumber'] ?? null,
+                    'card_pan' => $response['cardHashPan'] ?? null,
                 ]);
             }
         } else {

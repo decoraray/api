@@ -98,7 +98,14 @@ class PaymentController extends Controller
             }
         }
 
-        // Check if decoding worked
+        // Optional: try fixing known malformed JSON (e.g. ":_" instead of ":")
+        if (!is_array($data) && isset($raw) && is_string($raw)) {
+            $sanitized = str_replace(':_', ':', $raw);
+            if ($sanitized !== $raw) {
+                $data = json_decode($sanitized, true);
+            }
+        }
+
         if (!is_array($data)) {
             Log::error('Failed to decode payment data', ['raw_data' => $raw ?? null]);
             return response()->json(['message' => 'invalid payment data'], 400);
@@ -114,10 +121,10 @@ class PaymentController extends Controller
 
         try {
             $payment->update([
-                'card_number' => $data['cardNumber'],
-                'card_pan' => $data['cardHashPan'],
-                'payment_code' => $data['paymentCode'],
-                'ref_id' => $data['paymentRefId']
+                'card_number' => $data['cardNumber'] ?? null,
+                'card_pan' => $data['cardHashPan'] ?? null,
+                'payment_code' => $data['paymentCode'] ?? null,
+                'ref_id' => $data['paymentRefId'] ?? null,
             ]);
         } catch (\Exception $e) {
             Log::error('Failed to update payment', ['error' => $e->getMessage()]);

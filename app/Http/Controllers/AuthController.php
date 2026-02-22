@@ -11,6 +11,7 @@ use App\Services\Sms\Drivers\SmsIr;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Requests\RegisterRequest;
 use App\Http\Requests\SmsVerifyRequest;
+use App\Http\Requests\SmsLoginRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Http\Requests\SmsRegisterRequest;
 use App\Http\Resources\UserShowResource;
@@ -30,9 +31,10 @@ class AuthController extends Controller
         return $this->login($user, $request->getUuid());
     }
 
-    public function smsLogin(Request $request)
+    public function smsLogin(SmsLoginRequest $request)
     {
-        $user = User::where('phone', $request->phone)->first();
+        $phone = $request->getNormalizedPhone();
+        $user = User::where('phone', $phone)->first();
 
         if (!$user) {
             return response([
@@ -42,7 +44,7 @@ class AuthController extends Controller
 
         $user->generateOneTimePassword();
 
-        SmsIr::verify($user->phone, $user->one_time_password);
+        SmsIr::verify($phone, $user->one_time_password);
 
         $response = [
             'message' => 'Check your sms',

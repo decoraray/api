@@ -14,11 +14,20 @@ class SmsIr implements DriverInterface
 
     public static function verify(string $phone, string $code): bool
     {
+        $normalized = preg_replace('/\D/', '', $phone);
+        if (strlen($normalized) === 11 && $normalized[0] === '0') {
+            $normalized = substr($normalized, 1);
+        }
+        if (strlen($normalized) !== 10 || $normalized[0] !== '9') {
+            throw new \InvalidArgumentException('Invalid Iranian mobile number. Expected 9xxxxxxxxx or 09xxxxxxxxx.');
+        }
+        $mobile = '0' . $normalized;
+
         $response = Http::withHeaders([
             'accept' => 'application/json',
             'X-API-KEY' => config('services.sms_provider.app_key'),
         ])->post(config('services.sms_provider.url') . 'send/verify', [
-            'mobile' => $phone,
+            'mobile' => $mobile,
             'templateId' =>  269541,
             'parameters' => [
                 [
