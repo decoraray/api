@@ -1,9 +1,5 @@
 FROM php:8.1-fpm
 
-# Arguments defined in docker-compose.yml
-# ARG user
-# ARG uid
-
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
@@ -15,34 +11,32 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libmagickwand-dev \
     && pecl install imagick \
-    && docker-php-ext-enable imagick
-
-# Install wkhtmltopdf
-# RUN apt-get install -y xvfb libfontconfig wkhtmltopdf
-
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+    && docker-php-ext-enable imagick \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd 
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 
-# Get latest Composer
+# Get Composer
 COPY --from=composer:2.5.1 /usr/bin/composer /usr/bin/composer
 
-# Create system user to run Composer and Artisan Commands
-# RUN useradd -G www-data,root -u $uid -d /home/$user $user
-# RUN mkdir -p /home/$user/.composer && \
-# chown -R $user:$user /home/$user
-
-#upload
-RUN echo "file_uploads = On\n" \
-    "memory_limit = 500M\n" \
-    "upload_max_filesize = 500M\n" \
-    "post_max_size = 500M\n" \
-    "max_execution_time = 600\n" \
+# PHP upload/memory config
+RUN printf "file_uploads = On\nmemory_limit = 500M\nupload_max_filesize = 500M\npost_max_size = 500M\nmax_execution_time = 600\n" \
     > /usr/local/etc/php/conf.d/uploads.ini
 
-# Set working directory
 WORKDIR /app
 
-USER $user
+# Install PHP dependencies first (layer cache friendly)
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
+
+# Copy application source
+COPY . .
+
+# Set permissions for storage and cache
+RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache \
+    && chmod -R 775 /app/storage /app/bootstrap/cache
+
+EXPOSE 8000
+
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]

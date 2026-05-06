@@ -106,6 +106,7 @@ Route::prefix('v1')
             // Admin routs
             Route::prefix('admin')->middleware(['role:Admin'])->namespace('Admin')->group(function () {
 
+                Route::get('products/export', 'ProductExportController@export');
                 Route::resource('products', 'ProductController')->only(['index', 'show']);
                 Route::resource('variations', 'VariationController')->only(['index', 'show']);
                 Route::resource('categories', 'CategoryController')->only(['index', 'show']);
@@ -121,6 +122,7 @@ Route::prefix('v1')
 
                 Route::get('dashboard/statistics', 'DashboardController@statistics');
 
+                Route::get('products/export', 'ProductExportController@export');
                 Route::resource('products', 'ProductController');
                 Route::post('image', 'ImageController@imageStore'); // admin image upload
                 Route::delete('image', 'ImageController@imageDelete'); // admin image delete
