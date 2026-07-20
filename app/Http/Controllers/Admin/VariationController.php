@@ -8,10 +8,27 @@ use App\Models\Variation;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductShowResource;
+use App\Http\Resources\Admin\VariationShowAdminResource;
 
 class VariationController extends Controller
 {
-    //arrayStore 
+    public function index()
+    {
+        $variations = Variation::with(['colors', 'color', 'material', 'product'])
+            ->orderBy('id', 'desc')
+            ->paginate(20);
+
+        return VariationShowAdminResource::collection($variations);
+    }
+
+    public function show(Variation $variation)
+    {
+        $variation->load(['colors', 'color', 'material', 'product']);
+
+        return new VariationShowAdminResource($variation);
+    }
+
+    //arrayStore
     public function arrayStore(Request $request, Product $product)
     {
         $variations = $request->all();
@@ -43,9 +60,16 @@ class VariationController extends Controller
             $materialId = !empty($variationData['material_id']) ? $variationData['material_id'] : null;
             $size = !empty($variationData['size']) && trim($variationData['size']) !== '' ? trim($variationData['size']) : null;
 
+            // `variations.color_id` is NOT NULL, so colors must be resolved before create().
+            $colorIds = [];
+            foreach ($variationData['colors'] as $colorName) {
+                $color = Color::findOrCreate($colorName);
+                $colorIds[] = $color->id;
+            }
+
             $variation = $product->variations()->create([
                 'product_id' => $product->id,
-                'color_id' => null, // Keep for backward compatibility, but use colors relationship
+                'color_id' => $colorIds[0], // Keep for backward compatibility, but use colors relationship
                 'material_id' => $materialId,
                 'size' => $size,
                 'stock' => $variationData['stock'] ?? 0,
@@ -54,12 +78,6 @@ class VariationController extends Controller
                 'active' => $variationData['active'] ?? true,
             ]);
 
-            // Handle multiple colors
-            $colorIds = [];
-            foreach ($variationData['colors'] as $colorName) {
-                $color = Color::findOrCreate($colorName);
-                $colorIds[] = $color->id;
-            }
             $variation->colors()->sync($colorIds);
         }
 
@@ -75,9 +93,27 @@ class VariationController extends Controller
         $materialId = !empty($request->material_id) ? $request->material_id : null;
         $size = !empty($request->size) && trim($request->size) !== '' ? trim($request->size) : null;
 
+        // Resolve colors before the initial insert: `variations.color_id` is NOT NULL,
+        // so it must be set on the model before save(), not assigned afterward.
+        $colorIds = [];
+        $legacyColorId = null;
+        if ($request->has('colors') && is_array($request->colors) && count($request->colors) > 0) {
+            foreach ($request->colors as $colorName) {
+                $color = Color::findOrCreate($colorName);
+                $colorIds[] = $color->id;
+            }
+            $legacyColorId = $colorIds[0];
+        } elseif ($request->has('color')) {
+            // Backward compatibility: single color as string
+            $color = Color::findOrCreate($request->color);
+            $legacyColorId = $color->id;
+            $colorIds[] = $color->id;
+        }
+
         $variation = new Variation();
 
         $variation->product_id = $request->product_id;
+        $variation->color_id = $legacyColorId; // Keep for backward compatibility
         $variation->material_id = $materialId;
         $variation->size = $size;
         $variation->stock = $request->stock;
@@ -85,20 +121,6 @@ class VariationController extends Controller
         $variation->price = $request->price;
         $variation->active = $request->active;
         $variation->save();
-
-        // Handle multiple colors
-        $colorIds = [];
-        if ($request->has('colors') && is_array($request->colors) && count($request->colors) > 0) {
-            foreach ($request->colors as $colorName) {
-                $color = Color::findOrCreate($colorName);
-                $colorIds[] = $color->id;
-            }
-        } elseif ($request->has('color')) {
-            // Backward compatibility: single color as string
-            $color = Color::findOrCreate($request->color);
-            $variation->color_id = $color->id; // Keep for backward compatibility
-            $colorIds[] = $color->id;
-        }
 
         if (!empty($colorIds)) {
             $variation->colors()->sync($colorIds);

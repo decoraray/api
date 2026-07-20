@@ -45,16 +45,10 @@ Route::prefix('v1')
         Route::resource('blog', 'PostController')->only(['index']);
         Route::get('/blog/{slug}/{categorySlug?}', 'PostController@show');
 
-        // maintenance routs
-        // Route::get('/update-avg', 'App\Http\Controllers\Admin\ProductController@updateAveragePrice');
-        // Route::get('/port-products', 'App\Http\Controllers\Admin\ProductController@importProducts');
-        // Route::get('/update-categories', 'App\Http\Controllers\Admin\ProductController@updateCategories');
-        Route::get('/update-serch-title', 'Admin\ProductController@updateSearchTitle');
-
         // auth routs
         Route::post('admin/login', 'AuthController@emailLogin')->name('admin-login');
         Route::post('/email-login', 'AuthController@emailLogin')->name('email-login');
-        Route::post('/register', 'AuthController@register')->name('email-register');
+        Route::post('/email-register', 'AuthController@register')->name('email-register');
         Route::post('/forgot-password', 'AuthController@forgotPassword')->name('forgot-password'); // TODO
         Route::post('/login', 'AuthController@smsLogin')->name('sms-login');
         Route::post('/register', 'AuthController@smsRegister')->name('sms-register');
@@ -94,7 +88,7 @@ Route::prefix('v1')
             Route::post('/rate/{product}', 'CommentController@rating')->name('rate');
             Route::resource('comment', 'CommentController')->only(['store', 'destroy', 'index']);
 
-            // purchase 
+            // purchase
             Route::post('/checkout', 'PaymentController@checkout');
             Route::get('/orders', 'PaymentController@orders');
             Route::post('/pay', 'PaymentController@pay');
@@ -103,54 +97,57 @@ Route::prefix('v1')
             // address
             Route::resource('address', 'AddressController');
 
-            // Admin routs
-            Route::prefix('admin')->middleware(['role:Admin'])->namespace('Admin')->group(function () {
+            // Admin + SuperAdmin routs: read-only access shared by both roles.
+            // IMPORTANT: these routes must NOT be re-registered in the SuperAdmin-only
+            // group below — Laravel's route collection keys routes by method+URI, so a
+            // second registration of the same URI silently overwrites this one, locking
+            // plain `Admin`-role users out entirely (this happened before; see git history).
+            Route::prefix('admin')->middleware(['role:Admin|SuperAdmin'])->namespace('Admin')->group(function () {
 
                 Route::get('products/export', 'ProductExportController@export');
-                Route::resource('products', 'ProductController')->only(['index', 'show']);
-                Route::resource('variations', 'VariationController')->only(['index', 'show']);
-                Route::resource('categories', 'CategoryController')->only(['index', 'show']);
-                Route::resource('discount', 'DiscountController')->only(['index', 'show']);
-                Route::resource('deals', 'DealController')->only(['index', 'show']);
-                Route::resource('orders', 'OrderController')->only(['index', 'show']);
-                Route::resource('colors', 'ColorController')->only(['index', 'show']);
-                Route::resource('materials', 'MaterialController')->only(['index', 'show']);
+                Route::apiResource('products', 'ProductController')->only(['index', 'show']);
+                Route::apiResource('variations', 'VariationController')->only(['index', 'show']);
+                Route::apiResource('categories', 'CategoryController')->only(['index', 'show']);
+                Route::apiResource('discount', 'DiscountController')->only(['index', 'show']);
+                Route::apiResource('deals', 'DealController')->only(['index', 'show']);
+                Route::apiResource('orders', 'OrderController')->only(['index', 'show']);
+                Route::apiResource('colors', 'ColorController')->only(['index', 'show']);
+                Route::apiResource('materials', 'MaterialController')->only(['index', 'show']);
             });
 
-            // SuperAdmin routs
+            // SuperAdmin-only routs: write access plus everything else restricted to SuperAdmin.
             Route::prefix('admin')->middleware(['role:SuperAdmin'])->namespace('Admin')->group(function () {
 
                 Route::get('dashboard/statistics', 'DashboardController@statistics');
+                Route::get('/update-serch-title', 'ProductController@updateSearchTitle');
 
-                Route::get('products/export', 'ProductExportController@export');
-                Route::resource('products', 'ProductController');
+                Route::apiResource('products', 'ProductController')->except(['index', 'show']);
                 Route::post('image', 'ImageController@imageStore'); // admin image upload
                 Route::delete('image', 'ImageController@imageDelete'); // admin image delete
                 Route::post('images/reorder', 'ImageController@reorderImages'); // admin image reorder
 
-                Route::resource('variations', 'VariationController');
+                Route::apiResource('variations', 'VariationController')->except(['index', 'show']);
                 Route::post('products/{product}/variations', 'VariationController@arrayStore');
 
-                Route::resource('categories', 'CategoryController');
-                Route::resource('discount', 'DiscountController');
-                Route::resource('deals', 'DealController');
+                Route::apiResource('categories', 'CategoryController')->except(['index', 'show']);
+                Route::apiResource('discount', 'DiscountController')->except(['index', 'show']);
+                Route::apiResource('deals', 'DealController')->except(['index', 'show']);
                 Route::post('deals/{deal}/add', 'DealController@addDeal');
 
-                Route::resource('orders', 'OrderController')->only(['index', 'show']);
                 Route::patch('/orders/{order:uuid}', 'OrderController@update');
                 Route::get('/orders/uuid/{uuid}', 'OrderController@uuid');
                 Route::get('/orders/pdf/{uuid}', 'OrderController@downloadPdf');
                 Route::get('/orders/{uuid}/print', 'OrderController@print');
 
-                Route::resource('colors', 'ColorController');
+                Route::apiResource('colors', 'ColorController')->except(['index', 'show']);
                 Route::post('colors/sample/{color}', 'ColorController@addSample');
                 Route::get('colors/{color}/products', 'ColorController@productsWithVariations');
 
-                Route::resource('materials', 'MaterialController');
+                Route::apiResource('materials', 'MaterialController')->except(['index', 'show']);
 
-                Route::resource('users', 'UserController');
+                Route::apiResource('users', 'UserController');
 
-                Route::resource('posts', 'PostController');
+                Route::apiResource('posts', 'PostController');
 
                 Route::get('users/uuid/{uuid}', 'UserController@showByUuid');
             });

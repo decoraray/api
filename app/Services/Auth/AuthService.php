@@ -14,7 +14,7 @@ class AuthService
     public static function createToken($user)
     {
 
-        $key = config('app.key');
+        $key = config('app.jwt_secret');
 
         $payload = [
             'alg' => 'HS256',
@@ -33,7 +33,7 @@ class AuthService
 
     function decodeToken($token)
     {
-        $key = config('app.key');
+        $key = config('app.jwt_secret');
 
         /**
          * You can add a leeway to account for when there is a clock skew times between
@@ -50,7 +50,7 @@ class AuthService
     // verifyToken
     public static function verifyToken($token)
     {
-        $key = config('app.key');
+        $key = config('app.jwt_secret');
 
         $decoded = JWT::decode($token, new Key($key, 'HS256'));
 

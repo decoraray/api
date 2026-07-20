@@ -27,9 +27,6 @@ class SmsProviderClient implements SmsProviderClientInterface
             )]
         );
         if ($response->failed()) {
-            dd(
-                $response->json()
-            );
             Log::critical('Failed to send sms', [
                 'phone' => $phone,
                 'template' => $template,

@@ -127,6 +127,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | JWT Signing Secret
+    |--------------------------------------------------------------------------
+    |
+    | Used by App\Services\Auth\AuthService to sign/verify API JWTs. Falls back
+    | to APP_KEY when unset for backward compatibility, but a dedicated secret
+    | is strongly recommended: APP_KEY also backs Laravel's encrypter, so
+    | rotating it (e.g. after a leak) would otherwise invalidate every issued
+    | JWT and vice versa.
+    |
+    */
+
+    'jwt_secret' => env('JWT_SECRET', env('APP_KEY')),
+
+    /*
+    |--------------------------------------------------------------------------
     | Maintenance Mode Driver
     |--------------------------------------------------------------------------
     |

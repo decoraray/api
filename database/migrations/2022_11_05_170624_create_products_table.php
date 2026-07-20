@@ -16,7 +16,9 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->string('title');
-            $table->fullText('title');
+            if (Schema::getConnection()->getDriverName() !== 'sqlite') {
+                $table->fullText('title');
+            }
             $table->string('slug')->nullable();
             $table->unsignedBigInteger('thumbnail_id')->nullable();
             $table->integer('average_price')->nullable();
