@@ -1,37 +1,48 @@
+# Decoraray API
+
+Laravel 9 / PHP 8 API powering [Decoraray](https://decoraray.ir) (دکور آرای), a Persian-language e-commerce platform for wooden home/office decoration products. This repo is the backend API only — it serves a Nuxt 3 storefront and a Nuxt 3 admin dashboard, both separate projects.
+
+- Swagger UI: `/swagger` (served from `resources/documentation/api-docs.yaml` and `public/swagger/`)
+
+## Requirements
+
+- PHP 8.0+
+- Composer
+- MySQL 8
+- (optional) Typesense, for search — wired up but not enabled by default
+
+## Getting started
+
+```bash
 composer install
-
-php artisan migrate:fresh --seed
-
-###
-
-Docker
-
-```
-docker-compose up
+cp .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+php artisan serve   # http://localhost:8000
 ```
 
-###
+Or with Docker:
 
-Docker (without composer)
+```bash
+docker compose up --build
+```
 
-build image:
-docker build -t my_app .
+## Testing
 
-find <imageID>:
-docker image ls
+```bash
+php artisan test                        # full suite (Unit + Feature)
+./vendor/bin/phpunit --filter=TestName   # a single test
+```
 
-then:
-docker run -p 8000:8000 -d <imageID>
+Feature tests run against an in-memory sqlite database (configured in `phpunit.xml`), independent of whatever `DB_CONNECTION` is set in `.env`.
 
-to know what is the name (or container ID) of our app:
-docker ps
+## Architecture
 
-then:
-docker exec -it <container ID> sh
+- **Auth**: hand-rolled JWT (`firebase/php-jwt`), not Sanctum — see `App\Services\Auth\AuthService`. Roles (`SuperAdmin`, `Admin`, `User`) are managed separately via `spatie/laravel-permission`.
+- **Routing**: all routes live under the `v1` prefix in `routes/api.php`, layered with three middleware tiers — an outer tier that optionally decodes a JWT without rejecting the request, a `JwtVerify` tier that requires a valid token, and `role:` gates for the admin-only routes.
+- **Payments**: `App\Services\Payment\PaymentService` resolves a gateway driver by naming convention (`App\Services\Payment\Gateways\{Gateway}Driver`, implementing `pay()`/`verify()`). Payping is the primary gateway.
+- **Search**: Typesense/Scout integration exists in `App\Services\Search\ProductSearch` but is currently commented out in favor of a direct MySQL query path.
 
-Inside the container command line, we can start the server using the usual:
-php artisan serve
+## License
 
-# Documents 
-https://api.decoraray.ir/swagger/index.html
-https://api.decoraray.ir/api/v1/documentation
+MIT — see [LICENSE](LICENSE).
