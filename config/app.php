@@ -138,7 +138,9 @@ return [
     |
     */
 
-    'jwt_secret' => env('JWT_SECRET', env('APP_KEY')),
+    // env('JWT_SECRET') returns '' (not null) when the .env var is present but blank,
+    // so `?:` is needed here rather than env()'s built-in default to actually fall through.
+    'jwt_secret' => env('JWT_SECRET') ?: env('APP_KEY'),
 
     /*
     |--------------------------------------------------------------------------
