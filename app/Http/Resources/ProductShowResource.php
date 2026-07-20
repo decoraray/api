@@ -24,7 +24,7 @@ class ProductShowResource extends JsonResource
             'variations' => VariationShowResource::collection($this->variations->where('active', 1)),
             'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
-            'images' => $this->images ? ImageShowResource::collection($this->images) : null,
+            'images' => $this->images ? $this->images->pluck('imagePath') : null,
             'thumbnail' => $this->images->isNotEmpty() ? $this->thumbnail->imagePath  : null,
             'old_price' => $this->oldPrice,
             'discount' => $this->deal ? $this->deal->discount : 0,

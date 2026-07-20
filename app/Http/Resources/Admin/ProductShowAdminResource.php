@@ -2,7 +2,6 @@
 
 namespace App\Http\Resources\Admin;
 
-use App\Http\Resources\ImageShowResource;
 use App\Http\Resources\RatingShowResource;
 use App\Http\Resources\VariationShowResource;
 use App\Http\Resources\ColorShowResource;
@@ -33,7 +32,7 @@ class ProductShowAdminResource extends JsonResource
             'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,
             'colors' => $this->colors ? ColorShowResource::collection($this->colors) : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
-            'images' => $this->images ? ImageShowResource::collection($this->images) : null,
+            'images' => $this->images ? $this->images->pluck('imagePath') : null,
             'images_ids' => $this->images->pluck('id'),
             'thumbnail' => $this->images->isNotEmpty() ? $this->thumbnail->imagePath  : null,
         ];

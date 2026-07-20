@@ -25,7 +25,7 @@ class ProductListResource extends JsonResource
             'description' => Str::limit($this->description, 50),
             'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,
             'rating' => $this->rating ? new RatingShowResource($this->rating) : null,
-            'images' =>  $this->images->isNotEmpty() ? ImageShowResource::collection($this->images) : null,
+            'images' =>  $this->images->isNotEmpty() ? $this->images->pluck('imagePath') : null,
             'thumbnail' => $this->images->isNotEmpty() ? $this->thumbnail->imagePath  : null,
             'updated_at' => $this->updated_at,
         ];
