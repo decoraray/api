@@ -1,12 +1,12 @@
 # Decoraray API
 
-Laravel 9 / PHP 8 API powering [Decoraray](https://decoraray.ir) (دکور آرای), a Persian-language e-commerce platform for wooden home/office decoration products. This repo is the backend API only — it serves a Nuxt 3 storefront and a Nuxt 3 admin dashboard, both separate projects.
+Laravel 13 / PHP 8.3 API powering [Decoraray](https://decoraray.ir) (دکور آرای), a Persian-language e-commerce platform for wooden home/office decoration products. This repo is the backend API only — it serves a Nuxt 3 storefront and a Nuxt 3 admin dashboard, both separate projects.
 
 - Swagger UI: `/swagger` (served from `resources/documentation/api-docs.yaml` and `public/swagger/`)
 
 ## Requirements
 
-- PHP 8.0+
+- PHP 8.3+
 - Composer
 - MySQL 8
 - (optional) Typesense, for search — wired up but not enabled by default
