@@ -39,8 +39,16 @@ WORKDIR /app
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-scripts --no-interaction
 
-# Copy application source
+# Copy application source (vendor, .env and runtime data excluded via .dockerignore)
 COPY . .
+RUN composer dump-autoload --optimize --no-dev --no-scripts --no-interaction
+
+# Runtime dirs (contents are excluded from the build context)
+RUN mkdir -p storage/app/public storage/logs storage/framework/cache/data \
+    storage/framework/sessions storage/framework/views bootstrap/cache
+
+# Public storage symlink (php artisan storage:link), baked in so rebuilds don't lose it
+RUN ln -sfn /app/storage/app/public /app/public/storage
 
 # Set permissions for storage and cache
 RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache \
