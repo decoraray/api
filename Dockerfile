@@ -11,9 +11,16 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libmagickwand-dev \
-    && pecl install imagick \
-    && docker-php-ext-enable imagick \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Build imagick from GitHub source (PECL downloads are unreliable)
+ARG IMAGICK_VERSION=3.8.1
+RUN docker-php-source extract \
+    && mkdir -p /usr/src/php/ext/imagick \
+    && curl -fsSL https://github.com/Imagick/imagick/archive/refs/tags/${IMAGICK_VERSION}.tar.gz \
+       | tar xz -C /usr/src/php/ext/imagick --strip-components=1 \
+    && docker-php-ext-install imagick \
+    && docker-php-source delete
 
 # Install PHP extensions
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
