@@ -53,8 +53,13 @@ return [
     'channels' => [
         'stack' => [
             'driver' => 'stack',
-            'channels' => ['single'],
+            'channels' => explode(',', env('LOG_STACK', 'single')),
             'ignore_exceptions' => false,
+        ],
+
+        'sentry_logs' => [
+            'driver' => 'sentry_logs',
+            'level' => env('SENTRY_LOG_LEVEL', env('LOG_LEVEL', 'info')),
         ],
 
         'single' => [
