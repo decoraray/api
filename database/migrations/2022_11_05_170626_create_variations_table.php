@@ -17,7 +17,9 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
             $table->foreignId('color_id')->nullable()->constrained('colors');
-            $table->foreignId('material_id')->nullable()->constrained('materials');
+            // No FK: `materials` is created by a later migration (2023_01_15), so the
+            // constraint broke fresh installs on MySQL. Production never had it either.
+            $table->foreignId('material_id')->nullable();
             $table->string('size')->nullable();
             $table->integer('stock')->default(0);
             $table->integer('weight')->nullable();

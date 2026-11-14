@@ -13,15 +13,24 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('products', function (Blueprint $table) {
-            $table->index('title');
-            $table->index('category_id');
-            $table->index('tag_id');
-            $table->index('active');
+        // Idempotent: production had parts of this applied by hand, which made the
+        // original migration fail ("already exists") and blocked all later ones.
+        if (! Schema::hasColumn('products', 'search_title')) {
+            Schema::table('products', function (Blueprint $table) {
+                $table->string('search_title');
+            });
+        }
 
-            $table->string('search_title');
-            $table->index('search_title');
-        });
+        foreach (['title', 'category_id', 'tag_id', 'active', 'search_title'] as $column) {
+            // `category_id` only exists on databases where it was added by hand
+            // (fresh installs use the category_product pivot), so skip missing columns.
+            if (Schema::hasColumn('products', $column)
+                && ! Schema::hasIndex('products', "products_{$column}_index")) {
+                Schema::table('products', function (Blueprint $table) use ($column) {
+                    $table->index($column);
+                });
+            }
+        }
     }
 
     /**

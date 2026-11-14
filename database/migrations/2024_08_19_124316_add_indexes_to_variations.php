@@ -13,9 +13,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('variations', function (Blueprint $table) {
-            $table->index('product_id');
-        });
+        // Idempotent: production was stuck behind a failing earlier migration; guard
+        // it the same way so re-runs are safe.
+        if (! Schema::hasIndex('variations', 'variations_product_id_index')) {
+            Schema::table('variations', function (Blueprint $table) {
+                $table->index('product_id');
+            });
+        }
     }
 
     /**
