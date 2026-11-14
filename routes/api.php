@@ -67,7 +67,7 @@ Route::prefix('v1')
 
         // cart routs
         Route::get('/cart', 'CartController@index')->name('cart');
-        Route::get('/cart/{uuid}', 'CartController@index')->name('cart');
+        Route::get('/cart/{uuid}', 'CartController@index')->name('cart.show');
         Route::post('/add', 'CartController@add')->name('add');
         Route::post('/remove', 'CartController@remove')->name('remove');
         Route::post('/delete', 'CartController@delete');

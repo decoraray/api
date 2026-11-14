@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     libmagickwand-dev \
+    nginx \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Build imagick from GitHub source (PECL downloads are unreliable)
@@ -23,7 +24,7 @@ RUN docker-php-source extract \
     && docker-php-source delete
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd opcache
 
 # Get Composer
 COPY --from=composer:2.5.1 /usr/bin/composer /usr/bin/composer
@@ -54,9 +55,23 @@ RUN ln -sfn /app/storage/app/public /app/public/storage
 RUN chown -R www-data:www-data /app/storage /app/bootstrap/cache \
     && chmod -R 775 /app/storage /app/bootstrap/cache
 
+# Runtime: php-fpm (with OPcache) behind nginx, both on :8000 as before.
+# Was `php artisan serve`, PHP's single-threaded dev server: one slow request
+# (upload, export, payment callback) blocked every other visitor.
+COPY docker/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+COPY docker/php-fpm-pool.conf /usr/local/etc/php-fpm.d/zz-pool.conf
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/entrypoint.sh /usr/local/bin/api-entrypoint
+RUN chmod 755 /usr/local/bin/api-entrypoint \
+    # Fail the build on a broken nginx/fpm config instead of a broken deploy.
+    && nginx -t -c /etc/nginx/nginx.conf && php-fpm -t \
+    # The check runs as root and leaves a root-owned pid/temp dirs in /tmp,
+    # which the www-data nginx could then not open at runtime.
+    && rm -rf /tmp/nginx*
+
 EXPOSE 8000
 
 # Run as unprivileged user
 USER www-data
 
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+CMD ["api-entrypoint"]
