@@ -1,0 +1,69 @@
+# Build the api image on GitHub (x86, full internet) and deploy it to the Arvan server.
+# The server side is /usr/local/bin/decoraray-deploy (shop-docker repo: scripts/server/deploy.sh):
+# it loads the image, restarts the service, health-checks it and rolls back on failure.
+# Manual redeploy: Actions -> Deploy -> Run workflow (deploys the branch you pick; normally main).
+name: Deploy
+
+on:
+  # Only after the Tests workflow passed for a push to main.
+  workflow_run:
+    workflows: [Tests]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (linux/amd64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          tags: |
+            decoraray-api:latest
+            decoraray-api:${{ env.SHA }}
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,mode=max,scope=api
+
+      - name: Deploy to Arvan
+        env:
+          SSH_KEY: ${{ secrets.ARVAN_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.ARVAN_KNOWN_HOSTS }}
+          HOST: ${{ secrets.ARVAN_HOST }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          echo "Image size: $(docker image inspect -f '{{.Size}}' decoraray-api:latest | numfmt --to=iec)"
+          # The key is restricted server-side to decoraray-deploy; "api <sha>" are its arguments.
+          docker save decoraray-api:latest "decoraray-api:$SHA" | gzip -1 \
+            | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+                  -o ConnectTimeout=30 -o ServerAliveInterval=30 \
+                  "root@$HOST" api "$SHA"
+
+      - name: Clean up key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
