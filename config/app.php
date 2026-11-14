@@ -73,6 +73,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Rate limit exemptions
+    |--------------------------------------------------------------------------
+    |
+    | Comma-separated client IPs that bypass the "api" rate limiter, e.g. the
+    | production server's own public IP (the storefront SSR calls the API through
+    | the CDN and arrives from there).
+    |
+    */
+
+    'rate_limit_exempt_ips' => array_values(array_filter(array_map('trim',
+        explode(',', (string) env('RATE_LIMIT_EXEMPT_IPS', ''))))),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------
     |

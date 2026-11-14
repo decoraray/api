@@ -53,6 +53,12 @@ class RouteServiceProvider extends ServiceProvider
                 return Limit::none();
             }
 
+            // Our own servers (the Nuxt SSR calling the API) render pages for every
+            // visitor from one IP; limiting them would throttle the whole site.
+            if (in_array($request->ip(), config('app.rate_limit_exempt_ips'), true)) {
+                return Limit::none();
+            }
+
             return Limit::perMinute(120)->by($user?->id ?: $request->ip());
         });
     }
