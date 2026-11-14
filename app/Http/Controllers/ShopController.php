@@ -19,7 +19,7 @@ class ShopController extends Controller
     public function initial()
     {
         return response()->json([
-            'products' => ProductListResource::collection(Product::active()->hasActiveVariation()->get()),
+            'products' => ProductListResource::collection(Product::active()->hasActiveVariation()->withListRelations()->get()),
             'cart' => new CartShowResource(Cart::getOrCreate()),
         ]);
     }
@@ -38,13 +38,14 @@ class ShopController extends Controller
 
         if ($product) {
             $product = Product::where('id', $product)->orWhere('slug', $product)->firstOrFail();
-            $product->load(['variations.colors', 'variations.color', 'variations.material']);
+            $product->load(['variations.colors', 'variations.color', 'variations.material', 'deal', 'categories', 'rating', 'images', 'comments']);
             return response()->json(new ProductShowResource($product));
         }
         return response()->json(
             ProductListResource::collection(
                 Product::active()
                     ->hasActiveVariation()
+                    ->withListRelations()
                     ->byCategory($category)
                     ->paginate($request->per_page ?? 20)
             )
@@ -55,7 +56,7 @@ class ShopController extends Controller
     public function show($slugOrId)
     {
         $product = Product::where('id', $slugOrId)->orWhere('slug', $slugOrId)->firstOrFail();
-        $product->load(['variations.colors', 'variations.color', 'variations.material']);
+        $product->load(['variations.colors', 'variations.color', 'variations.material', 'deal', 'categories', 'rating', 'images', 'comments']);
 
         return response()->json(new ProductShowResource($product));
     }

@@ -101,14 +101,20 @@ class Product extends Model
         return $this->hasMany(Image::class)->orderBy('sort', 'asc');
     }
 
+    /**
+     * Picked from the `images` relation so that a list of products costs no
+     * extra query per product once `images` is eager-loaded (every caller reads
+     * `images` first anyway). Falls back to a lookup only if the chosen
+     * thumbnail is not one of this product's images.
+     */
     public function getThumbnailAttribute()
     {
-
         if ($this->thumbnail_id) {
-            return Image::find($this->thumbnail_id);
+            return $this->images->firstWhere('id', $this->thumbnail_id)
+                ?? Image::find($this->thumbnail_id);
         }
 
-        return $this->hasMany(Image::class)->orderBy('id', 'desc')->first();
+        return $this->images->sortByDesc('id')->first();
     }
 
     public function metas()
@@ -189,6 +195,17 @@ class Product extends Model
     }
 
     // scopes
+
+    /**
+     * Relations the product list/card resources read. Eager-load these on any
+     * query that feeds ProductListResource / ProductLightShowResource, or each
+     * product in the list fires ~6 lazy queries of its own.
+     */
+    public function scopeWithListRelations($query)
+    {
+        $query->with(['variations', 'deal', 'categories', 'rating', 'images']);
+    }
+
     public function scopePopular($query)
     {
         $query->where('active', 1)->orderBy('id', 'desc');
@@ -267,14 +284,24 @@ class Product extends Model
     // relatedProducts
     public function getRelatedProductsAttribute()
     {
-        // get 10 randome from same category and tag and not the same product
+        // get 10 random from same category and tag and not the same product.
+        // Memoised: the resource reads this twice, which used to run the random
+        // query twice and could return two different sets.
+        if ($this->relationLoaded('relatedProducts')) {
+            return $this->getRelation('relatedProducts');
+        }
 
-        return Product::active()
+        $related = Product::active()
+            ->withListRelations()
             ->byCategory($this->categories->first()->id)
             ->byTag($this->tag_id)
             ->where('id', '<>', $this->id)
             ->inRandomOrder()
             ->limit(10)
             ->get();
+
+        $this->setRelation('relatedProducts', $related);
+
+        return $related;
     }
 }
