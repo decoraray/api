@@ -2,8 +2,6 @@
 
 namespace App\Providers;
 
-use App\Events\OneTimePassGenerated;
-use App\Listeners\SendOneTimePassSms;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -18,9 +16,9 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             // SendEmailVerificationNotification::class,
         ],
-        OneTimePassGenerated::class => [
-            SendOneTimePassSms::class,
-        ],
+        // OTP SMS is sent directly via App\Services\Sms\Drivers\SmsIr::verify()
+        // in AuthController. The old SendOneTimePassSms listener posted to the
+        // sms.ir base URL (404) and threw before that call could run.
     ];
 
     /**
