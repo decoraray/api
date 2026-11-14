@@ -29,6 +29,7 @@ class ProductSearch
         $cleanedKeyword = self::cleanKeyword($request->keyword);
 
         $query = Product::active()
+            ->withListRelations()
             ->byCategory($request->category)
             ->byTag($request->tag)
             ->when($request->product, function ($query) use ($request) {
