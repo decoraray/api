@@ -35,6 +35,8 @@ class Order extends Model
         'address_id',
         'shipping_id',
         'description',
+        'source',
+        'quote_id',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -43,6 +45,16 @@ class Order extends Model
             ->logOnly(['status'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
+    }
+
+    public function quote()
+    {
+        return $this->belongsTo(Quote::class);
+    }
+
+    public function getQuoteNumberAttribute()
+    {
+        return $this->quote_id ? $this->quote?->number : null;
     }
 
     public function user()
