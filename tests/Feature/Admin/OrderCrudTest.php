@@ -15,7 +15,7 @@ class OrderCrudTest extends TestCase
 
     private function superAdminHeader(): array
     {
-        Role::create(['name' => 'SuperAdmin']);
+        Role::firstOrCreate(['name' => 'SuperAdmin']);
         $user = User::factory()->create();
         $user->assignRole('SuperAdmin');
 

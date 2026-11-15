@@ -68,6 +68,12 @@ class AuthTest extends TestCase
         $this->assertDatabaseHas('users', ['phone' => '9123456789']);
     }
 
+    public function test_email_register_route_does_not_500_on_empty_body()
+    {
+        $response = $this->postJson('/api/v1/email-register', []);
+        $response->assertStatus(422);
+    }
+
     public function test_sms_login_sends_otp_via_sms_provider()
     {
         Http::fake(['*' => Http::response(['status' => 1], 200)]);

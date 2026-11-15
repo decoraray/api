@@ -15,6 +15,7 @@
         "laravel/tinker": "^2.7|^3.0",
         "paragonie/sodium_compat": "^1.19",
         "sentry/sentry-laravel": "^4.30",
+        "spatie/laravel-activitylog": "^4.12",
         "spatie/laravel-permission": "^8.0",
         "typesense/typesense-php": "^4.9"
     },
