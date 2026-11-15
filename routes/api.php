@@ -106,6 +106,10 @@ Route::prefix('v1')
                 ->namespace('Admin')
                 ->group(function () {
 
+                    // quotes.manage or settings.manage (read), settings.manage (write)
+                    Route::get('settings', 'SettingsController@show')->middleware('permission:quotes.manage|settings.manage');
+                    Route::put('settings', 'SettingsController@update')->middleware('permission:settings.manage');
+
                     // dashboard.view
                     Route::middleware('permission:dashboard.view')->group(function () {
                         Route::get('dashboard/statistics', 'DashboardController@statistics');

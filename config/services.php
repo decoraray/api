@@ -39,6 +39,9 @@ return [
     'sms_provider' => [
         'url' => env('SMS_PROVIDER_URL'),
         'app_key' => env('SMS_PROVIDER_APP_KEY'),
+        'templates' => [
+            'quote' => env('SMS_QUOTE_TEMPLATE_ID'),
+        ],
     ],
 
     'payping' => [

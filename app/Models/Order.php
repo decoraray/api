@@ -35,6 +35,8 @@ class Order extends Model
         'address_id',
         'shipping_id',
         'description',
+        'source',
+        'quote_id',
     ];
 
     public function getActivitylogOptions(): LogOptions
