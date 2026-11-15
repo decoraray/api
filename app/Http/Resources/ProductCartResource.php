@@ -25,6 +25,12 @@ class ProductCartResource extends JsonResource
             'color' => $this->color ? $this->color->name : null,
             'thumbnail' => $this->product->images->isNotEmpty() ? $this->product->thumbnail->imagePath  : null,
             'quantity' => $this->pivot->quantity,
+            // The customer's note for this line; the storefront stores the
+            // chosen colour here ("رنگ: …"), since a variation's palette has
+            // several colours but the variation itself only one.
+            'description' => $this->pivot->description,
+            'size' => $this->size,
+            'material' => $this->material?->name,
         ];
     }
 }

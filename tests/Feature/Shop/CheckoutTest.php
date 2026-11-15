@@ -51,6 +51,30 @@ class CheckoutTest extends TestCase
         $this->assertTrue($user->cart->isEmpty());
     }
 
+    public function test_checkout_copies_the_line_description_to_the_order_item()
+    {
+        Shipping::factory()->create(['id' => 1]);
+
+        $user = User::factory()->create();
+        $address = Address::factory()->create(['user_id' => $user->id]);
+        $variation = Variation::factory()->create(['price' => 100000]);
+
+        $this->postJson('/api/v1/add', [
+            'variation' => $variation->id,
+            'description' => 'رنگ: ونگه',
+        ], $this->authHeader($user))->assertStatus(200);
+
+        $this->postJson('/api/v1/checkout', [
+            'address_id' => $address->uuid,
+            'payment_method' => 'cash',
+        ], $this->authHeader($user))->assertStatus(201);
+
+        $this->assertDatabaseHas('items', [
+            'variation_id' => $variation->id,
+            'description' => 'رنگ: ونگه',
+        ]);
+    }
+
     public function test_checkout_rejects_empty_cart()
     {
         Shipping::factory()->create(['id' => 1]);

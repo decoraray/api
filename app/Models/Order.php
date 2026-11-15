@@ -135,7 +135,13 @@ class Order extends Model
                 'quantity' => $cart->variations[$i]->pivot->quantity,
                 'price' => $cart->variations[$i]->calculatedPrice,
                 'discount' => $cart->variations[$i]->product->deal ? $cart->variations[$i]->product->deal->discount : 0,
-                'description' => $cart->variations[$i]->product->deal ? $cart->variations[$i]->product->deal->description : '',
+                // The customer's line note (the chosen colour) first, then any
+                // deal text. Previously only the deal text was kept, so the
+                // colour picked on the storefront never reached the order.
+                'description' => implode(' | ', array_filter([
+                    $cart->variations[$i]->pivot->description,
+                    $cart->variations[$i]->product->deal?->description,
+                ])),
             ]);
         }
 

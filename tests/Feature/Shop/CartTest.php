@@ -24,6 +24,22 @@ class CartTest extends TestCase
             ->assertJsonPath('cart.isEmpty', false);
     }
 
+    public function test_add_stores_line_description_and_returns_it_with_size_and_material()
+    {
+        // The storefront sends the chosen colour as the line description.
+        $variation = Variation::factory()->create();
+
+        $response = $this->postJson('/api/v1/add', [
+            'variation' => $variation->id,
+            'description' => 'رنگ: طوسی تیره',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('cart.items.0.description', 'رنگ: طوسی تیره')
+            ->assertJsonPath('cart.items.0.size', $variation->size)
+            ->assertJsonPath('cart.items.0.material', $variation->material->name);
+    }
+
     public function test_add_twice_increments_quantity()
     {
         // A guest cart is identified by `uuid`; each request must carry the uuid returned
