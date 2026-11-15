@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Cart;
+use App\Services\Orders\OrderNotifier;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Enums\OrderStatus;
@@ -142,7 +143,8 @@ class PaymentController extends Controller
             $payment->order->update([
                 'status' => OrderStatus::PAID,
             ]);
-            $payment->user->cart->clear();
+            $payment->user->cart?->clear();
+            app(OrderNotifier::class)->notify($payment->order, 'paid');
         } else {
             return Redirect::to(config('app.front_url') . '/payments/error/');
         }

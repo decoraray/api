@@ -20,7 +20,9 @@ class QuoteService
      */
     public function recordPayment(Quote $quote, int $amount, string $method, string $paidAt, ?string $reference, ?User $staff): Quote
     {
-        return DB::transaction(function () use ($quote, $amount, $method, $paidAt, $reference, $staff) {
+        $createdOrder = null;
+
+        $result = DB::transaction(function () use ($quote, $amount, $method, $paidAt, $reference, $staff, &$createdOrder) {
             $quote = Quote::whereKey($quote->getKey())->lockForUpdate()->firstOrFail();
             $quote->load('lines');
 
@@ -40,6 +42,7 @@ class QuoteService
             if (!$order) {
                 $order = $this->createOrder($quote, $totals, $methodEnum);
                 $quote->order_id = $order->id;
+                $createdOrder = $order;
             }
 
             $payment = new Payment([
@@ -62,6 +65,12 @@ class QuoteService
 
             return $quote->fresh(['lines', 'order', 'createdBy']);
         });
+
+        if ($createdOrder) {
+            app(\App\Services\Orders\OrderNotifier::class)->notify($createdOrder, 'confirmed');
+        }
+
+        return $result;
     }
 
     private function createOrder(Quote $quote, array $totals, PaymentMethods $method): Order

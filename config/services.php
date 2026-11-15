@@ -41,6 +41,10 @@ return [
         'app_key' => env('SMS_PROVIDER_APP_KEY'),
         'templates' => [
             'quote' => env('SMS_QUOTE_TEMPLATE_ID'),
+            'order_paid' => env('SMS_ORDER_PAID_TEMPLATE_ID'),
+            'order_confirmed' => env('SMS_ORDER_CONFIRMED_TEMPLATE_ID'),
+            'order_shipped' => env('SMS_ORDER_SHIPPED_TEMPLATE_ID'),
+            'order_canceled' => env('SMS_ORDER_CANCELED_TEMPLATE_ID'),
         ],
     ],
 
