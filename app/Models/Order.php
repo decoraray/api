@@ -47,6 +47,11 @@ class Order extends Model
             ->dontSubmitEmptyLogs();
     }
 
+    public function notifications()
+    {
+        return $this->hasMany(OrderNotification::class);
+    }
+
     public function quote()
     {
         return $this->belongsTo(Quote::class);

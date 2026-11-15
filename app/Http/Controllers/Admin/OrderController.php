@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Services\Orders\OrderNotifier;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use App\Models\Order;
 use App\Models\Shipping;
@@ -44,9 +45,15 @@ class OrderController extends Controller
         // takes "CONFIRMED" from request and returns the enum instance
         $status = OrderStatus::fromName($request->status);
 
+        $oldStatus = $order->status instanceof OrderStatus ? $order->status->value : $order->status;
+
         $order->update([
             'status' => $status->value
         ]);
+
+        if ($oldStatus !== $status->value && $event = OrderNotifier::eventForStatus($status)) {
+            app(OrderNotifier::class)->notify($order, $event);
+        }
 
         return new OrderShowAdminResource($order);
     }

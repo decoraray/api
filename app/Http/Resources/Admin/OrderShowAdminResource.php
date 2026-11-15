@@ -44,6 +44,14 @@ class OrderShowAdminResource extends JsonResource
             'source' => $this->source,
             'quote_id' => $this->quote_id,
             'quote_number' => $this->quote_number,
+            'notifications' => $this->notifications()->latest('id')->get()
+                ->map(fn ($n) => [
+                    'event' => $n->event,
+                    'phone' => $n->phone,
+                    'status' => $n->status,
+                    'error' => $n->error,
+                    'created_at' => $n->created_at,
+                ])->values(),
         ];
     }
 }
