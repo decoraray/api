@@ -14,6 +14,7 @@
         "laravel/scout": "^10.11",
         "laravel/tinker": "^2.7|^3.0",
         "paragonie/sodium_compat": "^1.19",
+        "sentry/sentry-laravel": "^4.30",
         "spatie/laravel-permission": "^8.0",
         "typesense/typesense-php": "^4.9"
     },
@@ -65,6 +66,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "php": "8.3.36"
         }
     },
     "minimum-stability": "dev",
