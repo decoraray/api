@@ -52,7 +52,6 @@ class MiddlewareTiersTest extends TestCase
 
     public function test_admin_role_route_rejects_plain_user()
     {
-        Role::create(['name' => 'Admin']);
         $user = User::factory()->create();
 
         $response = $this->getJson('/api/v1/admin/products', [
@@ -64,7 +63,6 @@ class MiddlewareTiersTest extends TestCase
 
     public function test_admin_role_route_allows_admin_user()
     {
-        Role::create(['name' => 'Admin']);
         $user = User::factory()->create();
         $user->assignRole('Admin');
 
@@ -77,8 +75,6 @@ class MiddlewareTiersTest extends TestCase
 
     public function test_superadmin_only_route_rejects_plain_admin()
     {
-        Role::create(['name' => 'Admin']);
-        Role::create(['name' => 'SuperAdmin']);
         $user = User::factory()->create();
         $user->assignRole('Admin');
 
@@ -91,7 +87,6 @@ class MiddlewareTiersTest extends TestCase
 
     public function test_superadmin_only_route_allows_superadmin()
     {
-        Role::create(['name' => 'SuperAdmin']);
         $user = User::factory()->create();
         $user->assignRole('SuperAdmin');
 

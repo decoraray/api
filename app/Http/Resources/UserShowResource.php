@@ -14,7 +14,7 @@ class UserShowResource extends JsonResource
      */
     public function toArray($request)
     {
-        return [
+        $data = [
             'name' => $this->name . ' ' . $this->surname,
             'email' => $this->email,
             'phone' => (string)$this->national_code . (string)$this->phone,
@@ -22,5 +22,13 @@ class UserShowResource extends JsonResource
             'address' => $this->addresses ? AddressShowResource::collection($this->addresses) : null,
             'cart' => $this->cart ? new CartShowResource($this->cart) : null,
         ];
+
+        if ($this->isStaff()) {
+            $data['permissions'] = $this->hasRole('SuperAdmin')
+                ? ['*']
+                : $this->getAllPermissions()->pluck('name')->values();
+        }
+
+        return $data;
     }
 }

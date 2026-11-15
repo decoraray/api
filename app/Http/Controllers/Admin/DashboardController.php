@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function statistics()
+    public function statistics(Request $request)
     {
         // Get counts
         $totalProducts = Product::count();
@@ -44,15 +44,20 @@ class DashboardController extends Controller
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get()
-            ->map(function ($order) {
-                return [
+            ->map(function ($order) use ($request) {
+                $data = [
                     'id' => $order->id,
                     'uuid' => $order->uuid,
                     'user_name' => $order->user ? $order->user->name : 'مهمان',
-                    'total_price' => $order->total,
                     'status' => $order->status,
                     'created_at' => $order->created_at->format('Y-m-d H:i'),
                 ];
+
+                if ($request->user()?->can('prices.view')) {
+                    $data['total_price'] = $order->total;
+                }
+
+                return $data;
             });
 
         // Get low stock products (stock < 5)
@@ -95,26 +100,33 @@ class DashboardController extends Controller
             ];
         }
 
-        return response()->json([
-            'statistics' => [
-                'products' => $totalProducts,
-                'categories' => $totalCategories,
-                'orders' => $totalOrders,
-                'users' => $totalUsers,
-                'pending_orders' => $pendingOrders,
-                'processing_orders' => $processingOrders,
-                'completed_orders' => $completedOrders,
-                'out_of_stock' => $outOfStockCount,
-            ],
-            'revenue' => [
+        $statistics = [
+            'products' => $totalProducts,
+            'categories' => $totalCategories,
+            'orders' => $totalOrders,
+            'users' => $totalUsers,
+            'pending_orders' => $pendingOrders,
+            'processing_orders' => $processingOrders,
+            'completed_orders' => $completedOrders,
+            'out_of_stock' => $outOfStockCount,
+        ];
+
+        $response = [
+            'statistics' => $statistics,
+            'recent_orders' => $recentOrders,
+            'low_stock_products' => $lowStockProducts,
+            'orders_by_status' => $ordersByStatus,
+        ];
+
+        if ($request->user()?->can('finance.view')) {
+            $response['revenue'] = [
                 'total' => $totalRevenue,
                 'today' => $todayRevenue,
                 'this_month' => $thisMonthRevenue,
                 'monthly' => $monthlyRevenue,
-            ],
-            'recent_orders' => $recentOrders,
-            'low_stock_products' => $lowStockProducts,
-            'orders_by_status' => $ordersByStatus,
-        ]);
+            ];
+        }
+
+        return response()->json($response);
     }
 }

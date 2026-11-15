@@ -4,7 +4,7 @@ namespace App\Http\Resources\Admin;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentMethods;
-use App\Http\Resources\OrderItemResource;
+use App\Http\Resources\Admin\AdminOrderItemResource;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class OrderShowAdminResource extends JsonResource
@@ -30,16 +30,16 @@ class OrderShowAdminResource extends JsonResource
             'status' => $status,
             'status_color' => OrderStatus::tryFrom($status)->color(),
             'shipping' => $this->shipping->name,
-            'shipping_price' => $this->shipping->price,
-            'items_total' => $this->items->sum('price'),
-            'total' => $this->total,
+            'shipping_price' => $this->when($request->user()?->can('prices.view'), $this->shipping->price),
+            'items_total' => $this->when($request->user()?->can('prices.view'), $this->items->sum('price')),
+            'total' => $this->when($request->user()?->can('prices.view'), $this->total),
             'payment_method' => PaymentMethods::fromName($this->payment_method)->value, // its "cash , partial , online " in the db 
-            'payableAmount' => $this->payableAmount,
-            'discount_amount' => $this->discount_amount,
-            'items' => $this->items ? OrderItemResource::collection($this->items) : null,
+            'payableAmount' => $this->when($request->user()?->can('prices.view'), $this->payableAmount),
+            'discount_amount' => $this->when($request->user()?->can('prices.view'), $this->discount_amount),
+            'items' => $this->items ? AdminOrderItemResource::collection($this->items) : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'payments' => $this->payments ? PaymentShowAdminResource::collection($this->payments) : null,
+            'payments' => $this->when($request->user()?->can('prices.view'), $this->payments ? PaymentShowAdminResource::collection($this->payments) : null),
             'description' => $this->description,
         ];
     }

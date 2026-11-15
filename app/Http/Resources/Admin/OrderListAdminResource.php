@@ -24,7 +24,7 @@ class OrderListAdminResource extends JsonResource
             'city' => $this->city,
             'phone' => $this->phone,
             'status' => $status,
-            'total' => $this->total,
+            'total' => $this->when($request->user()?->can('prices.view'), $this->total),
             'shipping' => $this->shipping->name,
             'items_count' => $this->items->count(),
             'payment_method' => PaymentMethods::fromName($this->payment_method)->value, // its "cash , partial , online " in the db 

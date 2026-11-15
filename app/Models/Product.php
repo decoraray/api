@@ -5,11 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Searchable;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Spatie\Activitylog\LogOptions;
 
 
 class Product extends Model
 {
     use HasFactory;
+    use LogsActivity;
     use Searchable;
 
     /**
@@ -36,6 +39,14 @@ class Product extends Model
      *
      * @return array<string, mixed>
      */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logFillable()
+            ->logOnlyDirty()
+            ->dontSubmitEmptyLogs();
+    }
+
     public function toSearchableArray()
     {
         return array_merge($this->toArray(), [

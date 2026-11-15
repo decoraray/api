@@ -55,6 +55,15 @@ class AuthController extends Controller
 
     private function login($user, $uuid = null)
     {
+        if ($user->isStaff()) {
+            activity('auth')
+                ->enableLogging()
+                ->event('login')
+                ->causedBy($user)
+                ->withProperties(['ip' => request()->ip()])
+                ->log('Staff sign-in');
+        }
+
         $token = AuthService::createToken($user);
 
         $cart = Cart::firstOrCreate(['user_id' => $user->id]);

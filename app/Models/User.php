@@ -35,6 +35,9 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+        'one_time_password',
+        'one_time_password_created_at',
+        'security',
     ];
 
     /**
@@ -54,6 +57,11 @@ class User extends Authenticatable
     public function isUser()
     {
         return $this->role == 'user';
+    }
+
+    public function isStaff(): bool
+    {
+        return $this->hasAnyRole(['SuperAdmin', 'Sales', 'Technic', 'Admin']);
     }
 
     public function createToken($name)

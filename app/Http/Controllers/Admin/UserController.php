@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Hash;
 use App\Http\Resources\UserShowResource;
+use App\Http\Resources\Admin\AdminUserResource;
 
 
 class UserController extends Controller
@@ -17,7 +18,7 @@ class UserController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(15);
 
-        return response()->json($users);
+        return AdminUserResource::collection($users);
     }
 
     public function showByUuid(Request $request)
@@ -40,14 +41,18 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        // Only update fields that are present in the request
-        $user->update([
+        $data = [
             'name' => $request->input('name', $user->name),
             'surname' => $request->input('surname', $user->surname),
             'email' => $request->input('email', $user->email),
             'phone' => $request->input('phone', $user->phone),
-            'password' => Hash::make($request->input('password', $user->password)),
-        ]);
+        ];
+
+        if ($request->filled('password')) {
+            $data['password'] = Hash::make($request->input('password'));
+        }
+
+        $user->update($data);
 
         return response()->json($user, 200);
     }

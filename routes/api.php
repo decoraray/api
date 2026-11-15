@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\EnableAuditLogging;
 
 /*
 |--------------------------------------------------------------------------
@@ -97,59 +98,137 @@ Route::prefix('v1')
             // address
             Route::resource('address', 'AddressController');
 
-            // Admin + SuperAdmin routs: read-only access shared by both roles.
-            // IMPORTANT: these routes must NOT be re-registered in the SuperAdmin-only
-            // group below — Laravel's route collection keys routes by method+URI, so a
-            // second registration of the same URI silently overwrites this one, locking
-            // plain `Admin`-role users out entirely (this happened before; see git history).
-            Route::prefix('admin')->middleware(['role:Admin|SuperAdmin'])->namespace('Admin')->group(function () {
+            // Admin routes: each method + URI is registered exactly once behind the
+            // permission that protects it. The audit middleware enables activity logging
+            // only inside this prefix.
+            Route::prefix('admin')
+                ->middleware([EnableAuditLogging::class])
+                ->namespace('Admin')
+                ->group(function () {
 
-                Route::get('products/export', 'ProductExportController@export');
-                Route::apiResource('products', 'ProductController')->only(['index', 'show']);
-                Route::apiResource('variations', 'VariationController')->only(['index', 'show']);
-                Route::apiResource('categories', 'CategoryController')->only(['index', 'show']);
-                Route::apiResource('discount', 'DiscountController')->only(['index', 'show']);
-                Route::apiResource('deals', 'DealController')->only(['index', 'show']);
-                Route::apiResource('orders', 'OrderController')->only(['index', 'show']);
-                Route::apiResource('colors', 'ColorController')->only(['index', 'show']);
-                Route::apiResource('materials', 'MaterialController')->only(['index', 'show']);
-            });
+                    // dashboard.view
+                    Route::middleware('permission:dashboard.view')->group(function () {
+                        Route::get('dashboard/statistics', 'DashboardController@statistics');
+                    });
 
-            // SuperAdmin-only routs: write access plus everything else restricted to SuperAdmin.
-            Route::prefix('admin')->middleware(['role:SuperAdmin'])->namespace('Admin')->group(function () {
+                    // catalog.view + prices.view (must precede products/{product} in the route list)
+                    Route::middleware(['permission:catalog.view', 'permission:prices.view'])->group(function () {
+                        Route::get('products/export', 'ProductExportController@export');
+                    });
 
-                Route::get('dashboard/statistics', 'DashboardController@statistics');
-                Route::get('/update-serch-title', 'ProductController@updateSearchTitle');
+                    // catalog.view
+                    Route::middleware('permission:catalog.view')->group(function () {
+                        Route::get('products', 'ProductController@index');
+                        Route::get('products/{product}', 'ProductController@show');
+                        Route::get('variations', 'VariationController@index');
+                        Route::get('variations/{variation}', 'VariationController@show');
+                        Route::get('categories', 'CategoryController@index');
+                        Route::get('categories/{category}', 'CategoryController@show');
+                        Route::get('discount', 'DiscountController@index');
+                        Route::get('discount/{discount}', 'DiscountController@show');
+                        Route::get('deals', 'DealController@index');
+                        Route::get('deals/{deal}', 'DealController@show');
+                        Route::get('colors/{color}/products', 'ColorController@productsWithVariations');
+                        Route::get('colors', 'ColorController@index');
+                        Route::get('colors/{color}', 'ColorController@show');
+                        Route::get('materials', 'MaterialController@index');
+                        Route::get('materials/{material}', 'MaterialController@show');
+                    });
 
-                Route::apiResource('products', 'ProductController')->except(['index', 'show']);
-                Route::post('image', 'ImageController@imageStore'); // admin image upload
-                Route::delete('image', 'ImageController@imageDelete'); // admin image delete
-                Route::post('images/reorder', 'ImageController@reorderImages'); // admin image reorder
+                    // catalog.edit
+                    Route::middleware('permission:catalog.edit')->group(function () {
+                        Route::get('/update-serch-title', 'ProductController@updateSearchTitle');
+                        Route::post('products', 'ProductController@store');
+                        Route::put('products/{product}', 'ProductController@update');
+                        Route::patch('products/{product}', 'ProductController@update');
+                        Route::delete('products/{product}', 'ProductController@destroy');
+                        Route::post('image', 'ImageController@imageStore'); // admin image upload
+                        Route::delete('image', 'ImageController@imageDelete'); // admin image delete
+                        Route::post('images/reorder', 'ImageController@reorderImages'); // admin image reorder
+                        Route::post('variations', 'VariationController@store');
+                        Route::put('variations/{variation}', 'VariationController@update');
+                        Route::patch('variations/{variation}', 'VariationController@update');
+                        Route::delete('variations/{variation}', 'VariationController@destroy');
+                        Route::post('products/{product}/variations', 'VariationController@arrayStore');
+                        Route::post('categories', 'CategoryController@store');
+                        Route::put('categories/{category}', 'CategoryController@update');
+                        Route::patch('categories/{category}', 'CategoryController@update');
+                        Route::delete('categories/{category}', 'CategoryController@destroy');
+                        Route::post('discount', 'DiscountController@store');
+                        Route::put('discount/{discount}', 'DiscountController@update');
+                        Route::patch('discount/{discount}', 'DiscountController@update');
+                        Route::delete('discount/{discount}', 'DiscountController@destroy');
+                        Route::post('deals', 'DealController@store');
+                        Route::put('deals/{deal}', 'DealController@update');
+                        Route::patch('deals/{deal}', 'DealController@update');
+                        Route::delete('deals/{deal}', 'DealController@destroy');
+                        Route::post('deals/{deal}/add', 'DealController@addDeal');
+                        Route::post('colors', 'ColorController@store');
+                        Route::put('colors/{color}', 'ColorController@update');
+                        Route::patch('colors/{color}', 'ColorController@update');
+                        Route::delete('colors/{color}', 'ColorController@destroy');
+                        Route::post('colors/sample/{color}', 'ColorController@addSample');
+                        Route::post('materials', 'MaterialController@store');
+                        Route::put('materials/{material}', 'MaterialController@update');
+                        Route::patch('materials/{material}', 'MaterialController@update');
+                        Route::delete('materials/{material}', 'MaterialController@destroy');
+                    });
 
-                Route::apiResource('variations', 'VariationController')->except(['index', 'show']);
-                Route::post('products/{product}/variations', 'VariationController@arrayStore');
+                    // orders.view
+                    Route::middleware('permission:orders.view')->group(function () {
+                        Route::get('orders', 'OrderController@index');
+                        Route::get('orders/{order}', 'OrderController@show');
+                        Route::get('orders/uuid/{uuid}', 'OrderController@uuid');
+                    });
 
-                Route::apiResource('categories', 'CategoryController')->except(['index', 'show']);
-                Route::apiResource('discount', 'DiscountController')->except(['index', 'show']);
-                Route::apiResource('deals', 'DealController')->except(['index', 'show']);
-                Route::post('deals/{deal}/add', 'DealController@addDeal');
+                    // orders.update-status
+                    Route::middleware('permission:orders.update-status')->group(function () {
+                        Route::patch('/orders/{order:uuid}', 'OrderController@update');
+                    });
 
-                Route::patch('/orders/{order:uuid}', 'OrderController@update');
-                Route::get('/orders/uuid/{uuid}', 'OrderController@uuid');
-                Route::get('/orders/pdf/{uuid}', 'OrderController@downloadPdf');
-                Route::get('/orders/{uuid}/print', 'OrderController@print');
+                    // orders.invoice
+                    Route::middleware('permission:orders.invoice')->group(function () {
+                        Route::get('/orders/pdf/{uuid}', 'OrderController@downloadPdf');
+                        Route::get('/orders/{uuid}/print', 'OrderController@print');
+                    });
 
-                Route::apiResource('colors', 'ColorController')->except(['index', 'show']);
-                Route::post('colors/sample/{color}', 'ColorController@addSample');
-                Route::get('colors/{color}/products', 'ColorController@productsWithVariations');
+                    // customers.view
+                    Route::middleware('permission:customers.view')->group(function () {
+                        Route::get('users', 'UserController@index');
+                        Route::get('users/{user}', 'UserController@show');
+                        Route::get('users/uuid/{uuid}', 'UserController@showByUuid');
+                    });
 
-                Route::apiResource('materials', 'MaterialController')->except(['index', 'show']);
+                    // customers.edit
+                    Route::middleware('permission:customers.edit')->group(function () {
+                        Route::post('users', 'UserController@store');
+                        Route::put('users/{user}', 'UserController@update');
+                        Route::patch('users/{user}', 'UserController@update');
+                        Route::delete('users/{user}', 'UserController@destroy');
+                    });
 
-                Route::apiResource('users', 'UserController');
+                    // blog.manage
+                    Route::middleware('permission:blog.manage')->group(function () {
+                        Route::get('posts', 'PostController@index');
+                        Route::get('posts/{post}', 'PostController@show');
+                        Route::post('posts', 'PostController@store');
+                        Route::put('posts/{post}', 'PostController@update');
+                        Route::patch('posts/{post}', 'PostController@update');
+                        Route::delete('posts/{post}', 'PostController@destroy');
+                    });
 
-                Route::apiResource('posts', 'PostController');
+                    // staff.manage
+                    Route::middleware('permission:staff.manage')->group(function () {
+                        Route::get('staff', 'StaffController@index');
+                        Route::post('staff', 'StaffController@store');
+                        Route::patch('staff/{user}', 'StaffController@update');
+                        Route::delete('staff/{user}/access', 'StaffController@removeAccess');
+                    });
 
-                Route::get('users/uuid/{uuid}', 'UserController@showByUuid');
-            });
+                    // audit.view
+                    Route::middleware('permission:audit.view')->group(function () {
+                        Route::get('audit-log', 'AuditLogController@index');
+                    });
+                });
         });
     });
