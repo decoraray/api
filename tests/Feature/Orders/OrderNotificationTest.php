@@ -222,12 +222,6 @@ class OrderNotificationTest extends TestCase
 
     private function payable(): Payment
     {
-        // payments.payment_code / card_pan exist in production but in no migration
-        foreach (['payment_code', 'card_pan'] as $col) {
-            if (!\Illuminate\Support\Facades\Schema::hasColumn('payments', $col)) {
-                \Illuminate\Support\Facades\Schema::table('payments', fn ($t) => $t->string($col)->nullable());
-            }
-        }
         $order = $this->order(['payment_method' => 'online']);
         Cart::create(['user_id' => $order->user_id]);
 
