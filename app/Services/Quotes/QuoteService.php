@@ -21,8 +21,9 @@ class QuoteService
     public function recordPayment(Quote $quote, int $amount, string $method, string $paidAt, ?string $reference, ?User $staff): Quote
     {
         $createdOrder = null;
+        $recorded = null;
 
-        $result = DB::transaction(function () use ($quote, $amount, $method, $paidAt, $reference, $staff, &$createdOrder) {
+        $result = DB::transaction(function () use ($quote, $amount, $method, $paidAt, $reference, $staff, &$createdOrder, &$recorded) {
             $quote = Quote::whereKey($quote->getKey())->lockForUpdate()->firstOrFail();
             $quote->load('lines');
 
@@ -59,12 +60,17 @@ class QuoteService
             $payment->created_at = $paidAtDate;
             $payment->updated_at = $paidAtDate;
             $payment->save();
+            $recorded = $payment;
 
             $quote->status = 'paid';
             $quote->save();
 
             return $quote->fresh(['lines', 'order', 'createdBy']);
         });
+
+        if ($recorded && $result->lead_id) {
+            app(\App\Services\Leads\LeadService::class)->quotePaid($result, $recorded, (bool) $createdOrder, $staff);
+        }
 
         if ($createdOrder) {
             app(\App\Services\Orders\OrderNotifier::class)->notify($createdOrder, 'confirmed');
