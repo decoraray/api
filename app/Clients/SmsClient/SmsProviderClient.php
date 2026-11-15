@@ -2,6 +2,7 @@
 
 namespace App\Clients\SmsClient;
 
+use App\Support\Phone;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Http;
 use App\Clients\SmsClient\Enums\SmsTemplate;
@@ -13,19 +14,19 @@ class SmsProviderClient implements SmsProviderClientInterface
         $url = config('services.sms_provider.url');
         $appKey = config('services.sms_provider.app_key');
 
+        $list = [];
+        foreach ($parameters as $name => $value) {
+            $list[] = ['name' => (string) $name, 'value' => (string) $value];
+        }
+
         $response = Http::withHeaders([
-            'ACCEPT' => 'application/json',
+            'accept' => 'application/json',
             'X-API-KEY' => $appKey,
-        ])->post(
-            $url,
-            ['body' => json_encode(
-                [
-                    'Mobile' => $phone,
-                    'TemplateId' => $template,
-                    'Parameters' => $parameters,
-                ]
-            )]
-        );
+        ])->post($url . 'send/verify', [
+            'mobile' => Phone::normalize($phone),
+            'templateId' => (int) $template->templateId(),
+            'parameters' => $list,
+        ]);
         if ($response->failed()) {
             Log::critical('Failed to send sms', [
                 'phone' => $phone,

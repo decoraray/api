@@ -29,8 +29,8 @@ class OrderShowAdminResource extends JsonResource
             'phone' => $this->phone,
             'status' => $status,
             'status_color' => OrderStatus::tryFrom($status)->color(),
-            'shipping' => $this->shipping->name,
-            'shipping_price' => $this->when($request->user()?->can('prices.view'), $this->shipping->price),
+            'shipping' => $this->shipping?->name,
+            'shipping_price' => $this->when($request->user()?->can('prices.view'), $this->shipping?->price),
             'items_total' => $this->when($request->user()?->can('prices.view'), $this->items->sum('price')),
             'total' => $this->when($request->user()?->can('prices.view'), $this->total),
             'payment_method' => PaymentMethods::fromName($this->payment_method)->value, // its "cash , partial , online " in the db 
@@ -41,6 +41,9 @@ class OrderShowAdminResource extends JsonResource
             'updated_at' => $this->updated_at,
             'payments' => $this->when($request->user()?->can('prices.view'), $this->payments ? PaymentShowAdminResource::collection($this->payments) : null),
             'description' => $this->description,
+            'source' => $this->source,
+            'quote_id' => $this->quote_id,
+            'quote_number' => $this->quote_number,
         ];
     }
 }

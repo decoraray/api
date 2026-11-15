@@ -25,12 +25,15 @@ class OrderListAdminResource extends JsonResource
             'phone' => $this->phone,
             'status' => $status,
             'total' => $this->when($request->user()?->can('prices.view'), $this->total),
-            'shipping' => $this->shipping->name,
+            'shipping' => $this->shipping?->name,
             'items_count' => $this->items->count(),
             'payment_method' => PaymentMethods::fromName($this->payment_method)->value, // its "cash , partial , online " in the db 
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'description' => $this->description,
+            'source' => $this->source,
+            'quote_id' => $this->quote_id,
+            'quote_number' => $this->quote_number,
         ];
     }
 }

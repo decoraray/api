@@ -63,6 +63,9 @@ Route::prefix('v1')
         Route::get('shippings', 'AddressController@shippings')->name('shippings');
         Route::get('comments', 'CommentController@all')->name('comments');
 
+        // public quote link (customer view; the token is the credential)
+        Route::get('quotes/{token}', 'PublicQuoteController@show')->middleware('throttle:30,1')->name('quote-public');
+
         // torob api
         Route::get('/torob', 'ShopController@torobApi')->name('torob');
 
@@ -109,6 +112,23 @@ Route::prefix('v1')
                     // quotes.manage or settings.manage (read), settings.manage (write)
                     Route::get('settings', 'SettingsController@show')->middleware('permission:quotes.manage|settings.manage');
                     Route::put('settings', 'SettingsController@update')->middleware('permission:settings.manage');
+
+                    // quotes.manage
+                    Route::middleware('permission:quotes.manage')->group(function () {
+                        Route::get('quotes', 'QuoteController@index');
+                        Route::post('quotes', 'QuoteController@store');
+                        Route::get('quotes/{quote}', 'QuoteController@show');
+                        Route::put('quotes/{quote}', 'QuoteController@update');
+                        Route::post('quotes/{quote}/cancel', 'QuoteController@cancel');
+                        Route::post('quotes/{quote}/sent', 'QuoteController@sent');
+                        Route::post('quotes/{quote}/sms', 'QuoteController@sms');
+                        Route::get('customers/lookup', 'QuoteController@customerLookup');
+                    });
+
+                    // payments.record
+                    Route::middleware('permission:payments.record')->group(function () {
+                        Route::post('quotes/{quote}/payments', 'QuoteController@recordPayment');
+                    });
 
                     // dashboard.view
                     Route::middleware('permission:dashboard.view')->group(function () {

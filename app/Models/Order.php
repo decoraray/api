@@ -47,6 +47,16 @@ class Order extends Model
             ->dontSubmitEmptyLogs();
     }
 
+    public function quote()
+    {
+        return $this->belongsTo(Quote::class);
+    }
+
+    public function getQuoteNumberAttribute()
+    {
+        return $this->quote_id ? $this->quote?->number : null;
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

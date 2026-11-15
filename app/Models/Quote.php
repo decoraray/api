@@ -54,6 +54,7 @@ class Quote extends Model
     {
         return LogOptions::defaults()
             ->logFillable()
+            ->logExcept(['token'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }

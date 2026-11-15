@@ -23,7 +23,8 @@ class AdminOrderItemResource extends JsonResource
             'price' => $this->when($request->user()?->can('prices.view'), $this->price),
             'old_price' => $this->when($request->user()?->can('prices.view'), $this->oldPrice),
             'discount' => $this->when($request->user()?->can('prices.view'), $this->discount),
-            'color' => $this->variation?->color?->name,
+            'color' => $this->color ?? $this->variation?->color?->name,
+            'dimensions' => $this->dimensions,
             'product_id' => $this->product?->id,
         ];
     }
