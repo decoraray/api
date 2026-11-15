@@ -9,6 +9,7 @@ use App\Http\Resources\Admin\QuoteAdminResource;
 use App\Models\Order;
 use App\Models\Quote;
 use App\Models\User;
+use App\Services\Leads\LeadService;
 use App\Services\Quotes\QuoteService;
 use App\Services\Settings;
 use App\Support\Phone;
@@ -58,6 +59,7 @@ class QuoteController extends Controller
             $user = $this->findOrCreateUser($data['phone'], $data['customer_name']);
             $quote = Quote::create($this->attributes($data) + [
                 'user_id' => $user->id,
+                'lead_id' => $data['lead_id'] ?? null,
                 'status' => 'draft',
                 'created_by' => $request->user()->id,
             ]);
@@ -65,6 +67,9 @@ class QuoteController extends Controller
 
             return $quote;
         });
+        if ($quote->lead_id) {
+            app(LeadService::class)->quoteCreated($quote, $request->user());
+        }
 
         return (new QuoteAdminResource($this->loaded($quote)))->response()->setStatusCode(201);
     }
@@ -166,6 +171,10 @@ class QuoteController extends Controller
             $quote->sent_at = now();
         }
         $quote->save();
+
+        if ($quote->lead_id) {
+            app(LeadService::class)->quoteSent($quote);
+        }
     }
 
     private function assertEditable(Quote $quote): void
@@ -180,6 +189,7 @@ class QuoteController extends Controller
         $request->merge(['phone' => Phone::normalize($request->input('phone'))]);
 
         return $request->validate([
+            'lead_id' => ['nullable', 'integer', 'exists:leads,id'],
             'customer_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'regex:/^09\d{9}$/'],
             'address' => ['nullable', 'string', 'max:1000'],

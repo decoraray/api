@@ -125,6 +125,19 @@ Route::prefix('v1')
                         Route::get('customers/lookup', 'QuoteController@customerLookup');
                     });
 
+                    // leads.manage (static routes before leads/{lead})
+                    Route::middleware('permission:leads.manage')->group(function () {
+                        Route::get('leads/meta', 'LeadController@meta');
+                        Route::get('leads/duplicates', 'LeadController@duplicates');
+                        Route::get('leads/follow-ups', 'LeadController@followUps');
+                        Route::get('leads', 'LeadController@index');
+                        Route::post('leads', 'LeadController@store');
+                        Route::get('leads/{lead}', 'LeadController@show');
+                        Route::patch('leads/{lead}', 'LeadController@update');
+                        Route::post('leads/{lead}/stage', 'LeadController@stage');
+                        Route::post('leads/{lead}/activities', 'LeadController@activity');
+                    });
+
                     // payments.record
                     Route::middleware('permission:payments.record')->group(function () {
                         Route::post('quotes/{quote}/payments', 'QuoteController@recordPayment');

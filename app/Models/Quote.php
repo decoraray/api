@@ -12,7 +12,7 @@ class Quote extends Model
     use LogsActivity;
 
     protected $fillable = [
-        'number', 'token', 'user_id', 'customer_name', 'phone', 'address', 'status',
+        'number', 'token', 'user_id', 'lead_id', 'customer_name', 'phone', 'address', 'status',
         'shipping_mode', 'shipping_amount', 'discount', 'deposit_percent', 'notes',
         'sent_at', 'sms_sent_at', 'created_by', 'order_id',
     ];
@@ -62,6 +62,11 @@ class Quote extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function lead()
+    {
+        return $this->belongsTo(Lead::class);
     }
 
     public function createdBy()
