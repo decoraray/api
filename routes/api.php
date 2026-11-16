@@ -150,6 +150,11 @@ Route::prefix('v1')
                         Route::post('quotes/{quote}/payments', 'QuoteController@recordPayment');
                     });
 
+                    // finance.view
+                    Route::middleware('permission:finance.view')->group(function () {
+                        Route::get('reports/delivered-invoices', 'InvoiceReportController@delivered');
+                    });
+
                     // dashboard.view
                     Route::middleware('permission:dashboard.view')->group(function () {
                         Route::get('dashboard/statistics', 'DashboardController@statistics');

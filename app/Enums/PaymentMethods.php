@@ -6,6 +6,7 @@ enum PaymentMethods: string
 {
     case ONLINE = 'آنلاین';
     case CASH = 'پرداخت در محل';
+    case CASH_RECEIVED = 'نقدی';
     case PARTIAL = 'پرداخت بیعانه';
     case CARD = 'کارت به کارت';
     case CHEQUE = 'چک';
