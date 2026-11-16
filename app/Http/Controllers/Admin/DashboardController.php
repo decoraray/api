@@ -69,7 +69,7 @@ class DashboardController extends Controller
 
         // Revenue = successful payments, by paid time (updated_at), Tehran days
         $tz = DashboardReport::TZ;
-        $paid = fn () => DB::table('payments')->where('status', 'paid');
+        $paid = fn () => \App\Support\Revenue::counted(DB::table('payments')->where('status', 'paid'));
         $range = fn ($q, Carbon $a, Carbon $b) => $q->whereBetween('updated_at', [$a->copy()->utc(), $b->copy()->utc()]);
         $nowT = Carbon::now($tz);
 

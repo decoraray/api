@@ -172,7 +172,7 @@ class QuoteApiTest extends TestCase
 
         $r = $this->postJson($url, ['amount' => 12000000, 'method' => 'CARD', 'paid_at' => '2026-11-10', 'reference' => 'R1'], $h)->assertStatus(201);
         $j = $r->json('data');
-        $this->assertSame('paid', $j['status']);
+        $this->assertSame('deposit_paid', $j['status']);
         $this->assertNotNull($j['order_id']);
         $this->assertSame(20500000, $j['totals']['payable']);
         $this->assertSame(8500000, $j['totals']['remaining']);

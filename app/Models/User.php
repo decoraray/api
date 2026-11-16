@@ -13,6 +13,16 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable, HasRoles;
 
+    protected static function booted(): void
+    {
+        // Leads that were recorded by phone before the person had an account follow them here.
+        static::saved(function (User $user) {
+            if ($user->phone && ($user->wasRecentlyCreated || $user->wasChanged('phone'))) {
+                app(\App\Services\Leads\LeadService::class)->linkCustomer($user);
+            }
+        });
+    }
+
     /**
      * The attributes that are mass assignable.
      *

@@ -32,6 +32,11 @@ class UserController extends Controller
         return response()->json(new UserShowResource($user), 200);
     }
 
+    public function crm(Request $request, User $user, \App\Services\Customers\CustomerProfile $profile)
+    {
+        return response()->json($profile->for($user, $request->user()));
+    }
+
     public function store(Request $request)
     {
         $user = User::create($request->all());

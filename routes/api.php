@@ -245,6 +245,7 @@ Route::prefix('v1')
                     // customers.view
                     Route::middleware('permission:customers.view')->group(function () {
                         Route::get('users', 'UserController@index');
+                        Route::get('users/{user}/crm', 'UserController@crm');
                         Route::get('users/{user}', 'UserController@show');
                         Route::get('users/uuid/{uuid}', 'UserController@showByUuid');
                     });

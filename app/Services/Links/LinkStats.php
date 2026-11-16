@@ -42,7 +42,7 @@ class LinkStats
 
         $received = collect();
         if ($money) {
-            $received = DB::table('payments')
+            $received = \App\Support\Revenue::counted(DB::table('payments'), 'orders.id')
                 ->join('orders', 'orders.id', '=', 'payments.order_id')
                 ->leftJoin('quotes', 'quotes.id', '=', 'orders.quote_id')
                 ->leftJoin('leads', 'leads.id', '=', 'quotes.lead_id')
