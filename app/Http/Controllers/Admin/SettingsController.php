@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\Settings;
+use App\Support\WholesalePricing;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -66,6 +67,19 @@ class SettingsController extends Controller
             }
         }
 
+        if ($request->has('wholesale_discount_percent')) {
+            if (!$request->user()?->can('prices.wholesale')) {
+                abort(403, 'شما اجازه تغییر درصد تخفیف همکار را ندارید.');
+            }
+            $percent = $request->input('wholesale_discount_percent');
+            $percent = is_string($percent) ? $this->digits($percent) : $percent;
+            if (!is_numeric($percent) || (int) $percent != $percent || $percent < 0 || $percent > 90) {
+                $errors['wholesale_discount_percent'] = ['درصد تخفیف همکار باید عددی بین ۰ تا ۹۰ باشد.'];
+            } else {
+                $changes['wholesale_discount_percent'] = (int) $percent;
+            }
+        }
+
         if ($errors) {
             throw ValidationException::withMessages($errors);
         }
@@ -109,6 +123,9 @@ class SettingsController extends Controller
         }
         $percent = $all['default_deposit_percent'] ?? null;
         $out['default_deposit_percent'] = $percent === null || $percent === '' ? 60 : (int) $percent;
+        if (request()->user()?->can('prices.wholesale')) {
+            $out['wholesale_discount_percent'] = WholesalePricing::percent();
+        }
         $out['sms_quote_enabled'] = filled(config('services.sms_provider.templates.quote'));
 
         return $out;

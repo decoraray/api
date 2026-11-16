@@ -7,7 +7,7 @@ use App\Models\Product;
 use App\Models\Variation;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
-use App\Http\Resources\ProductShowResource;
+use App\Http\Resources\Admin\ProductShowAdminResource;
 use App\Http\Resources\Admin\VariationShowAdminResource;
 
 class VariationController extends Controller
@@ -52,6 +52,18 @@ class VariationController extends Controller
             }
         }
 
+        $canWholesale = (bool) $request->user()?->can('prices.wholesale');
+
+        // Without prices.wholesale, carry wholesale prices over to matching variations.
+        $preserved = [];
+        if (!$canWholesale) {
+            foreach ($product->variations()->with('colors')->get() as $old) {
+                if ($old->wholesale_price !== null) {
+                    $preserved[$this->variationKey($old->size, $old->colors->pluck('name')->all(), $old->material_id)] = $old->wholesale_price;
+                }
+            }
+        }
+
         // Delete existing variations and create new ones
         $product->variations()->delete();
 
@@ -75,6 +87,9 @@ class VariationController extends Controller
                 'stock' => $variationData['stock'] ?? 0,
                 'weight' => $variationData['weight'] ?? null,
                 'price' => $variationData['price'],
+                'wholesale_price' => $canWholesale
+                    ? $this->wholesaleInput($variationData['wholesale_price'] ?? null)
+                    : ($preserved[$this->variationKey($size, $variationData['colors'], $materialId)] ?? null),
                 'active' => $variationData['active'] ?? true,
             ]);
 
@@ -84,7 +99,9 @@ class VariationController extends Controller
         // Update product average price
         $product->updateAveragePrice();
 
-        return new ProductShowResource($product);
+        $product->load(['variations.colors', 'variations.color', 'variations.material']);
+
+        return new ProductShowAdminResource($product);
     }
 
     public function store(Request $request)
@@ -119,6 +136,9 @@ class VariationController extends Controller
         $variation->stock = $request->stock;
         $variation->weight = $request->weight;
         $variation->price = $request->price;
+        if ($request->user()?->can('prices.wholesale')) {
+            $variation->wholesale_price = $this->wholesaleInput($request->input('wholesale_price'));
+        }
         $variation->active = $request->active;
         $variation->save();
 
@@ -130,14 +150,17 @@ class VariationController extends Controller
         // update product average price
         Product::find($request->product_id)->updateAveragePrice();
 
-        return $variation;
+        return $this->hideWholesale($request, $variation);
     }
 
 
     public function update(Request $request, Variation $variation)
     {
         // Normalize material_id and size - convert empty strings to null
-        $updateData = $request->except(['colors', 'color']);
+        $updateData = $request->except(['colors', 'color', 'wholesale_price']);
+        if ($request->user()?->can('prices.wholesale') && $request->exists('wholesale_price')) {
+            $updateData['wholesale_price'] = $this->wholesaleInput($request->input('wholesale_price'));
+        }
 
         if (isset($updateData['material_id']) && empty($updateData['material_id'])) {
             $updateData['material_id'] = null;
@@ -170,12 +193,45 @@ class VariationController extends Controller
             $variation->colors()->sync($colorIds);
         }
 
-        return $variation;
+        return $this->hideWholesale($request, $variation);
     }
 
     public function destroy(Variation $variation)
     {
         $variation->delete();
         return response()->json(null, 204);
+    }
+
+    /** Digits normalised, blank/null clears. */
+    private function wholesaleInput($value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        $value = preg_replace('/[\s,٬]+/u', '', strtr((string) $value, [
+            '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+            '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+            '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+            '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+        ]));
+
+        return ctype_digit($value) ? (int) $value : null;
+    }
+
+    private function variationKey($size, array $colorNames, $materialId): string
+    {
+        $names = array_map(fn ($n) => (string) (is_array($n) ? ($n['name'] ?? '') : $n), $colorNames);
+        sort($names);
+
+        return trim((string) $size) . '|' . implode(',', $names) . '|' . ($materialId ?: '');
+    }
+
+    private function hideWholesale(Request $request, Variation $variation): Variation
+    {
+        if (!$request->user()?->can('prices.wholesale')) {
+            $variation->makeHidden('wholesale_price');
+        }
+
+        return $variation;
     }
 }

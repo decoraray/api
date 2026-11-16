@@ -56,10 +56,11 @@ class LeadResource extends JsonResource
 
         if ($this->resource->getAttribute('_detail')) {
             $canPrice = (bool) $request->user()?->can('prices.view');
+            $canWholesale = (bool) $request->user()?->can('prices.wholesale');
             $quotes = $this->resource->getRelation('quotes');
-            $out['quotes'] = $quotes->map(function ($q) use ($canPrice) {
-                $row = ['id' => $q->id, 'number' => $q->number, 'status' => $q->status];
-                if ($canPrice) {
+            $out['quotes'] = $quotes->map(function ($q) use ($canPrice, $canWholesale) {
+                $row = ['id' => $q->id, 'number' => $q->number, 'status' => $q->status, 'price_tier' => $q->price_tier ?? 'retail'];
+                if ($canPrice && ($q->price_tier !== 'wholesale' || $canWholesale)) {
                     $row['payable'] = QuoteTotals::for($q)['payable'];
                 }
                 $row['created_at'] = $q->created_at;
