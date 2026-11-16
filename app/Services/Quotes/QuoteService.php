@@ -36,6 +36,13 @@ class QuoteService
                 throw ValidationException::withMessages(['amount' => ['مبلغ پرداخت بیشتر از مانده پیش‌فاکتور است.']]);
             }
 
+            if ($quote->order_id) {
+                $current = Order::whereKey($quote->order_id)->value('status');
+                if (in_array($current, [OrderStatus::CANCELED->value, OrderStatus::RETURNED->value], true)) {
+                    throw ValidationException::withMessages(['quote' => ['سفارش این پیش‌فاکتور لغو یا مرجوع شده است و پرداخت جدید ثبت نمی‌شود.']]);
+                }
+            }
+
             $methodEnum = PaymentMethods::fromName($method);
             $paidAtDate = \Illuminate\Support\Carbon::parse($paidAt);
 
@@ -62,7 +69,7 @@ class QuoteService
             $payment->save();
             $recorded = $payment;
 
-            $quote->status = 'paid';
+            $quote->status = $amount >= $totals['remaining'] ? 'paid' : 'deposit_paid';
             $quote->save();
 
             return $quote->fresh(['lines', 'order', 'createdBy']);
@@ -70,6 +77,9 @@ class QuoteService
 
         if ($recorded && $result->lead_id) {
             app(\App\Services\Leads\LeadService::class)->quotePaid($result, $recorded, (bool) $createdOrder, $staff);
+        } elseif ($recorded && $createdOrder) {
+            // A quote typed without a lead still closes the customer's open lead, found by phone.
+            app(\App\Services\Leads\LeadService::class)->orderPaid($createdOrder->fresh(), $recorded, 'payment', $staff);
         }
 
         if ($createdOrder) {
@@ -81,6 +91,8 @@ class QuoteService
 
     private function createOrder(Quote $quote, array $totals, PaymentMethods $method): Order
     {
+        $lead = $quote->lead_id ? \App\Models\Lead::find($quote->lead_id) : null;
+
         $order = Order::create([
             'uuid' => uniqid(),
             'user_id' => $quote->user_id,
@@ -96,6 +108,9 @@ class QuoteService
             'source' => 'staff',
             'quote_id' => $quote->id,
             'description' => null,
+            'channel' => $lead?->source,
+            'tracked_link_id' => $lead?->tracked_link_id,
+            'attribution' => $lead?->attribution,
         ]);
 
         foreach ($quote->lines as $line) {

@@ -7,16 +7,16 @@ use App\Models\Order;
 use App\Models\Quote;
 use App\Models\User;
 use App\Services\Auth\AuthService;
-use App\Services\Reports\DeliveredInvoiceReport;
+use App\Services\Reports\DeliveredOrderReport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
-class DeliveredInvoiceReportTest extends TestCase
+class DeliveredOrderReportTest extends TestCase
 {
     use RefreshDatabase;
 
-    private const URL = '/api/v1/admin/reports/delivered-invoices';
+    private const URL = '/api/v1/admin/reports/delivered-orders';
 
     private function as(string $role): array
     {
@@ -74,15 +74,15 @@ class DeliveredInvoiceReportTest extends TestCase
         $r = $this->getJson(self::URL . '?from=2026-11-01&to=2026-11-30', $this->as('SuperAdmin'))->assertOk();
 
         $this->assertSame(2, $r->json('summary.count'));
-        $this->assertSame(39000000, $r->json('summary.invoice_total_sum'));
+        $this->assertSame(39000000, $r->json('summary.total_sum'));
         $this->assertSame(9000100 + 19500000, $r->json('summary.paid_sum'));
 
         $rows = $r->json('rows');
-        $this->assertSame($b->number, $rows[0]['number']); // newest first
-        $this->assertSame($a->number, $rows[1]['number']);
+        $this->assertSame($b->number, $rows[0]['quote_number']); // newest first
+        $this->assertSame($a->number, $rows[1]['quote_number']);
         $this->assertSame($a->customer_name, $rows[1]['customer_name']);
         $this->assertSame($a->phone, $rows[1]['phone']);
-        $this->assertSame(19500000, $rows[1]['invoice_total']);
+        $this->assertSame(19500000, $rows[1]['total']);
         $this->assertSame(9000100, $rows[1]['paid']);
         $this->assertSame(['نقدی', 'چک'], $rows[1]['methods']);
         $this->assertSame('2026-11-05', $rows[1]['delivered_at']);
@@ -102,8 +102,8 @@ class DeliveredInvoiceReportTest extends TestCase
 
     public function test_jalali_month_equals_matching_range(): void
     {
-        $this->assertSame(['2026-11-22', '2026-12-21'], DeliveredInvoiceReport::monthRange(1405, 9));
-        $this->assertSame(['2026-03-21', '2026-04-20'], DeliveredInvoiceReport::monthRange(1405, 1));
+        $this->assertSame(['2026-11-22', '2026-12-21'], DeliveredOrderReport::monthRange(1405, 9));
+        $this->assertSame(['2026-03-21', '2026-04-20'], DeliveredOrderReport::monthRange(1405, 1));
 
         $this->invoice(OrderStatus::DELIVERED->value, '2026-11-25 09:00:00');
         $this->invoice(OrderStatus::DELIVERED->value, '2026-11-10 09:00:00');
@@ -130,6 +130,45 @@ class DeliveredInvoiceReportTest extends TestCase
         $r = $this->getJson(self::URL . '?from=2026-11-01&to=2026-11-30', $this->as('SuperAdmin'))->assertOk();
         $this->assertSame(0, $r->json('summary.count'));
         $this->assertSame([], $r->json('rows'));
+    }
+
+    public function test_site_order_without_quote_is_listed_with_items(): void
+    {
+        $user = User::factory()->create(['name' => 'سارا', 'surname' => 'احمدی']);
+        $order = Order::create([
+            'uuid' => 'site1', 'user_id' => $user->id, 'address' => 'خیابان ۱', 'city' => 'تهران', 'county' => 'x', 'postal_code' => '1',
+            'phone' => '09120000001', 'status' => OrderStatus::DELIVERED->value, 'payment_method' => 'online',
+            'total' => 5000000, 'discount_amount' => 500000, 'source' => 'site',
+        ]);
+        DB::table('items')->insert([
+            'title' => 'قفسه', 'slug' => 'shelf', 'order_id' => $order->id, 'quantity' => 2, 'price' => 2500000, 'discount' => 0,
+            'color' => 'گردویی', 'dimensions' => '40x80', 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('payments')->insert([
+            'uuid' => 'ps1', 'user_phone' => '0912', 'amount' => 4500000, 'status' => 'paid', 'method' => 'نقدی',
+            'order_id' => $order->id, 'created_at' => '2026-11-01 10:00:00', 'updated_at' => '2026-11-01 10:00:00',
+        ]);
+        DB::table('activity_log')->insert([
+            'log_name' => 'default', 'description' => 'updated', 'event' => 'updated',
+            'subject_type' => Order::class, 'subject_id' => $order->id,
+            'properties' => json_encode(['attributes' => ['status' => OrderStatus::DELIVERED->value]], JSON_UNESCAPED_UNICODE),
+            'created_at' => '2026-11-12 09:00:00', 'updated_at' => '2026-11-12 09:00:00',
+        ]);
+
+        $r = $this->getJson(self::URL . '?from=2026-11-01&to=2026-11-30', $this->as('SuperAdmin'))->assertOk();
+        $this->assertSame(1, $r->json('summary.count'));
+        $this->assertSame(4500000, $r->json('summary.total_sum'));
+        $row = $r->json('rows.0');
+        $this->assertSame($order->id, $row['order_id']);
+        $this->assertNull($row['quote_id']);
+        $this->assertNull($row['quote_number']);
+        $this->assertSame('سارا احمدی', $row['customer_name']);
+        $this->assertSame('09120000001', $row['phone']);
+        $this->assertSame('تهران', $row['city']);
+        $this->assertSame(4500000, $row['paid']);
+        $this->assertSame(0, $row['remaining']);
+        $this->assertSame('قفسه', $row['items'][0]['title']);
+        $this->assertSame(2, $row['items'][0]['quantity']);
     }
 
     public function test_validation(): void

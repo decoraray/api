@@ -55,6 +55,10 @@ class OrderController extends Controller
             app(OrderNotifier::class)->notify($order, $event);
         }
 
+        if ($oldStatus !== $status->value && in_array($status, [OrderStatus::CANCELED, OrderStatus::RETURNED], true)) {
+            app(\App\Services\Leads\LeadService::class)->orderCancelled($order, $request->user());
+        }
+
         return new OrderShowAdminResource($order);
     }
 

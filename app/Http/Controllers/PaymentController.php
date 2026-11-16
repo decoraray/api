@@ -41,6 +41,7 @@ class PaymentController extends Controller
                 'status' => OrderStatus::PENDING,
             ]);
             $cart->clear();
+            app(\App\Services\Leads\LeadService::class)->orderPaid($order->fresh('user'), null, 'order_placed');
             return response()->json(
                 ['url' => ''],
                 201
@@ -145,6 +146,9 @@ class PaymentController extends Controller
             ]);
             $payment->user->cart?->clear();
             app(OrderNotifier::class)->notify($payment->order, 'paid');
+            if ($payment->order->payments()->where('status', 'paid')->count() === 1) {
+                app(\App\Services\Leads\LeadService::class)->orderPaid($payment->order->fresh('user'), $payment, 'payment');
+            }
         } else {
             return Redirect::to(config('app.front_url') . '/payments/error/');
         }

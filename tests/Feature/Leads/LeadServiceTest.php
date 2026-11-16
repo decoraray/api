@@ -107,7 +107,7 @@ class LeadServiceTest extends TestCase
         Carbon::setTestNow();
     }
 
-    public function test_automatic_changes_never_move_closed_leads()
+    public function test_sending_a_quote_never_moves_closed_leads_and_only_payment_reopens_a_lost_one()
     {
         $u = $this->sales();
         foreach ([LeadStage::WON, LeadStage::LOST] as $closed) {
@@ -116,9 +116,12 @@ class LeadServiceTest extends TestCase
             $q = new \App\Models\Quote(['lead_id' => $lead->id]);
             $q->id = 1;
             $this->svc()->quoteSent($q);
+            $this->assertSame($closed->value, $lead->fresh()->stage);
+
+            // a first payment keeps a won lead won and turns a lost lead into won
             $p = new \App\Models\Payment(['amount' => 5, 'order_id' => 1]);
             $this->svc()->quotePaid($q, $p, true);
-            $this->assertSame($closed->value, $lead->fresh()->stage);
+            $this->assertSame(LeadStage::WON->value, $lead->fresh()->stage);
         }
     }
 

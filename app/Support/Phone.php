@@ -27,4 +27,26 @@ class Phone
 
         return $phone;
     }
+
+    /**
+     * The stored spellings a normalized mobile number can have: with and without the leading 0
+     * (site registrations were stored as 9xxxxxxxxx, staff and leads as 09xxxxxxxxx).
+     *
+     * @return array<int, string>
+     */
+    public static function variants(?string $phone): array
+    {
+        $n = self::normalize($phone);
+        if ($n === '') {
+            return [];
+        }
+        $out = [$n];
+        if (preg_match('/^0(9\d{9})$/', $n, $m)) {
+            $out[] = $m[1];
+        } elseif (preg_match('/^9\d{9}$/', $n)) {
+            $out[] = '0' . $n;
+        }
+
+        return $out;
+    }
 }

@@ -5,6 +5,7 @@ namespace App\Services\Leads;
 use App\Enums\LeadStage;
 use App\Models\Lead;
 use App\Models\LeadActivity;
+use App\Models\Order;
 use App\Models\Payment;
 use App\Models\Quote;
 use App\Models\User;
@@ -163,7 +164,15 @@ class LeadService
             return;
         }
         $this->log($lead, 'payment', $actor, null, ['quote_id' => $quote->id, 'amount' => $payment->amount, 'order_id' => $payment->order_id]);
-        if ($first && !LeadStage::from($lead->stage)->isClosed()) {
+        if (!$first) {
+            return;
+        }
+        if ($lead->stage === LeadStage::LOST->value) {
+            $lead->stage = LeadStage::WON->value;
+            $lead->lost_reason = null;
+            $lead->save();
+            $this->log($lead, 'stage_changed', $actor, null, ['from' => LeadStage::LOST->value, 'to' => LeadStage::WON->value, 'reopened' => true]);
+        } elseif (!LeadStage::from($lead->stage)->isClosed()) {
             $this->changeStage($lead, LeadStage::WON, null, null);
         }
     }
@@ -192,6 +201,94 @@ class LeadService
 
     private function customerId(?string $phone): ?int
     {
-        return $phone ? User::where('phone', $phone)->value('id') : null;
+        $variants = Phone::variants($phone);
+
+        return $variants ? User::whereIn('phone', $variants)->value('id') : null;
+    }
+
+    /** Link every lead with this customer's phone and no customer yet to them. */
+    public function linkCustomer(User $user): int
+    {
+        $variants = Phone::variants($user->phone);
+        if (!$variants) {
+            return 0;
+        }
+
+        return Lead::whereNull('user_id')->whereIn('phone', $variants)->update(['user_id' => $user->id]);
+    }
+
+    /**
+     * An order got its first payment, or a pay-on-delivery order was placed: close the matching
+     * lead as won (reopening a lost one). The quote's own lead wins over a phone match.
+     *
+     * @param string $type timeline entry: 'payment' or 'order_placed'
+     */
+    public function orderPaid(Order $order, ?Payment $payment, string $type = 'payment', ?User $actor = null): ?Lead
+    {
+        $lead = $this->leadForOrder($order);
+        if (!$lead) {
+            return null;
+        }
+
+        $data = ['order_id' => $order->id, 'source' => $order->source];
+        if ($order->quote_id) {
+            $data['quote_id'] = $order->quote_id;
+        }
+        if ($payment) {
+            $data['amount'] = $payment->amount;
+        }
+        $this->log($lead, $type, $actor, null, $data);
+
+        if ($lead->stage === LeadStage::LOST->value) {
+            $lead->stage = LeadStage::WON->value;
+            $lead->lost_reason = null;
+            $lead->save();
+            $this->log($lead, 'stage_changed', $actor, null, ['from' => LeadStage::LOST->value, 'to' => LeadStage::WON->value, 'reopened' => true]);
+        } elseif (!LeadStage::from($lead->stage)->isClosed()) {
+            $this->changeStage($lead, LeadStage::WON, null, $actor);
+        }
+
+        return $lead->fresh();
+    }
+
+    /** An order of a lead's customer was cancelled or returned: note it, change nothing else. */
+    public function orderCancelled(Order $order, ?User $actor): void
+    {
+        $lead = $this->leadForOrder($order, true);
+        if ($lead) {
+            $this->log($lead, 'order_cancelled', $actor, null, ['order_id' => $order->id, 'status' => $order->status instanceof \BackedEnum ? $order->status->value : $order->status]);
+        }
+    }
+
+    /** The order's quote lead; else the newest open lead of its customer; else their newest lost lead. */
+    private function leadForOrder(Order $order, bool $anyStage = false): ?Lead
+    {
+        if ($order->quote_id) {
+            $leadId = Quote::whereKey($order->quote_id)->value('lead_id');
+            if ($leadId) {
+                return Lead::find($leadId);
+            }
+        }
+
+        $phones = array_values(array_unique(array_merge(Phone::variants($order->phone), Phone::variants($order->user?->phone))));
+        if (!$order->user_id && !$phones) {
+            return null;
+        }
+        $query = fn () => Lead::query()->where(function ($q) use ($order, $phones) {
+            if ($order->user_id) {
+                $q->orWhere('user_id', $order->user_id);
+            }
+            if ($phones) {
+                $q->orWhereIn('phone', $phones);
+            }
+        })->latest('id');
+
+        if ($anyStage) {
+            return $query()->first();
+        }
+        $open = [LeadStage::WON->value, LeadStage::LOST->value];
+
+        return $query()->whereNotIn('stage', $open)->first()
+            ?: $query()->where('stage', LeadStage::LOST->value)->first();
     }
 }

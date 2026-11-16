@@ -21,7 +21,7 @@ use Illuminate\Validation\ValidationException;
 
 class QuoteController extends Controller
 {
-    private const STATUSES = ['draft', 'sent', 'paid', 'cancelled'];
+    private const STATUSES = ['draft', 'sent', 'deposit_paid', 'paid', 'cancelled'];
 
     public function index(Request $request)
     {
@@ -92,7 +92,7 @@ class QuoteController extends Controller
 
     public function cancel(Quote $quote)
     {
-        if ($quote->status === 'paid') {
+        if (in_array($quote->status, ['deposit_paid', 'paid'], true)) {
             throw ValidationException::withMessages(['quote' => ['پیش‌فاکتور پرداخت‌شده قابل لغو نیست.']]);
         }
         $quote->update(['status' => 'cancelled']);
@@ -179,7 +179,7 @@ class QuoteController extends Controller
 
     private function assertEditable(Quote $quote): void
     {
-        if (in_array($quote->status, ['paid', 'cancelled'], true)) {
+        if (in_array($quote->status, ['deposit_paid', 'paid', 'cancelled'], true)) {
             throw ValidationException::withMessages(['quote' => ['پیش‌فاکتور پرداخت‌شده یا لغوشده قابل ویرایش نیست.']]);
         }
     }

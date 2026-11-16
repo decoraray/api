@@ -33,6 +33,8 @@ class QuoteAdminResource extends JsonResource
             'created_by' => $this->createdBy ? ['id' => $this->createdBy->id, 'name' => trim($this->createdBy->name . ' ' . $this->createdBy->surname)] : null,
             'order_id' => $this->order_id,
             'order_uuid' => $this->order?->uuid,
+            'order_status' => $this->order ? ($this->order->status instanceof \BackedEnum ? $this->order->status->value : $this->order->status) : null,
+            'lead_id' => $this->when($request->user()?->can('leads.manage'), $this->lead_id),
             'totals' => QuoteTotals::for($this->resource),
         ];
 

@@ -90,6 +90,8 @@ class DashboardReport
             ->whereBetween('payments.updated_at', [$from->copy()->utc(), $to->copy()->utc()])
             ->selectRaw("payments.amount, payments.updated_at, {$srcExpr} as src, {$salesExpr} as sales");
 
+        \App\Support\Revenue::counted($q, 'orders.id');
+
         if ($f['assigned_to']) {
             $q->whereRaw("{$salesExpr} = ?", [$f['assigned_to']]);
         }

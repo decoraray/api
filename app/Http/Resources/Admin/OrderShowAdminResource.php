@@ -36,6 +36,8 @@ class OrderShowAdminResource extends JsonResource
             'payment_method' => PaymentMethods::fromName($this->payment_method)->value, // its "cash , partial , online " in the db 
             'payableAmount' => $this->when($request->user()?->can('prices.view'), $this->payableAmount),
             'discount_amount' => $this->when($request->user()?->can('prices.view'), $this->discount_amount),
+            'paid' => $this->when($request->user()?->can('prices.view'), fn () => (int) $this->payments->where('status', 'paid')->sum('amount')),
+            'remaining' => $this->when($request->user()?->can('prices.view'), fn () => max(0, (int) $this->total - (int) $this->discount_amount - (int) $this->payments->where('status', 'paid')->sum('amount'))),
             'items' => $this->items ? AdminOrderItemResource::collection($this->items) : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
