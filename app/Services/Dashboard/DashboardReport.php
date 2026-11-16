@@ -68,6 +68,7 @@ class DashboardReport
             $out['leads'] = $this->leadFigures($cohort, $f);
             $out['sources'] = $this->sources($cohort, $payments, $money);
             $out['salespeople'] = $this->salespeople($from, $to, $f, $payments, $money);
+            $out['links'] = app(\App\Services\Links\LinkStats::class)->rows($f['from'], $f['to'], $money);
         }
         $out['orders'] = $this->orders();
 
@@ -78,7 +79,7 @@ class DashboardReport
 
     private function payments(Carbon $from, Carbon $to, array $f)
     {
-        $srcExpr = "COALESCE(leads.source, CASE WHEN orders.source = 'site' THEN 'website' ELSE 'none' END)";
+        $srcExpr = "COALESCE(leads.source, CASE WHEN orders.source = 'site' THEN COALESCE(orders.channel, 'website') ELSE 'none' END)";
         $salesExpr = 'COALESCE(leads.assigned_to, quotes.created_by)';
 
         $q = DB::table('payments')
@@ -211,6 +212,7 @@ class DashboardReport
         foreach (LeadSource::cases() as $c) {
             $labels[$c->value] = $c->label();
         }
+        $labels['direct'] = 'مستقیم';
         $labels['none'] = 'بدون سرنخ';
 
         $rows = [];

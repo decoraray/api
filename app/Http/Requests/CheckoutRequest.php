@@ -29,6 +29,7 @@ class CheckoutRequest extends FormRequest
             'payment_method' => 'required|in:online,cash,partial', // TODO : make it dynamic
             'gateway' => 'required_if:payment_method,online|in:payping', // TODO : make it dynamic
             'description' => 'nullable|string',
+            'attribution' => 'nullable|array',
         ];
     }
 }

@@ -61,5 +61,16 @@ class RouteServiceProvider extends ServiceProvider
 
             return Limit::perMinute(120)->by($user?->id ?: $request->ip());
         });
+
+        // Short-link resolves come from the storefront SSR (one IP), so our own servers are exempt.
+        RateLimiter::for('links', function (Request $request) {
+            if (in_array($request->ip(), config('app.rate_limit_exempt_ips'), true)) {
+                return Limit::none();
+            }
+
+            return Limit::perMinute(60)->by($request->ip());
+        });
+
+        RateLimiter::for('enquiries', fn (Request $request) => Limit::perMinutes(10, 5)->by($request->ip()));
     }
 }

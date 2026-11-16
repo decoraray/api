@@ -95,6 +95,20 @@ class SettingsController extends Controller
             }
         }
 
+        if ($request->has('web_lead_assignee')) {
+            $v = $request->input('web_lead_assignee');
+            if ($v === null || $v === '') {
+                $changes['web_lead_assignee'] = null;
+            } else {
+                $u = is_numeric($v) ? \App\Models\User::find((int) $v) : null;
+                if (!$u || !$u->can('leads.manage')) {
+                    $errors['web_lead_assignee'] = ['مسئول سرنخ‌های سایت باید کاربری با دسترسی مدیریت سرنخ‌ها باشد.'];
+                } else {
+                    $changes['web_lead_assignee'] = $u->id;
+                }
+            }
+        }
+
         if ($request->has('wholesale_discount_percent')) {
             if (!$request->user()?->can('prices.wholesale')) {
                 abort(403, 'شما اجازه تغییر درصد تخفیف همکار را ندارید.');
@@ -156,6 +170,8 @@ class SettingsController extends Controller
         if (request()->user()?->can('prices.wholesale')) {
             $out['wholesale_discount_percent'] = WholesalePricing::percent();
         }
+        $assignee = $all['web_lead_assignee'] ?? null;
+        $out['web_lead_assignee'] = is_numeric($assignee) ? (int) $assignee : null;
         $out['sms_quote_enabled'] = filled(config('services.sms_provider.templates.quote'));
 
         return $out;

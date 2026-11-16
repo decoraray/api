@@ -12,6 +12,8 @@ enum LeadSource: string
     case WALK_IN = 'walk_in';
     case REFERRAL = 'referral';
     case PARTNER = 'partner';
+    case GOOGLE = 'google';
+    case TOROB = 'torob';
 
     public function label(): string
     {
@@ -24,6 +26,8 @@ enum LeadSource: string
             self::WALK_IN => 'مراجعه حضوری',
             self::REFERRAL => 'معرفی',
             self::PARTNER => 'همکار',
+            self::GOOGLE => 'گوگل',
+            self::TOROB => 'ترب',
         };
     }
 
