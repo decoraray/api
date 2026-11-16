@@ -3,14 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Services\Reports\DeliveredInvoiceReport;
+use App\Services\Reports\DeliveredOrderReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\ValidationException;
 
-class InvoiceReportController extends Controller
+class OrderReportController extends Controller
 {
-    public function delivered(Request $request, DeliveredInvoiceReport $report)
+    public function delivered(Request $request, DeliveredOrderReport $report)
     {
         $data = $request->validate([
             'from' => ['nullable', 'date_format:Y-m-d', 'required_with:to'],
@@ -20,7 +20,7 @@ class InvoiceReportController extends Controller
         ]);
 
         if (isset($data['jalali_year'])) {
-            [$from, $to] = DeliveredInvoiceReport::monthRange((int) $data['jalali_year'], (int) $data['jalali_month']);
+            [$from, $to] = DeliveredOrderReport::monthRange((int) $data['jalali_year'], (int) $data['jalali_month']);
         } elseif (isset($data['from'])) {
             [$from, $to] = [$data['from'], $data['to']];
         } else {

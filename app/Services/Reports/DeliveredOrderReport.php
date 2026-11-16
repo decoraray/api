@@ -5,7 +5,6 @@ namespace App\Services\Reports;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\Payment;
-use App\Models\Quote;
 use App\Enums\PaymentMethods;
 use App\Services\Dashboard\DashboardReport;
 use App\Services\Jdf\Jdf;
@@ -13,7 +12,7 @@ use App\Services\Quotes\QuoteTotals;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
-class DeliveredInvoiceReport
+class DeliveredOrderReport
 {
     /** Gregorian [from, to] (Y-m-d) covering a Jalali month. */
     public static function monthRange(int $jy, int $jm): array
@@ -29,6 +28,8 @@ class DeliveredInvoiceReport
     }
 
     /**
+     * Delivered orders in [from, to] (Tehran days), with or without a quote.
+     *
      * @return array{period:array,summary:array,rows:array}
      */
     public function build(string $from, string $to): array
@@ -36,40 +37,56 @@ class DeliveredInvoiceReport
         $start = Carbon::parse($from, DashboardReport::TZ)->startOfDay();
         $end = Carbon::parse($to, DashboardReport::TZ)->endOfDay();
 
-        $quotes = Quote::query()
-            ->join('orders', 'orders.id', '=', 'quotes.order_id')
-            ->where('orders.status', OrderStatus::DELIVERED->value)
-            ->select('quotes.*')
-            ->with(['lines', 'order'])
+        $orders = Order::query()
+            ->where('status', OrderStatus::DELIVERED->value)
+            ->with(['items', 'quote.lines', 'user:id,name,surname'])
             ->get();
 
-        $orderIds = $quotes->pluck('order_id')->all();
+        $orderIds = $orders->pluck('id')->all();
         $deliveredAt = $this->deliveredAt($orderIds);
         $methods = $this->methods($orderIds);
+        $paid = $this->paid($orderIds);
 
         $rows = [];
         $sumTotal = 0;
         $sumPaid = 0;
 
-        foreach ($quotes as $quote) {
-            $when = $deliveredAt[$quote->order_id] ?? $quote->order->updated_at;
+        foreach ($orders as $order) {
+            $when = $deliveredAt[$order->id] ?? $order->updated_at;
             $when = Carbon::parse($when)->setTimezone(DashboardReport::TZ);
             if ($when->lt($start) || $when->gt($end)) {
                 continue;
             }
 
-            $totals = QuoteTotals::for($quote);
-            $sumTotal += $totals['payable'];
-            $sumPaid += $totals['paid'];
+            $quote = $order->quote;
+            $total = $quote ? QuoteTotals::for($quote)['payable'] : (int) round($order->total - $order->discount_amount);
+            $paidAmount = (int) ($paid[$order->id] ?? 0);
+            $sumTotal += $total;
+            $sumPaid += $paidAmount;
+
+            $userName = trim(($order->user?->name ?? '') . ' ' . ($order->user?->surname ?? ''));
 
             $rows[] = [
-                'quote_id' => $quote->id,
-                'number' => $quote->number,
-                'customer_name' => $quote->customer_name,
-                'phone' => $quote->phone,
-                'invoice_total' => $totals['payable'],
-                'paid' => $totals['paid'],
-                'methods' => $methods[$quote->order_id] ?? [],
+                'order_id' => $order->id,
+                'source' => $order->source,
+                'quote_id' => $quote?->id,
+                'quote_number' => $quote?->number,
+                'customer_name' => $quote?->customer_name ?: ($userName ?: null),
+                'phone' => $quote?->phone ?: $order->phone,
+                'city' => $order->city ?: null,
+                'address' => $order->address ?: null,
+                'total' => $total,
+                'paid' => $paidAmount,
+                'remaining' => max(0, $total - $paidAmount),
+                'methods' => $methods[$order->id] ?? [],
+                'items' => $order->items->map(fn ($i) => [
+                    'title' => $i->title,
+                    'quantity' => (int) $i->quantity,
+                    'price' => (int) $i->price,
+                    'color' => $i->color,
+                    'dimensions' => $i->dimensions,
+                ])->values()->all(),
+                'created_at' => Carbon::parse($order->created_at)->setTimezone(DashboardReport::TZ)->format('Y-m-d'),
                 'delivered_at' => $when->format('Y-m-d'),
                 '_sort' => $when->timestamp,
             ];
@@ -86,11 +103,24 @@ class DeliveredInvoiceReport
             'period' => ['from' => $from, 'to' => $to],
             'summary' => [
                 'count' => count($rows),
-                'invoice_total_sum' => $sumTotal,
+                'total_sum' => $sumTotal,
                 'paid_sum' => $sumPaid,
+                'remaining_sum' => max(0, $sumTotal - $sumPaid),
             ],
             'rows' => $rows,
         ];
+    }
+
+    /** Sum of paid payments per order. */
+    private function paid(array $orderIds): array
+    {
+        if (!$orderIds) {
+            return [];
+        }
+
+        return Payment::whereIn('order_id', $orderIds)->where('status', 'paid')
+            ->groupBy('order_id')->selectRaw('order_id, SUM(amount) as s')
+            ->pluck('s', 'order_id')->all();
     }
 
     /** Latest activity-log time at which each order was set to delivered. */
