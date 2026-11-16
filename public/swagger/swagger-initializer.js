@@ -5,7 +5,7 @@ window.onload = function() {
   window.ui = SwaggerUIBundle({
     // url: "https://petstore.swagger.io/v2/swagger.json",
     // url: "http://localhost:8080/api/v1/documentation",
-    url: "https://api.decoraray.ir/api/v1/documentation",
+    url: "https://api.decoraray.com/api/v1/documentation",
  
     dom_id: '#swagger-ui',
     deepLinking: true,
