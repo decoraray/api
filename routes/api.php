@@ -66,6 +66,10 @@ Route::prefix('v1')
         // public quote link (customer view; the token is the credential)
         Route::get('quotes/{token}', 'PublicQuoteController@show')->middleware('throttle:30,1')->name('quote-public');
 
+        // channel tracking: short links and website enquiries
+        Route::get('links/{code}', 'LinkController@resolve')->middleware('throttle:links')->name('link-resolve');
+        Route::post('enquiries', 'EnquiryController@store')->middleware('throttle:enquiries')->name('enquiry');
+
         // torob api
         Route::get('/torob', 'ShopController@torobApi')->name('torob');
 
@@ -136,6 +140,9 @@ Route::prefix('v1')
                         Route::patch('leads/{lead}', 'LeadController@update');
                         Route::post('leads/{lead}/stage', 'LeadController@stage');
                         Route::post('leads/{lead}/activities', 'LeadController@activity');
+                        Route::get('links', 'LinkController@index');
+                        Route::post('links', 'LinkController@store');
+                        Route::patch('links/{link}', 'LinkController@update');
                     });
 
                     // payments.record
