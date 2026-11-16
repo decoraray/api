@@ -37,6 +37,7 @@ class QuoteSupportTest extends TestCase
         $this->assertSame('09123456789', Phone::normalize('٠٩١٢٣٤٥٦٧٨٩'));
         $this->assertSame('09123456789', Phone::normalize('+989123456789'));
         $this->assertSame('09123456789', Phone::normalize('00989123456789'));
+        $this->assertSame('09123456789', Phone::normalize('9123456789'));
         $this->assertSame('09123456789', Phone::normalize('989123456789'));
         $this->assertSame('09123456789', Phone::normalize('0912 345-6789'));
     }

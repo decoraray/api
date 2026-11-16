@@ -25,6 +25,11 @@ class Phone
             return '0' . $m[1];
         }
 
+        // Site registrations were stored without the leading 0 (9xxxxxxxxx).
+        if (preg_match('/^9\d{9}$/', $phone)) {
+            return '0' . $phone;
+        }
+
         return $phone;
     }
 
