@@ -23,6 +23,41 @@ class DashboardReportTest extends TestCase
     {
         parent::setUp();
         Carbon::setTestNow('2026-11-16 12:00:00'); // UTC
+        app(\App\Services\Settings::class)->set('orders_tracking_since', '2026-01-01');
+    }
+
+    public function test_tracking_since_excludes_old_orders(): void
+    {
+        app(\App\Services\Settings::class)->set('orders_tracking_since', '2026-10-01');
+        $old = $this->order(['status' => OrderStatus::PAID->value, 'created_at' => '2024-06-05 10:00:00']);
+        $this->pay($old, 100, '2024-06-05 10:00:00');
+        $edge = $this->order(['status' => OrderStatus::PAID->value, 'created_at' => '2026-09-30 20:30:00']); // 00:00 Tehran Oct 1
+        $this->pay($edge, 100, '2026-09-30 20:30:00');
+        $before = $this->order(['status' => OrderStatus::PAID->value, 'created_at' => '2026-09-30 20:00:00']);
+        $this->pay($before, 100, '2026-09-30 20:00:00');
+        $this->order(['status' => OrderStatus::PENDING->value, 'created_at' => '2023-01-01 10:00:00']);
+
+        $r = $this->report('?from=2026-11-01&to=2026-11-16', 'Technic')->assertOk();
+        $this->assertSame('2026-10-01', $r->json('orders.tracking_since'));
+        $this->assertSame(1, $r->json('orders.open.paid'));
+        $this->assertSame(0, $r->json('orders.open.waiting'));
+        $this->assertSame(1, $r->json('orders.late_count'));
+        $this->assertSame($edge, $r->json('orders.late.0.id'));
+        $this->assertSame(1, collect($r->json('orders.by_status'))->firstWhere('status', 'درانتظار بررسی')['count']);
+        $this->assertSame(3, collect($r->json('orders.by_status'))->firstWhere('status', 'پرداخت شده')['count']);
+    }
+
+    public function test_tracking_since_default_and_setting(): void
+    {
+        DB::table('settings')->where('key', 'orders_tracking_since')->delete();
+        \Illuminate\Support\Facades\Cache::forget(\App\Services\Settings::CACHE_KEY);
+        $h = $this->as('SuperAdmin');
+        $this->getJson('/api/v1/admin/settings', $h)->assertJsonPath('orders_tracking_since', '2026-11-16');
+        $this->putJson('/api/v1/admin/settings', ['orders_tracking_since' => '۲۰۲۶-۰۳-۰۱'], $h)
+            ->assertOk()->assertJsonPath('orders_tracking_since', '2026-03-01');
+        $this->putJson('/api/v1/admin/settings', ['orders_tracking_since' => '2026-02-30'], $h)->assertStatus(422);
+        $this->putJson('/api/v1/admin/settings', ['orders_tracking_since' => 'nope'], $h)->assertStatus(422);
+        $this->getJson('/api/v1/admin/settings', $h)->assertJsonPath('orders_tracking_since', '2026-03-01');
     }
 
     protected function tearDown(): void

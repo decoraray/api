@@ -24,6 +24,15 @@ class DashboardReport
         return is_numeric($v) && (int) $v >= 1 ? (int) $v : self::DEFAULT_LATE_DAYS;
     }
 
+    public const DEFAULT_TRACKING_SINCE = '2026-11-16';
+
+    public static function trackingSince(): string
+    {
+        $v = app(Settings::class)->get('orders_tracking_since');
+
+        return is_string($v) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) ? $v : self::DEFAULT_TRACKING_SINCE;
+    }
+
     /** Order status groups, built from enum cases. */
     public static function groups(): array
     {
@@ -285,9 +294,14 @@ class DashboardReport
     {
         $counts = DB::table('orders')->selectRaw('status, count(*) as c')->groupBy('status')->pluck('c', 'status');
 
+        $since = self::trackingSince();
+        $sinceUtc = Carbon::parse($since, self::TZ)->startOfDay()->utc();
+        $openCounts = DB::table('orders')->where('created_at', '>=', $sinceUtc)
+            ->selectRaw('status, count(*) as c')->groupBy('status')->pluck('c', 'status');
+
         $open = [];
         foreach (self::groups() as $name => $cases) {
-            $open[$name] = (int) collect($cases)->sum(fn ($c) => $counts[$c->value] ?? 0);
+            $open[$name] = (int) collect($cases)->sum(fn ($c) => $openCounts[$c->value] ?? 0);
         }
 
         $byStatus = array_map(fn ($c) => ['status' => $c->value, 'count' => (int) ($counts[$c->value] ?? 0)],
@@ -303,6 +317,7 @@ class DashboardReport
             ->leftJoin('users', 'users.id', '=', 'orders.user_id')
             ->whereNotIn('orders.status', array_map(fn ($c) => $c->value, $closed))
             ->where('fp.first_paid', '<', now()->subDays($days))
+            ->where('fp.first_paid', '>=', $sinceUtc)
             ->select('orders.id', 'orders.uuid', 'orders.status', 'fp.first_paid',
                 'quotes.customer_name', 'users.name as user_name')
             ->get()
@@ -323,6 +338,7 @@ class DashboardReport
         return [
             'open' => $open,
             'by_status' => $byStatus,
+            'tracking_since' => $since,
             'late_days' => $days,
             'late_count' => $late->count(),
             'late' => $late->take(20)->all(),

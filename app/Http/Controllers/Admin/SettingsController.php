@@ -77,6 +77,24 @@ class SettingsController extends Controller
             }
         }
 
+        if (array_key_exists('orders_tracking_since', $input = $request->all())) {
+            $d = $input['orders_tracking_since'];
+            // digits() strips dashes, so convert Persian/Arabic digits only
+            $d = is_string($d) ? trim(strtr($d, [
+                '۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4',
+                '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9',
+                '٠' => '0', '١' => '1', '٢' => '2', '٣' => '3', '٤' => '4',
+                '٥' => '5', '٦' => '6', '٧' => '7', '٨' => '8', '٩' => '9',
+            ])) : $d;
+            $ok = is_string($d) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)
+                && \Illuminate\Support\Carbon::createFromFormat('Y-m-d', $d)->format('Y-m-d') === $d;
+            if (!$ok) {
+                $errors['orders_tracking_since'] = ['تاریخ شروع پیگیری سفارش‌ها معتبر نیست.'];
+            } else {
+                $changes['orders_tracking_since'] = $d;
+            }
+        }
+
         if ($request->has('wholesale_discount_percent')) {
             if (!$request->user()?->can('prices.wholesale')) {
                 abort(403, 'شما اجازه تغییر درصد تخفیف همکار را ندارید.');
@@ -134,6 +152,7 @@ class SettingsController extends Controller
         $percent = $all['default_deposit_percent'] ?? null;
         $out['default_deposit_percent'] = $percent === null || $percent === '' ? 60 : (int) $percent;
         $out['late_order_days'] = \App\Services\Dashboard\DashboardReport::lateDays();
+        $out['orders_tracking_since'] = \App\Services\Dashboard\DashboardReport::trackingSince();
         if (request()->user()?->can('prices.wholesale')) {
             $out['wholesale_discount_percent'] = WholesalePricing::percent();
         }
