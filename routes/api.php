@@ -152,7 +152,7 @@ Route::prefix('v1')
 
                     // finance.view
                     Route::middleware('permission:finance.view')->group(function () {
-                        Route::get('reports/delivered-invoices', 'InvoiceReportController@delivered');
+                        Route::get('reports/delivered-orders', 'OrderReportController@delivered');
                     });
 
                     // dashboard.view
