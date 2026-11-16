@@ -15,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 
 class LeadService
 {
-    public function create(array $data, User $actor): Lead
+    public function create(array $data, ?User $actor): Lead
     {
         return DB::transaction(function () use ($data, $actor) {
             $note = $data['note'] ?? null;
@@ -23,10 +23,10 @@ class LeadService
 
             $attrs = $data + [
                 'stage' => LeadStage::NEW->value,
-                'assigned_to' => $actor->id,
-                'created_by' => $actor->id,
+                'assigned_to' => $actor?->id,
+                'created_by' => $actor?->id,
             ];
-            $attrs['assigned_to'] = $attrs['assigned_to'] ?? $actor->id;
+            $attrs['assigned_to'] = $attrs['assigned_to'] ?? $actor?->id;
             $attrs['phone'] = $this->phoneOrNull($attrs['phone'] ?? null);
             $attrs['user_id'] = $this->customerId($attrs['phone']);
 
@@ -121,9 +121,9 @@ class LeadService
         return $lead;
     }
 
-    public function addActivity(Lead $lead, string $type, string $body, ?User $actor, $followUp = null): Lead
+    public function addActivity(Lead $lead, string $type, string $body, ?User $actor, $followUp = null, ?array $data = null): Lead
     {
-        $this->log($lead, $type, $actor, $body);
+        $this->log($lead, $type, $actor, $body, $data);
         if ($followUp) {
             $this->setFollowUp($lead, $followUp, $actor);
         }
