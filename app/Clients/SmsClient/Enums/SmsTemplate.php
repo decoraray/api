@@ -10,6 +10,7 @@ enum SmsTemplate: string
     case ORDER_CONFIRMED = 'order_confirmed';
     case ORDER_SHIPPED = 'order_shipped';
     case ORDER_CANCELED = 'order_canceled';
+    case STAFF_REMINDER = 'staff_reminder';
 
     public function templateId(): ?int
     {

@@ -117,6 +117,9 @@ Route::prefix('v1')
                     Route::get('settings', 'SettingsController@show')->middleware('permission:quotes.manage|settings.manage');
                     Route::put('settings', 'SettingsController@update')->middleware('permission:settings.manage');
 
+                    // leads.manage or quotes.manage (sections filtered per permission)
+                    Route::get('reminders', 'ReminderController@index')->middleware('permission:leads.manage|quotes.manage');
+
                     // quotes.manage
                     Route::middleware('permission:quotes.manage')->group(function () {
                         Route::get('quotes', 'QuoteController@index');

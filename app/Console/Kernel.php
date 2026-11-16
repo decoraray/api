@@ -15,7 +15,9 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule)
     {
-        // $schedule->command('inspire')->hourly();
+        // Acts only during the reminder hour from settings and once per person per day,
+        // so a run missed during a deploy is picked up a few minutes later.
+        $schedule->command('reminders:send')->everyFiveMinutes();
     }
 
     /**

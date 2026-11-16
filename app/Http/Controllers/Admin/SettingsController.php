@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\Reminders\ReminderService;
 use App\Services\Settings;
 use App\Support\WholesalePricing;
 use Illuminate\Http\Request;
@@ -95,6 +96,33 @@ class SettingsController extends Controller
             }
         }
 
+        if ($request->has('reminders_enabled')) {
+            $v = filter_var($request->input('reminders_enabled'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+            if ($v === null) {
+                $errors['reminders_enabled'] = ['مقدار فعال بودن یادآوری‌ها معتبر نیست.'];
+            } else {
+                $changes['reminders_enabled'] = $v ? '1' : '0';
+            }
+        }
+
+        $ranges = [
+            'reminder_hour' => [0, 23, 'ساعت ارسال یادآوری باید عددی بین ۰ تا ۲۳ باشد.'],
+            'idle_lead_days' => [1, 90, 'تعداد روز سرنخ بی‌پاسخ باید عددی بین ۱ تا ۹۰ باشد.'],
+            'open_quote_days' => [1, 90, 'تعداد روز پیش‌فاکتور باز باید عددی بین ۱ تا ۹۰ باشد.'],
+        ];
+        foreach ($ranges as $key => [$min, $max, $message]) {
+            if (!$request->has($key)) {
+                continue;
+            }
+            $n = $request->input($key);
+            $n = is_string($n) ? $this->digits($n) : $n;
+            if (!is_numeric($n) || (int) $n != $n || $n < $min || $n > $max) {
+                $errors[$key] = [$message];
+            } else {
+                $changes[$key] = (int) $n;
+            }
+        }
+
         if ($request->has('web_lead_assignee')) {
             $v = $request->input('web_lead_assignee');
             if ($v === null || $v === '') {
@@ -173,6 +201,11 @@ class SettingsController extends Controller
         $assignee = $all['web_lead_assignee'] ?? null;
         $out['web_lead_assignee'] = is_numeric($assignee) ? (int) $assignee : null;
         $out['sms_quote_enabled'] = filled(config('services.sms_provider.templates.quote'));
+        $out['reminders_enabled'] = ReminderService::enabled();
+        $out['reminder_hour'] = ReminderService::hour();
+        $out['idle_lead_days'] = ReminderService::idleDays();
+        $out['open_quote_days'] = ReminderService::openQuoteDays();
+        $out['sms_reminder_enabled'] = filled(config('services.sms_provider.templates.staff_reminder'));
 
         return $out;
     }
