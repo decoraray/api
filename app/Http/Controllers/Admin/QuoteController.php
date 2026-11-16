@@ -130,7 +130,7 @@ class QuoteController extends Controller
     {
         $data = $request->validate([
             'amount' => ['required', 'integer', 'min:1'],
-            'method' => ['required', 'in:CARD,CASH,CHEQUE,OTHER'],
+            'method' => ['required', 'in:CARD,CASH,CASH_RECEIVED,CHEQUE,OTHER'],
             'paid_at' => ['required', 'date_format:Y-m-d'],
             'reference' => ['nullable', 'string', 'max:255'],
         ]);
