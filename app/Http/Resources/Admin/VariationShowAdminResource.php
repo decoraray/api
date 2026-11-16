@@ -38,6 +38,8 @@ class VariationShowAdminResource extends JsonResource
             'old_price' => $this->when($request->user()?->can('prices.view'), $this->oldPrice),
             'discount' => $this->when($request->user()?->can('prices.view'), $this->product->deal ? $this->product->deal->discount : null),
             'price' => $this->when($request->user()?->can('prices.view'), $this->calculatedPrice),
+            'wholesale_price' => $this->when($request->user()?->can('prices.wholesale'), $this->wholesale_price),
+            'effective_wholesale_price' => $this->when($request->user()?->can('prices.wholesale'), fn () => $this->effectiveWholesalePrice()),
             'color' => $firstColor ? $firstColor->name : null, // Backward compatibility
             'colors' => $colorsCollection->isNotEmpty() ? ColorShowResource::collection($colorsCollection) : [],
             'size' => $this->size,

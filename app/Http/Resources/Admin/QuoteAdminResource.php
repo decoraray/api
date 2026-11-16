@@ -15,6 +15,7 @@ class QuoteAdminResource extends JsonResource
             'number' => $this->number,
             'token' => $this->token,
             'status' => $this->status,
+            'price_tier' => $this->price_tier ?? 'retail',
             'link' => rtrim(config('app.storefront_url', 'https://decoraray.ir'), '/') . '/q/' . $this->token,
             'user_id' => $this->user_id,
             'customer_name' => $this->customer_name,
@@ -35,8 +36,13 @@ class QuoteAdminResource extends JsonResource
             'totals' => QuoteTotals::for($this->resource),
         ];
 
+        $hidden = $this->price_tier === 'wholesale' && !$request->user()?->can('prices.wholesale');
+        if ($hidden) {
+            unset($out['totals']);
+        }
+
         if ($this->relationLoaded('lines') && !$this->resource->getAttribute('_list')) {
-            $out['lines'] = $this->lines->map(fn ($l) => [
+            $out['lines'] = $this->lines->map(fn ($l) => array_diff_key([
                 'id' => $l->id,
                 'position' => $l->position,
                 'product_id' => $l->product_id,
@@ -47,9 +53,9 @@ class QuoteAdminResource extends JsonResource
                 'quantity' => $l->quantity,
                 'unit_price' => $l->unit_price,
                 'line_total' => $l->quantity * $l->unit_price,
-            ])->values();
+            ], $hidden ? ['unit_price' => 1, 'line_total' => 1] : []))->values();
 
-            $out['payments'] = $this->order_id
+            $out['payments'] = $this->order_id && !$hidden
                 ? \App\Models\Payment::where('order_id', $this->order_id)->where('status', 'paid')->orderBy('created_at')->orderBy('id')->get()
                     ->map(function ($p) {
                         $enum = PaymentMethods::tryFrom((string) $p->method);

@@ -188,7 +188,8 @@ class QuoteController extends Controller
     {
         $request->merge(['phone' => Phone::normalize($request->input('phone'))]);
 
-        return $request->validate([
+        $data = $request->validate([
+            'price_tier' => ['nullable', 'in:retail,wholesale'],
             'lead_id' => ['nullable', 'integer', 'exists:leads,id'],
             'customer_name' => ['required', 'string', 'max:255'],
             'phone' => ['required', 'regex:/^09\d{9}$/'],
@@ -209,6 +210,13 @@ class QuoteController extends Controller
         ], [
             'phone.regex' => 'شماره موبایل معتبر نیست.',
         ]);
+
+        $current = $request->route('quote')?->price_tier;
+        if (($data['price_tier'] ?? null) === 'wholesale' && $current !== 'wholesale' && !$request->user()?->can('prices.wholesale')) {
+            throw ValidationException::withMessages(['price_tier' => ['شما اجازه ثبت پیش‌فاکتور با قیمت همکار را ندارید.']]);
+        }
+
+        return $data;
     }
 
     private function attributes(array $data): array
@@ -222,7 +230,7 @@ class QuoteController extends Controller
             'discount' => (int) ($data['discount'] ?? 0),
             'deposit_percent' => $data['deposit_percent'],
             'notes' => $data['notes'] ?? null,
-        ];
+        ] + (isset($data['price_tier']) ? ['price_tier' => $data['price_tier']] : []);
     }
 
     private function syncLines(Quote $quote, array $lines): void

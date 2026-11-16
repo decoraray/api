@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Support\WholesalePricing;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Spatie\Activitylog\LogOptions;
 
@@ -25,6 +26,7 @@ class Variation extends Model
         'stock',
         'weight',
         'price',
+        'wholesale_price',
         'active',
     ];
 
@@ -70,5 +72,15 @@ class Variation extends Model
             $discount = $this->price * $this->product->deal->discount / 100;
         }
         return $this->price - $discount;
+    }
+
+    /** Own wholesale price, else retail (before deals) minus the default percentage. Deals never apply. */
+    public function effectiveWholesalePrice(): int
+    {
+        if ($this->wholesale_price !== null) {
+            return (int) $this->wholesale_price;
+        }
+
+        return WholesalePricing::fallback((int) $this->price);
     }
 }
