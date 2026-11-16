@@ -58,11 +58,50 @@ jobs:
           printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key && chmod 600 ~/.ssh/deploy_key
           printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
           echo "Image size: $(docker image inspect -f '{{.Size}}' decoraray-api:latest | numfmt --to=iec)"
+          # No `set -e`: a failure of the registry path must reach the fallback below.
+          set -uo pipefail
+          REG="localhost:5000/decoraray-api:$SHA"
+          TUNNEL_PATTERN='-L 5000:127.0.0.1:5000'
+          trap 'pkill -f -- "$TUNNEL_PATTERN" 2>/dev/null || true' EXIT
+
+          registry_push() {
+            # Tunnel to the server's loopback registry (key allows only 127.0.0.1:5000).
+            ssh -f -N -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 \
+                -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+                -o ConnectTimeout=30 -L 5000:127.0.0.1:5000 "root@$HOST" || return 1
+            local up=0
+            for _ in $(seq 1 20); do
+              if curl -sf http://localhost:5000/v2/ >/dev/null; then up=1; break; fi
+              sleep 1
+            done
+            [ "$up" = 1 ] || { echo "registry did not answer through the tunnel"; return 1; }
+            docker tag decoraray-api:latest "$REG" || return 1
+            local start=$SECONDS out
+            out=$(mktemp)
+            timeout 900 docker push "$REG" 2>&1 | tee "$out"
+            local rc=${PIPESTATUS[0]}
+            echo "Push summary: $(grep -c 'Pushed' "$out" || true) pushed, $(grep -c 'Layer already exists' "$out" || true) already existed, $((SECONDS - start))s elapsed"
+            rm -f "$out"
+            return "$rc"
+          }
+
+          if registry_push; then
+            # The key is restricted server-side to decoraray-deploy; "api <sha> pull" are its arguments.
+            # A failure here (health check / rollback on the server) fails the job; no fallback.
+            ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+                -o ConnectTimeout=30 -o ServerAliveInterval=30 \
+                "root@$HOST" api "$SHA" pull </dev/null
+            exit $?
+          fi
+
+          echo "::warning::registry path failed, falling back to full stream"
+          pkill -f -- "$TUNNEL_PATTERN" 2>/dev/null || true
           # The key is restricted server-side to decoraray-deploy; "api <sha>" are its arguments.
           docker save decoraray-api:latest "decoraray-api:$SHA" | gzip -1 \
             | ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
                   -o ConnectTimeout=30 -o ServerAliveInterval=30 \
                   "root@$HOST" api "$SHA"
+          exit $?
 
       - name: Clean up key
         if: always()
