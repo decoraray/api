@@ -16,7 +16,7 @@ class QuoteAdminResource extends JsonResource
             'token' => $this->token,
             'status' => $this->status,
             'price_tier' => $this->price_tier ?? 'retail',
-            'link' => rtrim(config('app.storefront_url', 'https://decoraray.ir'), '/') . '/q/' . $this->token,
+            'link' => rtrim(config('app.storefront_url', 'https://decoraray.com'), '/') . '/q/' . $this->token,
             'user_id' => $this->user_id,
             'customer_name' => $this->customer_name,
             'phone' => $this->phone,

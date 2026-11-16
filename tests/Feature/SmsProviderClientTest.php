@@ -19,7 +19,7 @@ class SmsProviderClientTest extends TestCase
         ]);
         Http::fake();
 
-        (new SmsProviderClient())->sendSms('۰۹۱۲۳۴۵۶۷۸۹', SmsTemplate::QUOTE_LINK, ['LINK' => 'https://decoraray.ir/q/abc']);
+        (new SmsProviderClient())->sendSms('۰۹۱۲۳۴۵۶۷۸۹', SmsTemplate::QUOTE_LINK, ['LINK' => 'https://decoraray.com/q/abc']);
 
         Http::assertSent(function (Request $r) {
             return str_ends_with($r->url(), 'send/verify')
@@ -27,7 +27,7 @@ class SmsProviderClientTest extends TestCase
                 && $r->data() === [
                     'mobile' => '09123456789',
                     'templateId' => 777,
-                    'parameters' => [['name' => 'LINK', 'value' => 'https://decoraray.ir/q/abc']],
+                    'parameters' => [['name' => 'LINK', 'value' => 'https://decoraray.com/q/abc']],
                 ];
         });
     }

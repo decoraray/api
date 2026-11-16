@@ -52,7 +52,7 @@ class OrderNotificationTest extends TestCase
         RecordingSms::$fail = false;
         $this->app->bind(SmsProviderClientInterface::class, RecordingSms::class);
         config([
-            'app.front_url' => 'https://decoraray.ir',
+            'app.front_url' => 'https://decoraray.com',
             'services.sms_provider.templates.order_paid' => '11',
             'services.sms_provider.templates.order_confirmed' => '12',
             'services.sms_provider.templates.order_shipped' => '13',
@@ -115,7 +115,7 @@ class OrderNotificationTest extends TestCase
         $this->assertSame([
             'NAME' => 'مریم',
             'ORDER' => '10f8e9',
-            'LINK' => 'https://decoraray.ir/profile/orders#order-6af9d3310f8e9',
+            'LINK' => 'https://decoraray.com/profile/orders#order-6af9d3310f8e9',
         ], $s['parameters']);
         $this->assertSame('sent', $order->notifications()->first()->status);
     }

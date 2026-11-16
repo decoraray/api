@@ -116,7 +116,7 @@ class QuoteController extends Controller
             throw ValidationException::withMessages(['quote' => ['این پیش‌فاکتور لغو شده است.']]);
         }
 
-        $link = rtrim(config('app.storefront_url', 'https://decoraray.ir'), '/') . '/q/' . $quote->token;
+        $link = rtrim(config('app.storefront_url', 'https://decoraray.com'), '/') . '/q/' . $quote->token;
         $sms->sendSms($quote->phone, SmsTemplate::QUOTE_LINK, ['LINK' => $link]);
 
         $quote->sms_sent_at = now();

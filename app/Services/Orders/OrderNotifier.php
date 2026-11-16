@@ -97,7 +97,7 @@ class OrderNotifier
     private function parameters(Order $order): array
     {
         $name = trim((string) ($order->user?->name ?? ''));
-        $base = rtrim(config('app.front_url') ?: 'https://decoraray.ir', '/');
+        $base = rtrim(config('app.front_url') ?: 'https://decoraray.com', '/');
 
         return [
             'NAME' => explode(' ', $name)[0] ?? '',

@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is the Laravel 13 / PHP 8 API for Decoraray, a Persian-language e-commerce platform. It serves the storefront (`ui`), admin dashboard (`admin`), and legacy Vue app (`old`) — see the monorepo root `CLAUDE.md` for the full-stack picture. This file covers only the `api/` service.
 
-- Production API: https://api.decoraray.ir
-- Swagger UI: https://api.decoraray.ir/swagger/index.html (served from `resources/documentation/api-docs.yaml` and `public/swagger/`)
+- Production API: https://api.decoraray.com
+- Swagger UI: https://api.decoraray.com/swagger/index.html (served from `resources/documentation/api-docs.yaml` and `public/swagger/`)
 
 ## Development Commands
 

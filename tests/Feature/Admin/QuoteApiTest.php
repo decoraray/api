@@ -254,7 +254,7 @@ class QuoteApiTest extends TestCase
         $this->assertSame('09123456789', FakeSms::$sent[0]['phone']);
         $this->assertSame(SmsTemplate::QUOTE_LINK, FakeSms::$sent[0]['template']);
         $this->assertSame(555, SmsTemplate::QUOTE_LINK->templateId());
-        $this->assertSame('https://decoraray.ir/q/' . $q->token, FakeSms::$sent[0]['parameters']['LINK']);
+        $this->assertSame('https://decoraray.com/q/' . $q->token, FakeSms::$sent[0]['parameters']['LINK']);
     }
 
     public function test_customer_lookup_and_token_not_logged()

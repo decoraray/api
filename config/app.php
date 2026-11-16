@@ -57,7 +57,7 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     // Public storefront origin, used to build tracked short links (<origin>/go/<code>).
-    'storefront_url' => env('STOREFRONT_URL', 'https://decoraray.ir'),
+    'storefront_url' => env('STOREFRONT_URL', 'https://decoraray.com'),
     'front_url' => env('FRONT_URL', 'http://localhost'),
     'asset_url' => env('ASSET_URL'),
 
