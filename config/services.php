@@ -45,6 +45,8 @@ return [
             'order_confirmed' => env('SMS_ORDER_CONFIRMED_TEMPLATE_ID'),
             'order_shipped' => env('SMS_ORDER_SHIPPED_TEMPLATE_ID'),
             'order_canceled' => env('SMS_ORDER_CANCELED_TEMPLATE_ID'),
+            // staff digest; parameters NAME, FOLLOWUPS, IDLE, QUOTES
+            'staff_reminder' => env('SMS_STAFF_REMINDER_TEMPLATE_ID'),
         ],
     ],
 

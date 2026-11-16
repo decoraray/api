@@ -11,6 +11,7 @@ use App\Models\Lead;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Leads\LeadService;
+use App\Services\Reminders\ReminderService;
 use App\Support\Phone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -136,10 +137,7 @@ class LeadController extends Controller
 
     private function scopeDue($query): void
     {
-        $end = Carbon::now('Asia/Tehran')->endOfDay()->utc();
-        $query->whereNotNull('next_follow_up_at')
-            ->where('next_follow_up_at', '<=', $end)
-            ->whereNotIn('stage', [LeadStage::WON->value, LeadStage::LOST->value]);
+        $query->whereIn('leads.id', app(ReminderService::class)->dueQuery()->select('leads.id'));
     }
 
     private function salespeople()

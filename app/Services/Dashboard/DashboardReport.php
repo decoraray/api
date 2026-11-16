@@ -7,6 +7,7 @@ use App\Enums\LeadSource;
 use App\Enums\LeadStage;
 use App\Enums\OrderStatus;
 use App\Models\User;
+use App\Services\Reminders\ReminderService;
 use App\Services\Settings;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
@@ -173,7 +174,7 @@ class DashboardReport
             ->whereIn('leads.stage', $open)
             ->where(function ($w) {
                 $w->whereNull('leads.next_follow_up_at')
-                    ->orWhere('leads.last_activity_at', '<', now()->subDays(7));
+                    ->orWhere('leads.last_activity_at', '<', now()->subDays(ReminderService::idleDays()));
             })
             ->select('leads.id', 'leads.name', 'leads.stage', 'leads.assigned_to', 'users.name as assignee',
                 'leads.last_activity_at', 'leads.next_follow_up_at');
