@@ -2,6 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\CustomerType;
+use App\Enums\LeadSource;
+use App\Enums\OrderStatus;
+use App\Services\Dashboard\DashboardReport;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Product;
@@ -13,6 +20,38 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    public function report(Request $request, DashboardReport $report)
+    {
+        $data = $request->validate([
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d'],
+            'assigned_to' => ['nullable', 'integer'],
+            'source' => ['nullable', Rule::in([...array_column(LeadSource::cases(), 'value'), 'website', 'none'])],
+            'customer_type' => ['nullable', Rule::in(array_column(CustomerType::cases(), 'value'))],
+        ]);
+
+        $today = Carbon::now(DashboardReport::TZ)->startOfDay();
+        $to = $data['to'] ?? $today->format('Y-m-d');
+        $from = $data['from'] ?? Carbon::parse($to)->subDays(29)->format('Y-m-d');
+
+        if ($from > $to) {
+            throw ValidationException::withMessages(['from' => ['تاریخ شروع باید قبل از تاریخ پایان باشد.']]);
+        }
+        if (Carbon::parse($from)->diffInDays(Carbon::parse($to)) > 400) {
+            throw ValidationException::withMessages(['to' => ['بازه نباید بیش از ۴۰۰ روز باشد.']]);
+        }
+
+        $user = $request->user();
+
+        return response()->json($report->build([
+            'from' => $from,
+            'to' => $to,
+            'assigned_to' => isset($data['assigned_to']) ? (int) $data['assigned_to'] : null,
+            'source' => $data['source'] ?? null,
+            'customer_type' => $data['customer_type'] ?? null,
+        ], (bool) $user?->can('prices.view'), (bool) $user?->can('leads.manage')));
+    }
+
     public function statistics(Request $request)
     {
         // Get counts
@@ -22,22 +61,21 @@ class DashboardController extends Controller
         $totalUsers = User::count();
 
         // Get order statistics
-        $pendingOrders = Order::where('status', 'pending')->count();
-        $processingOrders = Order::where('status', 'processing')->count();
-        $completedOrders = Order::where('status', 'completed')->count();
+        $groups = DashboardReport::groups();
+        $values = fn (array $cases) => array_map(fn ($c) => $c->value, $cases);
+        $pendingOrders = Order::whereIn('status', $values($groups['waiting']))->count();
+        $processingOrders = Order::whereIn('status', $values([...$groups['paid'], ...$groups['production']]))->count();
+        $completedOrders = Order::where('status', OrderStatus::DELIVERED->value)->count();
 
-        // Get revenue statistics
-        $totalRevenue = Order::where('status', '!=', 'cancelled')
-            ->sum('total');
+        // Revenue = successful payments, by paid time (updated_at), Tehran days
+        $tz = DashboardReport::TZ;
+        $paid = fn () => DB::table('payments')->where('status', 'paid');
+        $range = fn ($q, Carbon $a, Carbon $b) => $q->whereBetween('updated_at', [$a->copy()->utc(), $b->copy()->utc()]);
+        $nowT = Carbon::now($tz);
 
-        $todayRevenue = Order::where('status', '!=', 'cancelled')
-            ->whereDate('created_at', today())
-            ->sum('total');
-
-        $thisMonthRevenue = Order::where('status', '!=', 'cancelled')
-            ->whereYear('created_at', now()->year)
-            ->whereMonth('created_at', now()->month)
-            ->sum('total');
+        $totalRevenue = (int) $paid()->sum('amount');
+        $todayRevenue = (int) $range($paid(), $nowT->copy()->startOfDay(), $nowT->copy()->endOfDay())->sum('amount');
+        $thisMonthRevenue = (int) $range($paid(), $nowT->copy()->startOfMonth(), $nowT->copy()->endOfMonth())->sum('amount');
 
         // Get recent orders (last 10)
         $recentOrders = Order::with('user')
@@ -88,11 +126,8 @@ class DashboardController extends Controller
         // Get monthly revenue for last 6 months
         $monthlyRevenue = [];
         for ($i = 5; $i >= 0; $i--) {
-            $month = now()->subMonths($i);
-            $revenue = Order::where('status', '!=', 'cancelled')
-                ->whereYear('created_at', $month->year)
-                ->whereMonth('created_at', $month->month)
-                ->sum('total');
+            $month = $nowT->copy()->startOfMonth()->subMonths($i);
+            $revenue = (int) $range($paid(), $month->copy()->startOfMonth(), $month->copy()->endOfMonth())->sum('amount');
 
             $monthlyRevenue[] = [
                 'month' => $month->format('M Y'),

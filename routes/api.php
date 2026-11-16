@@ -146,6 +146,7 @@ Route::prefix('v1')
                     // dashboard.view
                     Route::middleware('permission:dashboard.view')->group(function () {
                         Route::get('dashboard/statistics', 'DashboardController@statistics');
+                        Route::get('dashboard/report', 'DashboardController@report');
                     });
 
                     // catalog.view + prices.view (must precede products/{product} in the route list)

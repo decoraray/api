@@ -67,6 +67,16 @@ class SettingsController extends Controller
             }
         }
 
+        if (array_key_exists('late_order_days', $input = $request->all())) {
+            $days = $input['late_order_days'];
+            $days = is_string($days) ? $this->digits($days) : $days;
+            if (!is_numeric($days) || (int) $days != $days || $days < 1 || $days > 180) {
+                $errors['late_order_days'] = ['تعداد روز باید عددی بین ۱ تا ۱۸۰ باشد.'];
+            } else {
+                $changes['late_order_days'] = (int) $days;
+            }
+        }
+
         if ($request->has('wholesale_discount_percent')) {
             if (!$request->user()?->can('prices.wholesale')) {
                 abort(403, 'شما اجازه تغییر درصد تخفیف همکار را ندارید.');
@@ -123,6 +133,7 @@ class SettingsController extends Controller
         }
         $percent = $all['default_deposit_percent'] ?? null;
         $out['default_deposit_percent'] = $percent === null || $percent === '' ? 60 : (int) $percent;
+        $out['late_order_days'] = \App\Services\Dashboard\DashboardReport::lateDays();
         if (request()->user()?->can('prices.wholesale')) {
             $out['wholesale_discount_percent'] = WholesalePricing::percent();
         }
