@@ -42,6 +42,9 @@ class OrderShowAdminResource extends JsonResource
             'payments' => $this->when($request->user()?->can('prices.view'), $this->payments ? PaymentShowAdminResource::collection($this->payments) : null),
             'description' => $this->description,
             'source' => $this->source,
+            'channel' => $this->channel,
+            'channel_label' => \App\Support\Channel::label($this->channel),
+            'tracked_link' => $this->trackedLink ? ['code' => $this->trackedLink->code] : null,
             'quote_id' => $this->quote_id,
             'quote_number' => $this->quote_number,
             'notifications' => $this->notifications()->latest('id')->get()

@@ -41,6 +41,9 @@ class LeadResource extends JsonResource
             'created_by' => self::person($this->creator),
             'last_activity_at' => $this->last_activity_at,
             'created_at' => $this->created_at,
+            'attribution' => $this->attribution,
+            'tracked_link' => $this->trackedLink ? ['id' => $this->trackedLink->id, 'code' => $this->trackedLink->code] : null,
+            'sms_consent_at' => $this->sms_consent_at,
         ];
 
         if ($this->relationLoaded('activities')) {

@@ -56,7 +56,7 @@ class LeadApiTest extends TestCase
         $h = $this->as();
         $r = $this->getJson('/api/v1/admin/leads/meta', $h)->assertOk();
         $this->assertSame('new', $r->json('stages.0.id'));
-        $this->assertCount(8, $r->json('sources'));
+        $this->assertCount(10, $r->json('sources'));
         $this->assertCount(3, $r->json('customer_types'));
         $this->assertContains($this->user->id, array_column($r->json('salespeople'), 'id'));
     }

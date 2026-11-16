@@ -31,7 +31,7 @@ class LeadController extends Controller
 
     public function index(Request $request)
     {
-        $query = Lead::query()->with(['assignee', 'creator'])->latest('id');
+        $query = Lead::query()->with(['assignee', 'creator', 'trackedLink'])->latest('id');
 
         if ($search = trim((string) $request->query('search', ''))) {
             $phone = Phone::normalize($search);
@@ -151,7 +151,7 @@ class LeadController extends Controller
 
     private function loaded(Lead $lead, bool $detail): Lead
     {
-        $lead = $lead->fresh(['assignee', 'creator', 'activities.user']);
+        $lead = $lead->fresh(['assignee', 'creator', 'activities.user', 'trackedLink']);
         if ($detail) {
             $lead->load('quotes');
             $lead->setAttribute('_detail', true);

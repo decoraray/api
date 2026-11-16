@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\OrderStatus;
 use App\Http\Requests\CheckoutRequest;
+use App\Support\Attribution;
+use App\Support\Channel;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -37,7 +39,19 @@ class Order extends Model
         'description',
         'source',
         'quote_id',
+        'channel',
+        'tracked_link_id',
+        'attribution',
     ];
+
+    protected $casts = [
+        'attribution' => 'array',
+    ];
+
+    public function trackedLink()
+    {
+        return $this->belongsTo(TrackedLink::class);
+    }
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -115,6 +129,20 @@ class Order extends Model
         }
     }
 
+    /** channel, tracked_link_id and attribution for a website order, from the client's attribution payload. */
+    public static function channelAttributes($payload): array
+    {
+        $payload = is_array($payload) ? $payload : [];
+        $link = TrackedLink::resolve($payload['link'] ?? null);
+        $channel = Channel::resolve($link, $payload['channel'] ?? null, true);
+
+        return [
+            'channel' => $channel,
+            'tracked_link_id' => $link?->id,
+            'attribution' => Attribution::clean($payload),
+        ];
+    }
+
     public static function createFromRequest(CheckoutRequest $request)
     {
 
@@ -148,7 +176,8 @@ class Order extends Model
             'address_id' => $address->id,
             'shipping_id' => $shipping->id,
             'description' => $request->description,
-        ]);
+            'source' => 'site',
+        ] + self::channelAttributes($request->input('attribution')));
 
         $order->save();
 

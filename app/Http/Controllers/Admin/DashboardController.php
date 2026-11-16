@@ -26,7 +26,7 @@ class DashboardController extends Controller
             'from' => ['nullable', 'date_format:Y-m-d'],
             'to' => ['nullable', 'date_format:Y-m-d'],
             'assigned_to' => ['nullable', 'integer'],
-            'source' => ['nullable', Rule::in([...array_column(LeadSource::cases(), 'value'), 'website', 'none'])],
+            'source' => ['nullable', Rule::in([...array_column(LeadSource::cases(), 'value'), 'website', 'direct', 'none'])],
             'customer_type' => ['nullable', Rule::in(array_column(CustomerType::cases(), 'value'))],
         ]);
 
