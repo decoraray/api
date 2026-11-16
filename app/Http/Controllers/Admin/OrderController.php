@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Services\Orders\OrderCreationService;
 use App\Services\Orders\OrderNotifier;
+use App\Http\Requests\Admin\StoreOrderRequest;
+use App\Models\User;
+use App\Support\Phone;
 use Barryvdh\DomPDF\Facade\Pdf as PDF;
 use App\Models\Order;
 use App\Models\Shipping;
@@ -38,6 +42,35 @@ class OrderController extends Controller
     public function show(Order $order)
     {
         return new OrderShowAdminResource($order);
+    }
+
+    public function store(StoreOrderRequest $request, OrderCreationService $service)
+    {
+        $order = $service->create($request->validated(), $request->user());
+
+        return (new OrderShowAdminResource($order->load('items', 'payments', 'user')))->response()->setStatusCode(201);
+    }
+
+    /** Choices for the create-order form. */
+    public function options()
+    {
+        return response()->json([
+            'shipping_methods' => ShippingListAdminResource::collection(Shipping::all()),
+            'statuses' => OrderStatus::values(),
+            'payment_methods' => \App\Enums\PaymentMethods::values(),
+            'channels' => collect(\App\Support\Channel::labels())->map(fn ($label, $id) => ['id' => $id, 'label' => $label])->values(),
+        ]);
+    }
+
+    public function customerLookup(Request $request)
+    {
+        $user = User::whereIn('phone', Phone::variants($request->query('phone')))->first();
+        $address = $user ? Order::where('user_id', $user->id)->where('address', '!=', '')->latest('id')->first() : null;
+
+        return response()->json([
+            'user' => $user ? ['id' => $user->id, 'name' => $user->name, 'surname' => $user->surname, 'phone' => $user->phone] : null,
+            'last_address' => $address ? $address->only('address', 'city', 'county', 'postal_code') : null,
+        ]);
     }
 
     public function update(UpdateOrderRequest $request, Order $order)
