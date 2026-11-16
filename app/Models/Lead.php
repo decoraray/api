@@ -13,11 +13,14 @@ class Lead extends Model
     protected $fillable = [
         'name', 'phone', 'handle', 'city', 'customer_type', 'source', 'interest', 'stage', 'lost_reason',
         'assigned_to', 'next_follow_up_at', 'user_id', 'created_by', 'last_activity_at',
+        'tracked_link_id', 'attribution', 'sms_consent_at',
     ];
 
     protected $casts = [
         'next_follow_up_at' => 'datetime',
         'last_activity_at' => 'datetime',
+        'attribution' => 'array',
+        'sms_consent_at' => 'datetime',
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -27,6 +30,11 @@ class Lead extends Model
             ->logExcept(['last_activity_at'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
+    }
+
+    public function trackedLink()
+    {
+        return $this->belongsTo(TrackedLink::class);
     }
 
     public function assignee()
