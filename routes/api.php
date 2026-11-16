@@ -231,6 +231,13 @@ Route::prefix('v1')
                         Route::get('orders/uuid/{uuid}', 'OrderController@uuid');
                     });
 
+                    // orders.create
+                    Route::middleware('permission:orders.create')->group(function () {
+                        Route::post('orders', 'OrderController@store');
+                        Route::get('orders-customer', 'OrderController@customerLookup');
+                        Route::get('orders-options', 'OrderController@options');
+                    });
+
                     // orders.update-status
                     Route::middleware('permission:orders.update-status')->group(function () {
                         Route::patch('/orders/{order:uuid}', 'OrderController@update');
