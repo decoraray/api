@@ -39,6 +39,8 @@ return [
     'sms_provider' => [
         'url' => env('SMS_PROVIDER_URL'),
         'app_key' => env('SMS_PROVIDER_APP_KEY'),
+        // sms.ir line allowed to send marketing SMS; campaigns are refused while empty
+        'campaign_line' => env('SMS_CAMPAIGN_LINE'),
         'templates' => [
             'quote' => env('SMS_QUOTE_TEMPLATE_ID'),
             'order_paid' => env('SMS_ORDER_PAID_TEMPLATE_ID'),

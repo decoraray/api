@@ -17,6 +17,10 @@ class AppServiceProvider extends ServiceProvider
             \App\Clients\SmsClient\SmsProviderClientInterface::class,
             \App\Clients\SmsClient\SmsProviderClient::class
         );
+        $this->app->bind(
+            \App\Clients\SmsClient\BulkSmsClientInterface::class,
+            \App\Clients\SmsClient\SmsProviderClient::class
+        );
     }
 
     /**

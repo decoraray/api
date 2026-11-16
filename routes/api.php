@@ -117,6 +117,20 @@ Route::prefix('v1')
                     Route::get('settings', 'SettingsController@show')->middleware('permission:quotes.manage|settings.manage');
                     Route::put('settings', 'SettingsController@update')->middleware('permission:settings.manage');
 
+                    // campaigns.manage (static routes before campaigns/{campaign})
+                    Route::middleware('permission:campaigns.manage')->group(function () {
+                        Route::post('campaigns/preview', 'CampaignController@preview');
+                        Route::get('campaigns', 'CampaignController@index');
+                        Route::post('campaigns', 'CampaignController@store');
+                        Route::get('campaigns/{campaign}', 'CampaignController@show');
+                        Route::patch('campaigns/{campaign}', 'CampaignController@update');
+                        Route::post('campaigns/{campaign}/test', 'CampaignController@test');
+                        Route::post('campaigns/{campaign}/send', 'CampaignController@send');
+                        Route::post('campaigns/{campaign}/cancel', 'CampaignController@cancel');
+                        Route::get('sms-opt-outs', 'SmsOptOutController@index');
+                        Route::post('sms-opt-outs', 'SmsOptOutController@store');
+                    });
+
                     // leads.manage or quotes.manage (sections filtered per permission)
                     Route::get('reminders', 'ReminderController@index')->middleware('permission:leads.manage|quotes.manage');
 
