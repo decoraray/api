@@ -14,6 +14,7 @@ enum LeadSource: string
     case PARTNER = 'partner';
     case GOOGLE = 'google';
     case TOROB = 'torob';
+    case SMS = 'sms';
 
     public function label(): string
     {
@@ -28,6 +29,7 @@ enum LeadSource: string
             self::PARTNER => 'همکار',
             self::GOOGLE => 'گوگل',
             self::TOROB => 'ترب',
+            self::SMS => 'پیامک',
         };
     }
 
