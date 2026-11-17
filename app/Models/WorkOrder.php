@@ -59,6 +59,11 @@ class WorkOrder extends Model
         return $this->belongsTo(Item::class);
     }
 
+    public function materials()
+    {
+        return $this->hasMany(WorkOrderMaterial::class)->orderBy('id');
+    }
+
     public function logs()
     {
         return $this->hasMany(WorkOrderStageLog::class)->orderBy('id');

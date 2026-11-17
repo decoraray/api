@@ -30,9 +30,9 @@ class InventoryService
     }
 
     /** Stock leaves, valued at the current average. */
-    public function issue(StockItem $item, float $quantity, ?User $user, ?string $note = null, ?Model $reference = null): StockMovement
+    public function issue(StockItem $item, float $quantity, ?User $user, ?string $note = null, ?Model $reference = null, string $type = StockMovement::TYPE_OUT): StockMovement
     {
-        return $this->record($item, StockMovement::TYPE_OUT, fn (StockItem $locked) => [-$quantity, $locked->average_cost, $locked->average_cost], $user, $note, $reference);
+        return $this->record($item, $type, fn (StockItem $locked) => [-$quantity, $locked->average_cost, $locked->average_cost], $user, $note, $reference);
     }
 
     /** A count found a different quantity: the ledger gets the difference. */
@@ -61,6 +61,12 @@ class InventoryService
 
             if ($balance < 0) {
                 throw ValidationException::withMessages(['quantity' => ['موجودی کافی نیست.']]);
+            }
+
+            // Stock held for work orders cannot leave any other way. A work order consuming its own
+            // material lowers its reservation first (WorkOrderMaterialService::consume), so it passes.
+            if ($delta < 0 && $balance < round($locked->reserved, 3)) {
+                throw ValidationException::withMessages(['quantity' => ['بخشی از موجودی برای دستورهای تولید رزرو شده است.']]);
             }
 
             $movement = StockMovement::create([

@@ -25,6 +25,8 @@ class StockItemResource extends JsonResource
             'width_mm' => $this->width_mm,
             'sheet_type' => $this->sheet_type,
             'quantity' => $this->quantity,
+            'reserved' => $this->reserved,
+            'available' => $this->available,
             'reorder_point' => $this->reorder_point,
             'is_low' => $this->is_low,
             'active' => $this->active,

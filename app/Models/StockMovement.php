@@ -10,6 +10,8 @@ class StockMovement extends Model
     public const TYPE_IN = 'in';
     public const TYPE_OUT = 'out';
     public const TYPE_ADJUST = 'adjust';
+    // Material lost on a job (offcuts, mistakes): an issue, kept apart so it can be reported.
+    public const TYPE_WASTE = 'waste';
 
     public $timestamps = false;
 
@@ -54,6 +56,7 @@ class StockMovement extends Model
             self::TYPE_IN => 'ورود',
             self::TYPE_OUT => 'خروج',
             self::TYPE_ADJUST => 'شمارش',
+            self::TYPE_WASTE => 'ضایعات',
             default => $type,
         };
     }

@@ -42,7 +42,7 @@ class WorkOrderService
                     continue;
                 }
 
-                WorkOrder::create([
+                $created = WorkOrder::create([
                     'number' => 'WO-' . $order->id . '-' . ($index + 1),
                     'order_id' => $order->id,
                     'item_id' => $item->id,
@@ -52,6 +52,9 @@ class WorkOrderService
                     'color' => $item->color,
                     'description' => $item->description,
                 ]);
+
+                // The material list starts from the product's BOM; custom lines start empty.
+                app(WorkOrderMaterialService::class)->fillFromTemplate($created, $item);
             }
 
             return $order->workOrders()->get();
@@ -112,6 +115,7 @@ class WorkOrderService
             $now = now();
             $this->closeOpenLog($workOrder, $now);
             $workOrder->update(['state' => WorkOrderState::DONE, 'finished_at' => $now]);
+            app(WorkOrderMaterialService::class)->release($workOrder);
 
             $this->syncOrderStatus($workOrder->order);
 
@@ -132,6 +136,7 @@ class WorkOrderService
             foreach ($open as $workOrder) {
                 $this->closeOpenLog($workOrder, $now);
                 $workOrder->update(['state' => WorkOrderState::CANCELLED]);
+                app(WorkOrderMaterialService::class)->release($workOrder);
             }
         });
     }
