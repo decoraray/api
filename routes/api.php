@@ -260,6 +260,19 @@ Route::prefix('v1')
                         Route::patch('/orders/{order:uuid}', 'OrderController@update');
                     });
 
+                    // production.view
+                    Route::middleware('permission:production.view')->group(function () {
+                        Route::get('work-orders', 'WorkOrderController@index');
+                        Route::get('work-orders/{workOrder}', 'WorkOrderController@show');
+                    });
+
+                    // production.update
+                    Route::middleware('permission:production.update')->group(function () {
+                        Route::post('orders/{order:uuid}/work-orders', 'WorkOrderController@storeForOrder');
+                        Route::post('work-orders/{workOrder}/stage', 'WorkOrderController@move');
+                        Route::post('work-orders/{workOrder}/complete', 'WorkOrderController@complete');
+                    });
+
                     // orders.invoice
                     Route::middleware('permission:orders.invoice')->group(function () {
                         Route::get('/orders/pdf/{uuid}', 'OrderController@downloadPdf');
