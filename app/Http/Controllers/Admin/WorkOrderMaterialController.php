@@ -29,6 +29,11 @@ class WorkOrderMaterialController extends Controller
             'lines.*.stock_item_id' => ['required', 'integer', 'distinct', Rule::exists('stock_items', 'id')],
             'lines.*.quantity' => ['required', 'numeric', 'gt:0', 'max:999999999', 'regex:/^\d+(\.\d{1,3})?$/'],
             'lines.*.note' => ['nullable', 'string', 'max:190'],
+        ], [
+            'lines.*.stock_item_id.distinct' => 'هر قلم انبار فقط یک بار در فهرست مواد می‌آید.',
+            'lines.*.quantity.required' => 'مقدار هر ماده را وارد کنید.',
+            'lines.*.quantity.gt' => 'مقدار هر ماده باید بیشتر از صفر باشد.',
+            'lines.*.quantity.regex' => 'مقدار حداکثر سه رقم اعشار دارد.',
         ]);
 
         $this->materials->replacePlan($workOrder, $data['lines']);

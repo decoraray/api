@@ -34,6 +34,9 @@ class BomController extends Controller
             'lines.*.note' => ['nullable', 'string', 'max:190'],
         ], [
             'lines.*.stock_item_id.distinct' => 'هر قلم انبار فقط یک بار در فرمول ساخت می‌آید.',
+            'lines.*.quantity.required' => 'مقدار هر ماده را وارد کنید.',
+            'lines.*.quantity.gt' => 'مقدار هر ماده باید بیشتر از صفر باشد.',
+            'lines.*.quantity.regex' => 'مقدار حداکثر سه رقم اعشار دارد.',
         ]);
 
         $variationId = $data['variation_id'] ?? null;

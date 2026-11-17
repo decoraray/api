@@ -60,6 +60,8 @@ class BomApiTest extends MaterialTestCase
 
         $this->putJson($url, ['lines' => [['stock_item_id' => $sheet->id, 'quantity' => 1], ['stock_item_id' => $sheet->id, 'quantity' => 2]]], $headers)->assertStatus(422);
         $this->putJson($url, ['lines' => [['stock_item_id' => $sheet->id, 'quantity' => 0]]], $headers)->assertStatus(422);
+        $this->putJson($url, ['lines' => [['stock_item_id' => $sheet->id, 'quantity' => null]]], $headers)->assertStatus(422)
+            ->assertJsonFragment(['مقدار هر ماده را وارد کنید.']);
         $this->putJson($url, ['lines' => [['stock_item_id' => 99999, 'quantity' => 1]]], $headers)->assertStatus(422);
         $this->putJson($url, ['variation_id' => $foreign->id, 'lines' => []], $headers)->assertStatus(422);
         $this->putJson($url, [], $headers)->assertStatus(422);
