@@ -29,6 +29,7 @@ class AuditLogController extends Controller
         'post' => Post::class,
         'order' => Order::class,
         'work_order' => \App\Models\WorkOrder::class,
+        'stock_item' => \App\Models\StockItem::class,
         'user' => User::class,
     ];
 

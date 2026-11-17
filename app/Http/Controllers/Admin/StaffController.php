@@ -11,7 +11,7 @@ use App\Http\Resources\Admin\AdminUserResource;
 
 class StaffController extends Controller
 {
-    protected array $staffRoles = ['SuperAdmin', 'Sales', 'Technic', 'Admin'];
+    protected array $staffRoles = ['SuperAdmin', 'Sales', 'Technic', 'Warehouse', 'Admin'];
 
     public function index(Request $request)
     {
@@ -31,7 +31,7 @@ class StaffController extends Controller
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:255|unique:users,phone',
             'password' => 'required|string|min:6',
-            'role' => 'required|in:SuperAdmin,Sales,Technic,Admin',
+            'role' => 'required|in:SuperAdmin,Sales,Technic,Warehouse,Admin',
         ]);
 
         $user = User::create([
@@ -56,7 +56,7 @@ class StaffController extends Controller
             'name' => 'sometimes|nullable|string|max:255',
             'surname' => 'sometimes|nullable|string|max:255',
             'password' => 'sometimes|nullable|string|min:6',
-            'role' => 'required|in:SuperAdmin,Sales,Technic,Admin',
+            'role' => 'required|in:SuperAdmin,Sales,Technic,Warehouse,Admin',
         ]);
 
         $oldRole = $user->roles->whereIn('name', $this->staffRoles)->first()?->name;
