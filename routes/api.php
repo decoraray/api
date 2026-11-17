@@ -274,6 +274,20 @@ Route::prefix('v1')
                         Route::patch('/orders/{order:uuid}', 'OrderController@update');
                     });
 
+                    // inventory.view
+                    Route::middleware('permission:inventory.view')->group(function () {
+                        Route::get('stock-items', 'StockItemController@index');
+                        Route::get('stock-items/{stockItem}', 'StockItemController@show');
+                        Route::get('stock-items/{stockItem}/movements', 'StockItemController@movements');
+                    });
+
+                    // inventory.manage
+                    Route::middleware('permission:inventory.manage')->group(function () {
+                        Route::post('stock-items', 'StockItemController@store');
+                        Route::put('stock-items/{stockItem}', 'StockItemController@update');
+                        Route::post('stock-items/{stockItem}/movements', 'StockItemController@storeMovement');
+                    });
+
                     // production.view
                     Route::middleware('permission:production.view')->group(function () {
                         Route::get('work-orders', 'WorkOrderController@index');
