@@ -23,6 +23,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('campaigns:send')->everyMinute()->withoutOverlapping(30);
         // Replies of «11» / «لغو» to the campaign line become opt-outs.
         $schedule->command('campaigns:sync-opt-outs')->everyFiveMinutes()->withoutOverlapping(10);
+
+        // Instagram: events left pending by a crashed request, and failed ones (up to 10 tries).
+        $schedule->command('instagram:process')->everyFiveMinutes()->withoutOverlapping(10);
+        // Long-lived token lasts 60 days; refreshed when within 15 days of expiry.
+        $schedule->command('instagram:refresh-token')->dailyAt('04:00')->timezone('Asia/Tehran');
     }
 
     /**

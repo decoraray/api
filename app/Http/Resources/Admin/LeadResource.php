@@ -4,6 +4,9 @@ namespace App\Http\Resources\Admin;
 
 use App\Enums\LeadSource;
 use App\Enums\LeadStage;
+use App\Models\InstagramContact;
+use App\Models\InstagramMessage;
+use App\Models\InstagramReplyRule;
 use App\Services\Quotes\QuoteTotals;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Carbon;
@@ -13,6 +16,22 @@ class LeadResource extends JsonResource
     private static function person($u): ?array
     {
         return $u ? ['id' => $u->id, 'name' => trim($u->name . ' ' . $u->surname)] : null;
+    }
+
+    /** The Instagram contact behind this lead: linked now, or via messages for an older lead. */
+    private function instagram(): ?array
+    {
+        $contact = InstagramContact::where('lead_id', $this->id)->first()
+            ?? InstagramContact::whereIn('id', InstagramMessage::where('lead_id', $this->id)->select('contact_id'))->first();
+        if (!$contact) {
+            return null;
+        }
+
+        return [
+            'username' => $contact->username,
+            'name' => $contact->name,
+            'profile_url' => $contact->username ? 'https://instagram.com/' . rawurlencode($contact->username) : null,
+        ];
     }
 
     public function toArray($request)
@@ -47,11 +66,16 @@ class LeadResource extends JsonResource
         ];
 
         if ($this->relationLoaded('activities')) {
+            // Instagram auto-replies name the rule (by its keywords) that sent them.
+            $ruleIds = $this->activities->map(fn ($a) => $a->data['rule_id'] ?? null)->filter()->unique()->values();
+            $rules = $ruleIds->isEmpty() ? collect() : InstagramReplyRule::whereIn('id', $ruleIds)->pluck('keywords', 'id');
             $out['activities'] = $this->activities->map(fn ($a) => [
                 'id' => $a->id,
                 'type' => $a->type,
                 'body' => $a->body,
-                'data' => $a->data,
+                'data' => isset($a->data['rule_id']) && isset($rules[$a->data['rule_id']])
+                    ? $a->data + ['rule' => implode('، ', (array) $rules[$a->data['rule_id']])]
+                    : $a->data,
                 'user' => self::person($a->user),
                 'created_at' => $a->created_at,
             ])->values();
@@ -70,6 +94,7 @@ class LeadResource extends JsonResource
 
                 return $row;
             })->values();
+            $out['instagram'] = $this->instagram();
             $out['orders'] = $this->resource->getRelation('_orders')->map(fn ($o) => [
                 'id' => $o->id, 'uuid' => $o->uuid, 'status' => $o->status, 'created_at' => $o->created_at,
             ])->values();

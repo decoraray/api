@@ -132,6 +132,12 @@ class LeadService
         return $lead->fresh();
     }
 
+    /** Add a timeline entry and return it (for callers that need to point back at it). */
+    public function record(Lead $lead, string $type, ?string $body, ?User $actor = null, ?array $data = null): LeadActivity
+    {
+        return $this->log($lead, $type, $actor, $body, $data);
+    }
+
     public function quoteCreated(Quote $quote, ?User $actor): void
     {
         $lead = $quote->lead_id ? Lead::find($quote->lead_id) : null;

@@ -70,6 +70,9 @@ Route::prefix('v1')
         Route::get('links/{code}', 'LinkController@resolve')->middleware('throttle:links')->name('link-resolve');
         Route::post('enquiries', 'EnquiryController@store')->middleware('throttle:enquiries')->name('enquiry');
 
+        // Instagram events from the egress relay (HMAC-signed with INSTAGRAM_RELAY_KEY)
+        Route::post('webhooks/instagram', 'WebhookController@instagram')->middleware('throttle:120,1')->name('webhook-instagram');
+
         // torob api
         Route::get('/torob', 'ShopController@torobApi')->name('torob');
 
@@ -130,6 +133,17 @@ Route::prefix('v1')
                         Route::get('sms-opt-outs', 'SmsOptOutController@index');
                         Route::post('sms-opt-outs', 'SmsOptOutController@store');
                     });
+
+                    // Instagram: connection, toggles, health (settings.manage); rules read by leads.manage too
+                    Route::middleware('permission:settings.manage')->group(function () {
+                        Route::get('instagram', 'InstagramController@show');
+                        Route::put('instagram', 'InstagramController@update');
+                        Route::post('instagram/events/{event}/retry', 'InstagramController@retry');
+                        Route::post('instagram/rules', 'InstagramRuleController@store');
+                        Route::put('instagram/rules/{rule}', 'InstagramRuleController@update');
+                        Route::delete('instagram/rules/{rule}', 'InstagramRuleController@destroy');
+                    });
+                    Route::get('instagram/rules', 'InstagramRuleController@index')->middleware('permission:leads.manage|settings.manage');
 
                     // leads.manage or quotes.manage (sections filtered per permission)
                     Route::get('reminders', 'ReminderController@index')->middleware('permission:leads.manage|quotes.manage');
