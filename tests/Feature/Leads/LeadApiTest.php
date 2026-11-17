@@ -280,4 +280,41 @@ class LeadApiTest extends TestCase
         $this->assertSame('new', $log->properties['old']['stage']);
         $this->assertSame('lost', $log->properties['attributes']['stage']);
     }
+
+    public function test_instagram_lead_shows_contact_and_reply_rule()
+    {
+        $h = $this->as();
+        $lead = $this->mk($this->user);
+        $contact = \App\Models\InstagramContact::create(['ig_user_id' => 'u-1', 'username' => 'sara_home', 'name' => 'سارا', 'lead_id' => $lead->id]);
+        $rule = \App\Models\InstagramReplyRule::create(['keywords' => ['قیمت', 'چند'], 'private_text' => 'x']);
+        app(\App\Services\Leads\LeadService::class)->record($lead, 'instagram_reply', 'قیمت‌ها:', null, [
+            'direction' => 'out', 'kind' => 'private_reply', 'status' => 'sent', 'rule_id' => $rule->id, 'auto' => true,
+        ]);
+
+        $d = $this->getJson("/api/v1/admin/leads/{$lead->id}", $h)->assertOk()->json();
+        $d = $d['data'] ?? $d;
+
+        $this->assertSame('sara_home', $d['instagram']['username']);
+        $this->assertSame('https://instagram.com/sara_home', $d['instagram']['profile_url']);
+        $reply = collect($d['activities'])->firstWhere('type', 'instagram_reply');
+        $this->assertSame('قیمت، چند', $reply['data']['rule']);
+        $this->assertSame('sent', $reply['data']['status']);
+        $this->assertArrayNotHasKey('payable', $d);
+
+        // A later lead takes over the contact; the old lead still finds it through its messages.
+        \App\Models\InstagramMessage::create(['contact_id' => $contact->id, 'lead_id' => $lead->id, 'direction' => 'in', 'kind' => 'dm', 'external_id' => 'm1', 'status' => 'received']);
+        $contact->update(['lead_id' => $this->mk($this->user)->id]);
+        $d = $this->getJson("/api/v1/admin/leads/{$lead->id}", $h)->json();
+        $this->assertSame('sara_home', ($d['data'] ?? $d)['instagram']['username']);
+    }
+
+    public function test_non_instagram_lead_has_null_instagram()
+    {
+        $h = $this->as();
+        $lead = $this->mk($this->user, ['source' => 'phone', 'phone' => '09120000001']);
+
+        $d = $this->getJson("/api/v1/admin/leads/{$lead->id}", $h)->json();
+
+        $this->assertNull(($d['data'] ?? $d)['instagram']);
+    }
 }

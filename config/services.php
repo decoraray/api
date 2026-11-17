@@ -57,6 +57,14 @@ return [
         'url' => env('PAYPING_URL'),
         'callback' => env('PAYPING_CALLBACK'),
         'test' => env('PAYPING_TEST', false),
-    ]
+    ],
+
+    // Instagram Graph API, reached only through the egress relay (see relay/README.md
+    // in the root repo). The access token lives encrypted in settings, not here.
+    'instagram' => [
+        'relay_url' => rtrim((string) env('INSTAGRAM_RELAY_URL', ''), '/'),
+        'relay_key' => env('INSTAGRAM_RELAY_KEY'),
+        'graph_version' => env('INSTAGRAM_GRAPH_VERSION') ?: 'v25.0',
+    ],
 
 ];
