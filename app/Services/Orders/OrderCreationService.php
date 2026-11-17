@@ -113,6 +113,10 @@ class OrderCreationService
                 ->withProperties(['source' => 'staff', 'total' => $totals['total'], 'status' => $status->value])
                 ->log('manual-create');
 
+            if (\App\Enums\ProductionStage::orderIsProducible($status)) {
+                app(\App\Services\Production\WorkOrderService::class)->createForOrder($order);
+            }
+
             return $order;
         });
 

@@ -61,6 +61,11 @@ class Order extends Model
             ->dontSubmitEmptyLogs();
     }
 
+    public function workOrders()
+    {
+        return $this->hasMany(WorkOrder::class)->orderBy('id');
+    }
+
     public function notifications()
     {
         return $this->hasMany(OrderNotification::class);

@@ -92,6 +92,14 @@ class OrderController extends Controller
             app(\App\Services\Leads\LeadService::class)->orderCancelled($order, $request->user());
         }
 
+        // Production: a confirmed order gets a work order per line; a cancelled one stops them.
+        $production = app(\App\Services\Production\WorkOrderService::class);
+        if (\App\Enums\ProductionStage::orderIsProducible($status)) {
+            $production->createForOrder($order);
+        } elseif (in_array($status, [OrderStatus::CANCELED, OrderStatus::RETURNED], true)) {
+            $production->cancelForOrder($order);
+        }
+
         return new OrderShowAdminResource($order);
     }
 
