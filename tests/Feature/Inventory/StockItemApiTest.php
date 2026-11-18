@@ -224,6 +224,23 @@ class StockItemApiTest extends InventoryTestCase
         $this->getJson('/api/v1/admin/stock-items', $this->header(User::factory()->create()))->assertStatus(403);
     }
 
+    public function test_a_warehouse_user_gets_a_permission_list_and_an_audited_sign_in()
+    {
+        $user = User::factory()->create(['email' => 'wh@example.test', 'password' => bcrypt('secret-123')]);
+        $user->assignRole('Warehouse');
+
+        $token = $this->postJson('/api/v1/email-login', ['email' => 'wh@example.test', 'password' => 'secret-123'])->assertStatus(200)->json('token');
+        $permissions = $this->getJson('/api/v1/user', ['Authorization' => "Bearer {$token}"])->assertStatus(200)->json('permissions');
+
+        $this->assertContains('inventory.view', $permissions);
+        $this->assertContains('inventory.manage', $permissions);
+        $this->assertTrue(Activity::where('event', 'login')->where('causer_id', $user->id)->exists());
+
+        // and the staff screen lists them
+        $listed = collect($this->getJson('/api/v1/admin/staff', $this->header('SuperAdmin'))->assertStatus(200)->json('data'))->pluck('id');
+        $this->assertTrue($listed->contains($user->id));
+    }
+
     public function test_super_admin_can_give_the_warehouse_role_and_sees_costs()
     {
         $admin = $this->header('SuperAdmin');

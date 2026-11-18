@@ -69,9 +69,15 @@ class User extends Authenticatable
         return $this->role == 'user';
     }
 
+    /**
+     * Every back-office role. The admin gets a permission list, sign-ins are audited and the staff screen
+     * lists people only for these: a role missing here is locked out of the admin.
+     */
+    public const STAFF_ROLES = ['SuperAdmin', 'Sales', 'Technic', 'Warehouse', 'Admin'];
+
     public function isStaff(): bool
     {
-        return $this->hasAnyRole(['SuperAdmin', 'Sales', 'Technic', 'Admin']);
+        return $this->hasAnyRole(self::STAFF_ROLES);
     }
 
     public function createToken($name)
