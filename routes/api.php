@@ -181,6 +181,21 @@ Route::prefix('v1')
                         Route::post('quotes/{quote}/payments', 'QuoteController@recordPayment');
                     });
 
+                    // costs.view
+                    Route::middleware('permission:costs.view')->group(function () {
+                        Route::get('orders/{order:uuid}/costs', 'OrderCostController@show');
+                        Route::get('reports/order-profit', 'OrderCostController@report');
+                        Route::get('costing/settings', 'OrderCostController@settings');
+                    });
+
+                    // costs.manage
+                    Route::middleware('permission:costs.manage')->group(function () {
+                        Route::post('orders/{order:uuid}/costs', 'OrderCostController@store');
+                        Route::put('order-costs/{orderCost}', 'OrderCostController@update');
+                        Route::delete('order-costs/{orderCost}', 'OrderCostController@destroy');
+                        Route::put('costing/settings', 'OrderCostController@updateSettings');
+                    });
+
                     // finance.view
                     Route::middleware('permission:finance.view')->group(function () {
                         Route::get('reports/delivered-orders', 'OrderReportController@delivered');
@@ -272,6 +287,44 @@ Route::prefix('v1')
                     // orders.update-status
                     Route::middleware('permission:orders.update-status')->group(function () {
                         Route::patch('/orders/{order:uuid}', 'OrderController@update');
+                    });
+
+                    // purchasing.request or purchasing.view
+                    Route::get('purchase-requests', 'PurchaseRequestController@index')->middleware('permission:purchasing.request|purchasing.view');
+
+                    // purchasing.request
+                    Route::middleware('permission:purchasing.request')->group(function () {
+                        Route::post('purchase-requests', 'PurchaseRequestController@store');
+                        Route::post('purchase-requests/{purchaseRequest}/cancel', 'PurchaseRequestController@cancel');
+                    });
+
+                    // purchasing.view or purchasing.receive (receive-only callers see receivable orders)
+                    Route::middleware('permission:purchasing.view|purchasing.receive')->group(function () {
+                        Route::get('purchase-orders', 'PurchaseOrderController@index');
+                        Route::get('purchase-orders/{purchaseOrder}', 'PurchaseOrderController@show');
+                    });
+
+                    // purchasing.view
+                    Route::middleware('permission:purchasing.view')->group(function () {
+                        Route::get('suppliers', 'SupplierController@index');
+                        Route::get('suppliers/{supplier}', 'SupplierController@show');
+                    });
+
+                    // purchasing.manage
+                    Route::middleware('permission:purchasing.manage')->group(function () {
+                        Route::post('suppliers', 'SupplierController@store');
+                        Route::put('suppliers/{supplier}', 'SupplierController@update');
+                        Route::post('purchase-orders', 'PurchaseOrderController@store');
+                        Route::put('purchase-orders/{purchaseOrder}', 'PurchaseOrderController@update');
+                        Route::post('purchase-orders/{purchaseOrder}/place', 'PurchaseOrderController@place');
+                        Route::post('purchase-orders/{purchaseOrder}/cancel', 'PurchaseOrderController@cancel');
+                        Route::post('purchase-orders/{purchaseOrder}/close', 'PurchaseOrderController@close');
+                        Route::put('purchase-orders/{purchaseOrder}/evaluation', 'PurchaseOrderController@evaluate');
+                    });
+
+                    // purchasing.receive
+                    Route::middleware('permission:purchasing.receive')->group(function () {
+                        Route::post('purchase-orders/{purchaseOrder}/receipts', 'PurchaseOrderController@receive');
                     });
 
                     // inventory.view
