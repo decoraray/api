@@ -347,14 +347,24 @@ Route::prefix('v1')
                         Route::get('work-orders/{workOrder}', 'WorkOrderController@show');
                         Route::get('work-orders/{workOrder}/materials', 'WorkOrderMaterialController@index');
                         Route::get('material-shortages', 'WorkOrderMaterialController@shortages');
+                        Route::get('work-orders/{workOrder}/cutting-list', 'CuttingListController@workOrder');
                     });
 
                     // production.view or bom.manage
-                    Route::get('products/{product}/bom', 'BomController@show')->middleware('permission:production.view|bom.manage');
+                    Route::middleware('permission:production.view|bom.manage')->group(function () {
+                        Route::get('products/{product}/bom', 'BomController@show');
+                        Route::get('products/{product}/cutting-list', 'CuttingListController@show');
+                        Route::get('panel-materials', 'PanelMaterialController@index');
+                    });
 
                     // bom.manage
                     Route::middleware('permission:bom.manage')->group(function () {
                         Route::put('products/{product}/bom', 'BomController@update');
+                        Route::put('products/{product}/cutting-list', 'CuttingListController@update');
+                        Route::post('products/{product}/cutting-list/bom-lines', 'CuttingListController@bomLines');
+                        Route::post('panel-materials', 'PanelMaterialController@store');
+                        Route::put('panel-materials/{panelMaterial}', 'PanelMaterialController@update');
+                        Route::delete('panel-materials/{panelMaterial}', 'PanelMaterialController@destroy');
                     });
 
                     // production.update
