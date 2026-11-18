@@ -8,7 +8,7 @@ class QuoteLine extends Model
 {
     protected $fillable = [
         'quote_id', 'position', 'product_id', 'variation_id', 'description',
-        'dimensions', 'color', 'quantity', 'unit_price',
+        'dimensions', 'color', 'quantity', 'unit_price', 'design_id',
     ];
 
     protected $casts = [
@@ -16,6 +16,11 @@ class QuoteLine extends Model
         'quantity' => 'integer',
         'unit_price' => 'integer',
     ];
+
+    public function design()
+    {
+        return $this->belongsTo(ProductDesign::class, 'design_id');
+    }
 
     public function quote()
     {

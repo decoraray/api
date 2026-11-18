@@ -215,6 +215,13 @@ Route::prefix('v1')
                         Route::get('dashboard/report', 'DashboardController@report');
                     });
 
+                    // designs: anyone who builds, sells or quotes may list and preview them (must precede products/{product})
+                    Route::middleware('permission:production.view|bom.manage|orders.create|quotes.manage')->group(function () {
+                        Route::get('products/one-off', 'DesignController@oneOffProducts');
+                        Route::get('products/{product}/designs', 'DesignController@index');
+                        Route::get('designs/{design}/sheet', 'DesignController@sheet');
+                    });
+
                     // catalog.view + prices.view (must precede products/{product} in the route list)
                     Route::middleware(['permission:catalog.view', 'permission:prices.view'])->group(function () {
                         Route::get('products/export', 'ProductExportController@export');
@@ -363,6 +370,9 @@ Route::prefix('v1')
                         Route::get('products/{product}/bom', 'BomController@show');
                         Route::get('products/{product}/cutting-list', 'CuttingListController@show');
                         Route::get('panel-materials', 'PanelMaterialController@index');
+                        Route::get('designs/{design}', 'DesignController@show');
+                        Route::get('designs/{design}/cutting-list', 'DesignController@cuttingList');
+                        Route::get('designs/{design}/bom', 'DesignController@bom');
                     });
 
                     // bom.manage
@@ -373,6 +383,17 @@ Route::prefix('v1')
                         Route::post('panel-materials', 'PanelMaterialController@store');
                         Route::put('panel-materials/{panelMaterial}', 'PanelMaterialController@update');
                         Route::delete('panel-materials/{panelMaterial}', 'PanelMaterialController@destroy');
+                        Route::post('products/{product}/designs', 'DesignController@store');
+                        Route::put('designs/{design}', 'DesignController@update');
+                        Route::delete('designs/{design}', 'DesignController@destroy');
+                        Route::put('designs/{design}/cutting-list', 'DesignController@updateCuttingList');
+                        Route::put('designs/{design}/bom', 'DesignController@updateBom');
+                        Route::post('designs/{design}/bom-lines', 'DesignController@proposeBomLines');
+                    });
+
+                    // bom.manage and production.view: keep a work order's design on a product
+                    Route::middleware(['permission:bom.manage', 'permission:production.view'])->group(function () {
+                        Route::post('work-orders/{workOrder}/save-as-design', 'WorkOrderDesignController@saveAsDesign');
                     });
 
                     // production.update
@@ -384,6 +405,9 @@ Route::prefix('v1')
                         Route::post('orders/{order:uuid}/work-orders', 'WorkOrderController@storeForOrder');
                         Route::post('work-orders/{workOrder}/stage', 'WorkOrderController@move');
                         Route::post('work-orders/{workOrder}/complete', 'WorkOrderController@complete');
+                        Route::put('work-orders/{workOrder}/parts', 'WorkOrderDesignController@updateParts');
+                        Route::post('work-orders/{workOrder}/parts/bom-lines', 'WorkOrderDesignController@proposeMaterials');
+                        Route::post('work-orders/{workOrder}/design', 'WorkOrderDesignController@switchDesign');
                     });
 
                     // orders.invoice

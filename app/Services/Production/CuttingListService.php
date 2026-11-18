@@ -2,16 +2,17 @@
 
 namespace App\Services\Production;
 
+use App\Enums\CuttingOp;
 use App\Models\PanelMaterial;
-use App\Models\Product;
-use App\Models\ProductPart;
 use App\Models\StockItem;
 use App\Support\PersianText;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\Rule;
 
 /**
- * A product's cutting list: which list applies, how much sheet and edge band it needs,
- * the BOM lines that follows from it, and parts that cannot fit the product.
+ * Cutting lists (of a design or a work order): how much sheet and edge band they need,
+ * the BOM lines that follow from them, parts that cannot fit, and the printable sheet.
  *
  * All sums are in whole mm / mm² and divided once at the end, rounding up: a slightly long
  * reservation is cheaper than a job stopping for one missing sheet.
@@ -21,29 +22,79 @@ class CuttingListService
     /** Each banded edge is cut this much longer than the side it covers, for trimming. */
     public const EDGE_ALLOWANCE_MM = 30;
 
-    /**
-     * The list that applies: the variation's own when it has one, else the product's.
-     *
-     * @return array{0: Collection<int, ProductPart>, 1: string} parts and their source (variation, product, none)
-     */
-    public function resolve(?int $productId, ?int $variationId): array
+    /** Validation rules for a whole parts list, shared by design and work order editors. */
+    public static function partRules(): array
     {
-        if (!$productId) {
-            return [collect(), 'none'];
+        return [
+            'parts' => ['present', 'array', 'max:200'],
+            'parts.*.name' => ['required', 'string', 'max:100'],
+            'parts.*.length_mm' => ['required', 'integer', 'min:1', 'max:5000'],
+            'parts.*.width_mm' => ['required', 'integer', 'min:1', 'max:5000'],
+            'parts.*.count' => ['required', 'integer', 'min:1', 'max:1000'],
+            'parts.*.panel_material_id' => ['required', 'integer', Rule::exists('panel_materials', 'id')->where('active', true)],
+            'parts.*.edge_length' => ['required', 'integer', 'min:0', 'max:2'],
+            'parts.*.edge_width' => ['required', 'integer', 'min:0', 'max:2'],
+            'parts.*.grain_locked' => ['sometimes', 'boolean'],
+            'parts.*.ops' => ['sometimes', 'array'],
+            'parts.*.ops.*' => [Rule::enum(CuttingOp::class)],
+            'parts.*.note' => ['nullable', 'string', 'max:190'],
+        ];
+    }
+
+    public static function partMessages(): array
+    {
+        return [
+            'parts.*.name.required' => 'نام هر قطعه را وارد کنید.',
+            'parts.*.length_mm.*' => 'طول قطعه باید بین ۰.۱ و ۵۰۰ سانت باشد.',
+            'parts.*.width_mm.*' => 'عرض قطعه باید بین ۰.۱ و ۵۰۰ سانت باشد.',
+            'parts.*.count.*' => 'تعداد هر قطعه دست‌کم ۱ است.',
+            'parts.*.panel_material_id.*' => 'ورق هر قطعه را از ورق‌های فعال انتخاب کنید.',
+            'parts.*.edge_length.*' => 'نوار لبه زیر هر بُعد ۰ تا ۲ خط است.',
+            'parts.*.edge_width.*' => 'نوار لبه زیر هر بُعد ۰ تا ۲ خط است.',
+            'parts.*.ops.*.*' => 'عملیات قطعه نامعتبر است.',
+        ];
+    }
+
+    /** Columns to store for one validated part (or a copied part model) at a position. */
+    public static function partAttributes(array|Model $part, int $position): array
+    {
+        $get = fn (string $key, $default = null) => $part instanceof Model ? $part->getAttribute($key) : ($part[$key] ?? $default);
+        $ops = $get('ops', []);
+        $ops = $ops instanceof Collection ? $ops->map(fn ($op) => $op instanceof CuttingOp ? $op->value : $op)->all() : (array) $ops;
+
+        return [
+            'position' => $position,
+            'name' => $get('name'),
+            'length_mm' => $get('length_mm'),
+            'width_mm' => $get('width_mm'),
+            'count' => $get('count'),
+            'panel_material_id' => $get('panel_material_id'),
+            'edge_length' => $get('edge_length', 0),
+            'edge_width' => $get('edge_width', 0),
+            'grain_locked' => (bool) $get('grain_locked', false),
+            'ops' => array_values(array_unique($ops)),
+            'note' => $get('note'),
+        ];
+    }
+
+    /**
+     * A printable sheet: parts grouped by panel material with counts × quantity, plus the summary for that quantity.
+     *
+     * @return array{groups: array, summary: array}
+     */
+    public function sheet(Collection $parts, int $quantity): array
+    {
+        if (method_exists($parts, 'loadMissing')) {
+            $parts->loadMissing('panelMaterial');
         }
 
-        $query = fn () => ProductPart::with('panelMaterial')->where('product_id', $productId)->orderBy('position')->orderBy('id');
-
-        if ($variationId) {
-            $own = $query()->where('variation_id', $variationId)->get();
-            if ($own->isNotEmpty()) {
-                return [$own, 'variation'];
-            }
-        }
-
-        $shared = $query()->whereNull('variation_id')->get();
-
-        return [$shared, $shared->isEmpty() ? 'none' : 'product'];
+        return [
+            'groups' => $parts->groupBy('panel_material_id')->map(fn ($group) => [
+                'panel_material' => $this->presentMaterial($group->first()->panelMaterial),
+                'parts' => $group->map(fn ($part) => $this->presentPart($part, $quantity))->values(),
+            ])->values()->all(),
+            'summary' => $this->summary($parts, $quantity),
+        ];
     }
 
     /** Per panel material, in order of first use: pieces, m², estimated sheets and edge band metres for `multiplier` units. */
@@ -63,12 +114,12 @@ class CuttingListService
     }
 
     /**
-     * Proposed BOM lines for one unit. `mapping` is keyed by panel material id:
+     * Proposed BOM lines for `multiplier` units (one by default). `mapping` is keyed by panel material id:
      * ['sheet' => StockItem, 'edge_band' => ?StockItem]. Lines for the same stock item are summed.
      *
      * @return array<int, array{stock_item: StockItem, quantity: float}>
      */
-    public function proposeBomLines(Collection $parts, array $mapping): array
+    public function proposeBomLines(Collection $parts, array $mapping, int $multiplier = 1): array
     {
         $lines = [];
         $add = function (StockItem $item, float $quantity) use (&$lines) {
@@ -76,7 +127,7 @@ class CuttingListService
             $lines[$item->id]['quantity'] = round($lines[$item->id]['quantity'] + $quantity, 3);
         };
 
-        foreach ($this->groups($parts, 1) as $materialId => $group) {
+        foreach ($this->groups($parts, $multiplier) as $materialId => $group) {
             $material = $group['material'];
             $sheet = $mapping[$materialId]['sheet'];
             // The real sheet's size beats the material's default when the stock item records one.
@@ -93,10 +144,10 @@ class CuttingListService
         return array_values($lines);
     }
 
-    /** Parts that do not fit the product's overall dimensions («200*40*40», cm). None when those cannot be read. */
-    public function fitWarnings(?Product $product, Collection $parts): array
+    /** Parts that do not fit the overall dimensions («200*40*40», cm). None when those cannot be read. */
+    public function fitWarnings(?string $dimensions, Collection $parts): array
     {
-        $overall = $this->overallMm($product?->dimensions);
+        $overall = $this->overallMm($dimensions);
         if (!$overall) {
             return [];
         }
@@ -109,8 +160,8 @@ class CuttingListService
                 $warnings[] = [
                     'index' => $index,
                     'part_id' => $part->id,
-                    'message' => sprintf('قطعه «%s» (%s × %s سانت) از ابعاد کلی محصول (%s) بزرگ‌تر است.',
-                        $part->name, $this->cm($part->length_mm), $this->cm($part->width_mm), $product->dimensions),
+                    'message' => sprintf('قطعه «%s» (%s × %s سانت) از ابعاد کلی (%s) بزرگ‌تر است.',
+                        $part->name, $this->cm($part->length_mm), $this->cm($part->width_mm), $dimensions),
                 ];
             }
         }
@@ -118,7 +169,7 @@ class CuttingListService
         return $warnings;
     }
 
-    public function presentPart(ProductPart $part, int $multiplier = 1): array
+    public function presentPart(Model $part, int $multiplier = 1): array
     {
         return [
             'id' => $part->id,
@@ -187,6 +238,12 @@ class CuttingListService
     private function metres(int $mm): float
     {
         return intdiv($mm + 99, 100) / 10;
+    }
+
+    /** True when the text reads as three overall dimensions in cm. */
+    public function readableDimensions(?string $dimensions): bool
+    {
+        return $this->overallMm($dimensions) !== null;
     }
 
     /** Overall dimensions in mm, largest first, or null when they are not three numbers. */

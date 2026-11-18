@@ -19,7 +19,7 @@ class ShopController extends Controller
     public function initial()
     {
         return response()->json([
-            'products' => ProductListResource::collection(Product::active()->hasActiveVariation()->withListRelations()->get()),
+            'products' => ProductListResource::collection(Product::active()->notOneOff()->hasActiveVariation()->withListRelations()->get()),
             'cart' => new CartShowResource(Cart::getOrCreate()),
         ]);
     }
@@ -37,13 +37,14 @@ class ShopController extends Controller
     {
 
         if ($product) {
-            $product = Product::where('id', $product)->orWhere('slug', $product)->firstOrFail();
+            $product = Product::notOneOff()->where(fn ($q) => $q->where('id', $product)->orWhere('slug', $product))->firstOrFail();
             $product->load(['variations.colors', 'variations.color', 'variations.material', 'deal', 'categories', 'rating', 'images', 'comments']);
             return response()->json(new ProductShowResource($product));
         }
         return response()->json(
             ProductListResource::collection(
                 Product::active()
+                    ->notOneOff()
                     ->hasActiveVariation()
                     ->withListRelations()
                     ->byCategory($category)
@@ -55,7 +56,8 @@ class ShopController extends Controller
     // product detail
     public function show($slugOrId)
     {
-        $product = Product::where('id', $slugOrId)->orWhere('slug', $slugOrId)->firstOrFail();
+        // One-off products are made for one customer and are never shown on the storefront.
+        $product = Product::notOneOff()->where(fn ($q) => $q->where('id', $slugOrId)->orWhere('slug', $slugOrId))->firstOrFail();
         $product->load(['variations.colors', 'variations.color', 'variations.material', 'deal', 'categories', 'rating', 'images', 'comments']);
 
         return response()->json(new ProductShowResource($product));
@@ -77,7 +79,7 @@ class ShopController extends Controller
      */
     public function torobApi()
     {
-        $products = Product::paginate(100);
+        $products = Product::notOneOff()->paginate(100);
 
         $data = [];
 
@@ -98,7 +100,7 @@ class ShopController extends Controller
     public function allProducts()
     {
         // just te available ones 
-        $products = Product::HasActiveVariation()->get(['slug', 'updated_at']);
+        $products = Product::notOneOff()->hasActiveVariation()->get(['slug', 'updated_at']);
 
         $data = [];
 

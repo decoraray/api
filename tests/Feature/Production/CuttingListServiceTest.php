@@ -7,6 +7,7 @@ use App\Models\PanelMaterial;
 use App\Models\Product;
 use App\Models\ProductPart;
 use App\Models\Variation;
+use App\Services\Production\DesignResolver;
 use Illuminate\Support\Facades\Schema;
 
 class CuttingListServiceTest extends CuttingTestCase
@@ -15,10 +16,11 @@ class CuttingListServiceTest extends CuttingTestCase
     {
         $this->assertTrue(Schema::hasColumns('panel_materials', ['name', 'thickness_mm', 'sheet_length_mm', 'sheet_width_mm', 'waste_percent', 'active']));
         $this->assertTrue(Schema::hasColumns('product_parts', [
-            'product_id', 'variation_id', 'position', 'name', 'length_mm', 'width_mm', 'count',
+            'design_id', 'position', 'name', 'length_mm', 'width_mm', 'count',
             'panel_material_id', 'edge_length', 'edge_width', 'grain_locked', 'ops', 'note',
         ]));
-        $this->assertTrue(Schema::hasIndex('product_parts', ['product_id', 'variation_id', 'position']));
+        $this->assertTrue(Schema::hasIndex('product_parts', ['design_id', 'position']));
+        $this->assertFalse(Schema::hasColumn('product_parts', 'product_id'));
 
         $this->assertSame([16.0, 20, 3660, 1830], [$this->body16()->thickness_mm, $this->body16()->waste_percent, $this->body16()->sheet_length_mm, $this->body16()->sheet_width_mm]);
         $this->assertSame([3.0, 10, 3660, 1830], [$this->back3()->thickness_mm, $this->back3()->waste_percent, $this->back3()->sheet_length_mm, $this->back3()->sheet_width_mm]);
@@ -37,8 +39,7 @@ class CuttingListServiceTest extends CuttingTestCase
     public function test_damtv220_summary()
     {
         $product = $this->damtv220();
-        [$parts, $source] = $this->cutting()->resolve($product->id, null);
-        $this->assertSame('product', $source);
+        $parts = $this->design($product)->parts()->get();
         $this->assertSame(['صفحه رویی', 'کف', 'درب ها', 'طبقه', 'بغل ها', 'وادارها', 'پشت بند'], $parts->pluck('name')->all());
 
         [$body, $back] = $this->cutting()->summary($parts);
@@ -57,7 +58,7 @@ class CuttingListServiceTest extends CuttingTestCase
 
     public function test_multiplier_scales_counts_and_area()
     {
-        [$parts] = $this->cutting()->resolve($this->damtv220()->id, null);
+        $parts = $this->design($this->damtv220())->parts()->get();
 
         [$body] = $this->cutting()->summary($parts, 2);
 
@@ -67,21 +68,18 @@ class CuttingListServiceTest extends CuttingTestCase
         $this->assertSame(5.1, $body['edge_m']);
     }
 
-    public function test_variation_list_overrides_and_others_fall_back()
+    public function test_variation_default_design_overrides_and_others_fall_back()
     {
         $walnut = Variation::factory()->create();
         $other = Variation::factory()->create(['product_id' => $walnut->product_id]);
-        ProductPart::factory()->create(['product_id' => $walnut->product_id, 'name' => 'مشترک']);
-        ProductPart::factory()->create(['product_id' => $walnut->product_id, 'variation_id' => $walnut->id, 'name' => 'گردویی']);
+        ProductPart::factory()->create(['design_id' => $this->design($walnut->product)->id, 'name' => 'مشترک']);
+        ProductPart::factory()->create(['design_id' => $this->design($walnut->product, $walnut)->id, 'name' => 'گردویی']);
+        $resolve = fn ($productId, $variationId) => app(DesignResolver::class)->forLine(null, $productId, $variationId);
 
-        [$own, $source] = $this->cutting()->resolve($walnut->product_id, $walnut->id);
-        $this->assertSame(['variation', ['گردویی']], [$source, $own->pluck('name')->all()]);
-
-        [$shared, $source] = $this->cutting()->resolve($walnut->product_id, $other->id);
-        $this->assertSame(['product', ['مشترک']], [$source, $shared->pluck('name')->all()]);
-
-        $this->assertSame('none', $this->cutting()->resolve(null, null)[1]);
-        $this->assertSame('none', $this->cutting()->resolve(Product::factory()->create()->id, null)[1]);
+        $this->assertSame(['گردویی'], $resolve($walnut->product_id, $walnut->id)->parts->pluck('name')->all());
+        $this->assertSame(['مشترک'], $resolve($walnut->product_id, $other->id)->parts->pluck('name')->all());
+        $this->assertNull($resolve(null, null));
+        $this->assertNull($resolve(Product::factory()->create()->id, null));
     }
 
     public function test_fit_warnings()
@@ -91,20 +89,20 @@ class CuttingListServiceTest extends CuttingTestCase
         $parts = collect([$part(2000, 400), $part(400, 2000), $part(2100, 400), $part(1000, 450)]);
 
         foreach (['200*40*40', '200×40×40', '۲۰۰ x ۴۰ x ۴۰', '40*200*40'] as $dimensions) {
-            $warnings = $this->cutting()->fitWarnings(new Product(['dimensions' => $dimensions]), $parts);
+            $warnings = $this->cutting()->fitWarnings($dimensions, $parts);
             // fits as written and rotated; too long; too wide
             $this->assertSame([2, 3], array_column($warnings, 'index'), $dimensions);
         }
-        $this->assertStringContainsString('210 × 40', $this->cutting()->fitWarnings(new Product(['dimensions' => '200*40*40']), $parts)[0]['message']);
+        $this->assertStringContainsString('210 × 40', $this->cutting()->fitWarnings('200*40*40', $parts)[0]['message']);
 
         foreach ([null, '', 'طول دلخواه', '200*40'] as $dimensions) {
-            $this->assertSame([], $this->cutting()->fitWarnings(new Product(['dimensions' => $dimensions]), $parts));
+            $this->assertSame([], $this->cutting()->fitWarnings($dimensions, $parts));
         }
     }
 
     public function test_bom_proposal_for_damtv220()
     {
-        [$parts] = $this->cutting()->resolve($this->damtv220()->id, null);
+        $parts = $this->design($this->damtv220())->parts()->get();
         $walnut = $this->stock(0, ['code' => 'MDF-16-WAL', 'kind' => 'mdf_sheet', 'unit' => 'sheet']);
         $band = $this->stock(0, ['code' => 'EB-WAL-2', 'kind' => 'edge_band', 'unit' => 'meter']);
         $hdf = $this->stock(0, ['code' => 'HDF-3-WH', 'kind' => 'mdf_sheet', 'unit' => 'sheet']);
@@ -120,7 +118,7 @@ class CuttingListServiceTest extends CuttingTestCase
 
     public function test_bom_proposal_uses_the_sheet_items_own_size()
     {
-        [$parts] = $this->cutting()->resolve($this->damtv220()->id, null);
+        $parts = $this->design($this->damtv220())->parts()->get();
         $small = $this->stock(0, ['kind' => 'mdf_sheet', 'unit' => 'sheet', 'length_mm' => 2440, 'width_mm' => 1220]);
         $hdf = $this->stock(0, ['kind' => 'mdf_sheet', 'unit' => 'sheet']);
 
@@ -135,11 +133,11 @@ class CuttingListServiceTest extends CuttingTestCase
 
     public function test_bom_proposal_sums_lines_sharing_a_stock_item()
     {
-        $product = Product::factory()->create();
+        $design = $this->design(Product::factory()->create());
         $doors = PanelMaterial::factory()->create(['name' => 'بدنه ۱۶ میل — درب']);
-        ProductPart::factory()->create(['product_id' => $product->id, 'panel_material_id' => $this->body16()->id, 'length_mm' => 970, 'width_mm' => 400, 'count' => 1, 'edge_length' => 1]);
-        ProductPart::factory()->create(['product_id' => $product->id, 'panel_material_id' => $doors->id, 'length_mm' => 470, 'width_mm' => 400, 'count' => 2, 'edge_length' => 2, 'edge_width' => 2]);
-        [$parts] = $this->cutting()->resolve($product->id, null);
+        ProductPart::factory()->create(['design_id' => $design->id, 'panel_material_id' => $this->body16()->id, 'length_mm' => 970, 'width_mm' => 400, 'count' => 1, 'edge_length' => 1]);
+        ProductPart::factory()->create(['design_id' => $design->id, 'panel_material_id' => $doors->id, 'length_mm' => 470, 'width_mm' => 400, 'count' => 2, 'edge_length' => 2, 'edge_width' => 2]);
+        $parts = $design->parts()->get();
         $sheet = $this->stock(0, ['kind' => 'mdf_sheet', 'unit' => 'sheet']);
         $band = $this->stock(0, ['kind' => 'edge_band', 'unit' => 'meter']);
 

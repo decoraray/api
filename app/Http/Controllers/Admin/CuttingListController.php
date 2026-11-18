@@ -2,190 +2,131 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Enums\CuttingOp;
-use App\Enums\StockItemKind;
 use App\Http\Controllers\Controller;
-use App\Models\PanelMaterial;
 use App\Models\Product;
-use App\Models\ProductPart;
-use App\Models\StockItem;
+use App\Models\ProductDesign;
 use App\Models\WorkOrder;
 use App\Services\Production\CuttingListService;
+use App\Services\Production\DesignService;
+use App\Services\Production\PanelMapping;
+use App\Support\Production\Present;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 
+/**
+ * The work order cutting sheet, and the deprecated product-level cutting list routes kept while the admin moves to
+ * designs (designs/{design}/cutting-list). Those read and write the variation's default design, else the product's.
+ */
 class CuttingListController extends Controller
 {
-    public function __construct(private CuttingListService $cutting)
+    public function __construct(private CuttingListService $cutting, private DesignService $designs)
     {
     }
 
-    /** The cutting list that applies: the variation's own when it has one, else the product's. */
+    /** @deprecated */
     public function show(Request $request, Product $product)
     {
-        $variationId = $this->variationId($request, $product);
-
-        return response()->json($this->body($product, $variationId));
+        return response()->json($this->body($product, $this->variationId($request, $product)));
     }
 
-    /** Replaces the whole cutting list of the product, or of one variation. An empty list clears it. */
+    /** @deprecated */
     public function update(Request $request, Product $product)
     {
-        $data = $request->validate([
-            'variation_id' => ['nullable', 'integer', Rule::exists('variations', 'id')->where('product_id', $product->id)],
-            'parts' => ['present', 'array', 'max:200'],
-            'parts.*.name' => ['required', 'string', 'max:100'],
-            'parts.*.length_mm' => ['required', 'integer', 'min:1', 'max:5000'],
-            'parts.*.width_mm' => ['required', 'integer', 'min:1', 'max:5000'],
-            'parts.*.count' => ['required', 'integer', 'min:1', 'max:1000'],
-            'parts.*.panel_material_id' => ['required', 'integer', Rule::exists('panel_materials', 'id')->where('active', true)],
-            'parts.*.edge_length' => ['required', 'integer', 'min:0', 'max:2'],
-            'parts.*.edge_width' => ['required', 'integer', 'min:0', 'max:2'],
-            'parts.*.grain_locked' => ['sometimes', 'boolean'],
-            'parts.*.ops' => ['sometimes', 'array'],
-            'parts.*.ops.*' => [Rule::enum(CuttingOp::class)],
-            'parts.*.note' => ['nullable', 'string', 'max:190'],
-        ], [
-            'parts.*.name.required' => 'نام هر قطعه را وارد کنید.',
-            'parts.*.length_mm.*' => 'طول قطعه باید بین ۰.۱ و ۵۰۰ سانت باشد.',
-            'parts.*.width_mm.*' => 'عرض قطعه باید بین ۰.۱ و ۵۰۰ سانت باشد.',
-            'parts.*.count.*' => 'تعداد هر قطعه دست‌کم ۱ است.',
-            'parts.*.panel_material_id.*' => 'ورق هر قطعه را از ورق‌های فعال انتخاب کنید.',
-            'parts.*.edge_length.*' => 'نوار لبه زیر هر بُعد ۰ تا ۲ خط است.',
-            'parts.*.edge_width.*' => 'نوار لبه زیر هر بُعد ۰ تا ۲ خط است.',
-            'parts.*.ops.*.*' => 'عملیات قطعه نامعتبر است.',
-        ]);
+        $variationId = $this->variationId($request, $product);
+        $data = $request->validate(CuttingListService::partRules(), CuttingListService::partMessages());
 
-        $variationId = $data['variation_id'] ?? null;
+        $design = $this->designs->defaultFor($product, $variationId, true);
+        $this->designs->replaceParts($design, $data['parts']);
 
-        DB::transaction(function () use ($product, $variationId, $data) {
-            $scope = ProductPart::where('product_id', $product->id);
-            $variationId ? $scope->where('variation_id', $variationId) : $scope->whereNull('variation_id');
-            $scope->delete();
-
-            foreach (array_values($data['parts']) as $position => $part) {
-                ProductPart::create([
-                    'product_id' => $product->id,
-                    'variation_id' => $variationId,
-                    'position' => $position,
-                    'name' => $part['name'],
-                    'length_mm' => $part['length_mm'],
-                    'width_mm' => $part['width_mm'],
-                    'count' => $part['count'],
-                    'panel_material_id' => $part['panel_material_id'],
-                    'edge_length' => $part['edge_length'],
-                    'edge_width' => $part['edge_width'],
-                    'grain_locked' => $part['grain_locked'] ?? false,
-                    'ops' => array_values(array_unique($part['ops'] ?? [])),
-                    'note' => $part['note'] ?? null,
-                ]);
-            }
-        });
-
-        activity()->performedOn($product)->causedBy($request->user())
-            ->withProperties(['variation_id' => $variationId, 'parts' => count($data['parts'])])
+        activity()->performedOn($design)->causedBy($request->user())
+            ->withProperties(['product_id' => $product->id, 'variation_id' => $variationId, 'parts' => count($data['parts'])])
             ->log('cutting-list-updated');
 
         return response()->json($this->body($product, $variationId));
     }
 
-    /** Proposed BOM lines for one unit, from the cutting list and a sheet / edge band item per panel material. Saves nothing. */
+    /** @deprecated Proposed BOM lines for one unit. Saves the mapping on the design, nothing else. */
     public function bomLines(Request $request, Product $product)
     {
-        $data = $request->validate([
-            'variation_id' => ['nullable', 'integer', Rule::exists('variations', 'id')->where('product_id', $product->id)],
-            'mapping' => ['present', 'array'],
-            'mapping.*.panel_material_id' => ['required', 'integer', 'distinct'],
-            'mapping.*.sheet_stock_item_id' => ['required', 'integer', Rule::exists('stock_items', 'id')->where('kind', StockItemKind::MDF_SHEET->value)],
-            'mapping.*.edge_band_stock_item_id' => ['nullable', 'integer', Rule::exists('stock_items', 'id')->where('kind', StockItemKind::EDGE_BAND->value)],
-        ], [
-            'mapping.*.sheet_stock_item_id.required' => 'برای هر ورق، قلم انبار ورق را انتخاب کنید.',
-            'mapping.*.sheet_stock_item_id.exists' => 'قلم ورق باید از نوع ورق MDF باشد.',
-            'mapping.*.edge_band_stock_item_id.exists' => 'قلم نوار لبه باید از نوع نوار لبه باشد.',
-        ]);
+        $variationId = $this->variationId($request, $product);
+        $data = $request->validate(['mapping' => ['present', 'array']] + PanelMapping::rules(), PanelMapping::messages());
 
-        [$parts] = $this->cutting->resolve($product->id, $data['variation_id'] ?? null);
-
-        $items = StockItem::whereIn('id', collect($data['mapping'])->flatMap(fn ($m) => [$m['sheet_stock_item_id'], $m['edge_band_stock_item_id'] ?? null])->filter())
-            ->get()->keyBy('id');
-        $mapping = [];
-        foreach ($data['mapping'] as $row) {
-            $mapping[$row['panel_material_id']] = [
-                'sheet' => $items[$row['sheet_stock_item_id']],
-                'edge_band' => isset($row['edge_band_stock_item_id']) ? $items[$row['edge_band_stock_item_id']] : null,
-            ];
+        [$design] = $this->find($product, $variationId);
+        $parts = $design ? $design->parts()->with('panelMaterial')->get() : collect();
+        $lines = $this->cutting->proposeBomLines($parts, PanelMapping::resolve(PanelMapping::normalize($data['mapping']), $parts));
+        if ($design) {
+            $this->designs->saveMapping($design, $data['mapping']);
         }
 
-        $missing = $parts->pluck('panelMaterial')->unique('id')->reject(fn (PanelMaterial $m) => isset($mapping[$m->id]));
-        if ($missing->isNotEmpty()) {
-            throw ValidationException::withMessages([
-                'mapping' => 'قلم ورق برای «' . $missing->pluck('name')->join('»، «') . '» انتخاب نشده است.',
-            ]);
-        }
-
-        $lines = $this->cutting->proposeBomLines($parts, $mapping);
-
-        return response()->json(['data' => array_map(fn ($line) => [
-            'stock_item' => [
-                'id' => $line['stock_item']->id,
-                'code' => $line['stock_item']->code,
-                'name' => $line['stock_item']->name,
-                'unit' => $line['stock_item']->unit->value,
-                'unit_label' => $line['stock_item']->unit->label(),
-            ],
-            'quantity' => $line['quantity'],
-        ], $lines)]);
+        return response()->json(['data' => PanelMapping::presentLines($lines)]);
     }
 
-    /** The cutting sheet of a work order: its product's cutting list × the work order quantity, grouped by panel material. */
+    /** The cutting sheet of a work order: its own parts × its quantity, grouped by panel material, and its materials. */
     public function workOrder(WorkOrder $workOrder)
     {
         $workOrder->loadMissing('item');
         $item = $workOrder->item;
-        [$parts, $source] = $this->cutting->resolve($item?->product_id, $item?->variation_id);
+        $parts = $workOrder->parts()->with('panelMaterial')->get();
         $quantity = (int) $workOrder->quantity;
 
-        $groups = $parts->groupBy('panel_material_id')->map(fn ($group) => [
-            'panel_material' => $this->cutting->presentMaterial($group->first()->panelMaterial),
-            'parts' => $group->map(fn ($part) => $this->cutting->presentPart($part, $quantity))->values(),
-        ])->values();
+        $dimensions = $this->cutting->readableDimensions($workOrder->dimensions)
+            ? $workOrder->dimensions
+            : ($workOrder->design_id ? ProductDesign::find($workOrder->design_id)?->dimensions : null);
 
         return response()->json([
             'work_order' => [
                 'id' => $workOrder->id,
                 'number' => $workOrder->number,
                 'quantity' => $quantity,
-                'title' => $item?->title,
-                'color' => $item?->color,
-                'dimensions' => $item?->dimensions,
+                'title' => $item?->title ?? $workOrder->title,
+                'color' => $workOrder->color,
+                'dimensions' => $workOrder->dimensions,
+                'state' => $workOrder->state->value,
             ],
-            'source' => $source,
+            'design' => $workOrder->design_name ? ['id' => $workOrder->design_id, 'name' => $workOrder->design_name] : null,
+            'customized' => $workOrder->customized,
+            'source' => $parts->isEmpty() ? 'none' : 'work_order',
             'updated_at' => $parts->max('updated_at')?->toIso8601String(),
-            'groups' => $groups,
-            'summary' => $this->cutting->summary($parts, $quantity),
-        ]);
+            'parts' => $parts->map(fn ($part) => $this->cutting->presentPart($part))->values(),
+            'materials' => $workOrder->materials()->with('stockItem')->get()->map(fn ($m) => [
+                'stock_item' => Present::stockItem($m->stockItem),
+                'quantity' => $m->planned_quantity,
+                'note' => $m->note,
+            ])->values(),
+            'panel_map' => PanelMapping::present($workOrder->panel_map),
+            'warnings' => $this->cutting->fitWarnings($dimensions, $parts),
+        ] + $this->cutting->sheet($parts, $quantity));
+    }
+
+    /** The variation's default design when it has parts, else the product's default. */
+    private function find(Product $product, ?int $variationId): array
+    {
+        if ($variationId && ($own = $this->designs->defaultFor($product, $variationId)) && $own->parts()->exists()) {
+            return [$own, 'variation'];
+        }
+        $shared = $this->designs->defaultFor($product, null);
+
+        return [$shared, $shared && $shared->parts()->exists() ? 'product' : 'none'];
     }
 
     private function body(Product $product, ?int $variationId): array
     {
-        [$parts, $source] = $this->cutting->resolve($product->id, $variationId);
+        [$design, $source] = $this->find($product, $variationId);
+        $parts = $design ? $design->parts()->with('panelMaterial')->get() : collect();
+        $dimensions = $design && $this->cutting->readableDimensions($design->dimensions) ? $design->dimensions : $product->dimensions;
 
         return [
             'data' => $parts->map(fn ($part) => $this->cutting->presentPart($part))->values(),
             'source' => $source,
             'summary' => $this->cutting->summary($parts),
-            'warnings' => $this->cutting->fitWarnings($product, $parts),
+            'warnings' => $this->cutting->fitWarnings($dimensions, $parts),
         ];
     }
 
     private function variationId(Request $request, Product $product): ?int
     {
-        $data = $request->validate([
+        return $request->validate([
             'variation_id' => ['nullable', 'integer', Rule::exists('variations', 'id')->where('product_id', $product->id)],
-        ]);
-
-        return $data['variation_id'] ?? null;
+        ])['variation_id'] ?? null;
     }
 }

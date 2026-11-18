@@ -133,6 +133,7 @@ class QuoteService
                 'description' => $line->description,
                 'dimensions' => $line->dimensions,
                 'color' => $line->color,
+                'design_id' => $line->design_id,
             ]);
         }
 

@@ -92,7 +92,7 @@ class CuttingListApiTest extends CuttingTestCase
         $this->putJson($this->url($product), ['variation_id' => $foreign->id, 'parts' => [$good]], $headers)
             ->assertStatus(422)->assertJsonValidationErrors('variation_id');
 
-        $this->assertSame(7, ProductPart::where('product_id', $product->id)->count());
+        $this->assertSame(7, $this->design($product)->parts()->count());
     }
 
     public function test_fit_warning_does_not_block_saving()

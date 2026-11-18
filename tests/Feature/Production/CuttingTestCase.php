@@ -4,6 +4,7 @@ namespace Tests\Feature\Production;
 
 use App\Models\PanelMaterial;
 use App\Models\Product;
+use App\Models\ProductDesign;
 use App\Models\ProductPart;
 use App\Models\Variation;
 use App\Services\Production\CuttingListService;
@@ -41,15 +42,21 @@ abstract class CuttingTestCase extends MaterialTestCase
         ];
     }
 
-    /** Stores DAMTV220's parts on a product (or one variation of it) without going through the API. */
+    /** Stores DAMTV220's parts on a product's default design (or a variation's) without going through the API. */
     protected function damtv220(?Product $product = null, ?Variation $variation = null): Product
     {
         $product ??= Product::factory()->create(['title' => 'میزتلویزیون DAMTV220', 'dimensions' => '200*40*40']);
-
-        foreach ($this->damtv220Parts() as $position => $part) {
-            ProductPart::create($part + ['product_id' => $product->id, 'variation_id' => $variation?->id, 'position' => $position]);
-        }
+        $this->damtv220On($this->design($product, $variation));
 
         return $product;
+    }
+
+    protected function damtv220On(ProductDesign $design): ProductDesign
+    {
+        foreach ($this->damtv220Parts() as $position => $part) {
+            ProductPart::create($part + ['design_id' => $design->id, 'position' => $position]);
+        }
+
+        return $design;
     }
 }
