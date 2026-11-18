@@ -41,7 +41,7 @@ class OrderShowAdminResource extends JsonResource
             'items' => $this->items ? AdminOrderItemResource::collection($this->items) : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'payments' => $this->when($request->user()?->can('prices.view'), $this->payments ? PaymentShowAdminResource::collection($this->payments) : null),
+            'payments' => $this->when($request->user()?->can('prices.view'), $this->payments ? PaymentShowAdminResource::collection($this->payments->loadMissing('attachments')) : null),
             'description' => $this->description,
             'source' => $this->source,
             'channel' => $this->channel,

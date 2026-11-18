@@ -54,6 +54,8 @@ class StoreOrderRequest extends FormRequest
             'payment.amount' => ['required_with:payment', 'integer', 'min:1'],
             'payment.method' => ['required_with:payment', Rule::in(PaymentMethods::names())],
             'payment.reference' => ['nullable', 'string', 'max:255'],
+            'payment.receipt_ids' => ['nullable', 'array', 'max:10'],
+            'payment.receipt_ids.*' => ['integer', 'distinct'],
         ];
     }
 

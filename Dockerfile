@@ -45,7 +45,7 @@ COPY . .
 RUN composer dump-autoload --optimize --no-dev --no-scripts --no-interaction
 
 # Runtime dirs (contents are excluded from the build context)
-RUN mkdir -p storage/app/public storage/logs storage/framework/cache/data \
+RUN mkdir -p storage/app/public storage/app/receipts storage/logs storage/framework/cache/data \
     storage/framework/sessions storage/framework/views bootstrap/cache
 
 # Public storage symlink (php artisan storage:link), baked in so rebuilds don't lose it

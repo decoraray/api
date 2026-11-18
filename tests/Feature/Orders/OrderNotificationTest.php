@@ -273,7 +273,7 @@ class OrderNotificationTest extends TestCase
         $q = Quote::findOrFail($r->json('data.id') ?? $r->json('id'));
         $url = "/api/v1/admin/quotes/{$q->id}/payments";
 
-        $this->postJson($url, ['amount' => 100000, 'method' => 'CARD', 'paid_at' => '2026-11-10'], $sales)->assertStatus(201);
+        $this->postJson($url, ['amount' => 100000, 'method' => 'CASH_RECEIVED', 'paid_at' => '2026-11-10'], $sales)->assertStatus(201);
         $order = Order::first();
         $this->assertSame(['confirmed'], $order->notifications()->pluck('event')->all());
 

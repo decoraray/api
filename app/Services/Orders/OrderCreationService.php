@@ -37,7 +37,12 @@ class OrderCreationService
 
     public function create(array $data, ?User $staff): Order
     {
-        $order = DB::transaction(function () use ($data, $staff) {
+        $receipts = app(\App\Services\Payment\PaymentReceiptRules::class);
+        if (!empty($data['payment'])) {
+            $receipts->assertAllowed(PaymentMethods::fromName($data['payment']['method']), $data['payment']['receipt_ids'] ?? [], 'payment.receipt_ids');
+        }
+
+        $order = DB::transaction(function () use ($data, $staff, $receipts) {
             $user = $this->customer($data['phone'], $data['customer_name'] ?? null);
             $shipping = Shipping::findOrFail($data['shipping_id']);
             $lines = $this->resolveLines($data['lines']);
@@ -94,7 +99,7 @@ class OrderCreationService
 
             if ($payment) {
                 $method = PaymentMethods::fromName($payment['method']);
-                Payment::create([
+                $recorded = Payment::create([
                     'uuid' => (string) Str::uuid(),
                     'user_phone' => $data['phone'],
                     'amount' => (int) $payment['amount'],
@@ -105,6 +110,7 @@ class OrderCreationService
                     'user_id' => $user->id,
                     'order_id' => $order->id,
                 ]);
+                $receipts->attach($recorded, $payment['receipt_ids'] ?? [], $staff, 'payment.receipt_ids');
             }
 
             activity()

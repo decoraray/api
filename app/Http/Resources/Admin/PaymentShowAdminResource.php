@@ -18,6 +18,9 @@ class PaymentShowAdminResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'reference' => $this->ref_id,
+            'method' => \App\Enums\PaymentMethods::tryFrom((string) $this->method)?->name,
+            'method_label' => $this->method,
+            'receipts' => $this->attachments->map->toReceipt()->values(),
         ];
     }
 }

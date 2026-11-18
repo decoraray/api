@@ -28,6 +28,7 @@ class CreateOrderFakeSms implements SmsProviderClientInterface
 class AdminCreateOrderTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Feature\Concerns\UploadsReceipts;
 
     private function header(string $role): array
     {
@@ -124,7 +125,9 @@ class AdminCreateOrderTest extends TestCase
         CreateOrderFakeSms::$sent = [];
         $this->app->bind(SmsProviderClientInterface::class, CreateOrderFakeSms::class);
 
-        $this->submit($this->payload(['payment' => ['amount' => 3000000, 'method' => 'CARD', 'reference' => '123']]))
+        $h = $this->header('Sales');
+        $receipt = $this->uploadReceipt($h);
+        $this->postJson('/api/v1/admin/orders', $this->payload(['payment' => ['amount' => 3000000, 'method' => 'CARD', 'reference' => '123', 'receipt_ids' => [$receipt]]]), $h)
             ->assertStatus(201);
 
         $order = Order::firstOrFail();

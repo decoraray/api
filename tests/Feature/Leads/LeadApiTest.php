@@ -215,7 +215,7 @@ class LeadApiTest extends TestCase
         $this->postJson("/api/v1/admin/quotes/{$quote->id}/sent", [], $h)->assertOk();
         $this->assertSame('quote_sent', $lead->fresh()->stage);
 
-        $this->postJson("/api/v1/admin/quotes/{$quote->id}/payments", ['amount' => 100, 'method' => 'CARD', 'paid_at' => '2026-11-10'], $h)->assertStatus(201);
+        $this->postJson("/api/v1/admin/quotes/{$quote->id}/payments", ['amount' => 100, 'method' => 'CASH_RECEIVED', 'paid_at' => '2026-11-10'], $h)->assertStatus(201);
         $fresh = $lead->fresh();
         $this->assertSame('won', $fresh->stage);
         $this->assertNull($fresh->next_follow_up_at);
@@ -239,7 +239,7 @@ class LeadApiTest extends TestCase
         $r = $this->postJson('/api/v1/admin/quotes', $this->quotePayload(), $h)->assertStatus(201);
         $id = $r->json('data.id') ?? $r->json('id');
         $this->postJson("/api/v1/admin/quotes/{$id}/sent", [], $h)->assertOk();
-        $this->postJson("/api/v1/admin/quotes/{$id}/payments", ['amount' => 100, 'method' => 'CARD', 'paid_at' => '2026-11-10'], $h)->assertStatus(201);
+        $this->postJson("/api/v1/admin/quotes/{$id}/payments", ['amount' => 100, 'method' => 'CASH_RECEIVED', 'paid_at' => '2026-11-10'], $h)->assertStatus(201);
         $this->assertSame('new', $lead->fresh()->stage);
         $this->assertSame(0, $lead->activities()->count());
 
