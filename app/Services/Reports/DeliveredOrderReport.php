@@ -34,16 +34,9 @@ class DeliveredOrderReport
      */
     public function build(string $from, string $to): array
     {
-        $start = Carbon::parse($from, DashboardReport::TZ)->startOfDay();
-        $end = Carbon::parse($to, DashboardReport::TZ)->endOfDay();
-
-        $orders = Order::query()
-            ->where('status', OrderStatus::DELIVERED->value)
-            ->with(['items', 'quote.lines', 'user:id,name,surname'])
-            ->get();
+        $orders = app(DeliveredOrders::class)->in($from, $to, ['items', 'quote.lines', 'user:id,name,surname']);
 
         $orderIds = $orders->pluck('id')->all();
-        $deliveredAt = $this->deliveredAt($orderIds);
         $methods = $this->methods($orderIds);
         $paid = $this->paid($orderIds);
 
@@ -52,14 +45,9 @@ class DeliveredOrderReport
         $sumPaid = 0;
 
         foreach ($orders as $order) {
-            $when = $deliveredAt[$order->id] ?? $order->updated_at;
-            $when = Carbon::parse($when)->setTimezone(DashboardReport::TZ);
-            if ($when->lt($start) || $when->gt($end)) {
-                continue;
-            }
-
+            $when = $order->delivered_on;
             $quote = $order->quote;
-            $total = $quote ? QuoteTotals::for($quote)['payable'] : (int) round($order->total - $order->discount_amount);
+            $total = DeliveredOrders::revenue($order);
             $paidAmount = (int) ($paid[$order->id] ?? 0);
             $sumTotal += $total;
             $sumPaid += $paidAmount;
@@ -121,24 +109,6 @@ class DeliveredOrderReport
         return Payment::whereIn('order_id', $orderIds)->where('status', 'paid')
             ->groupBy('order_id')->selectRaw('order_id, SUM(amount) as s')
             ->pluck('s', 'order_id')->all();
-    }
-
-    /** Latest activity-log time at which each order was set to delivered. */
-    private function deliveredAt(array $orderIds): array
-    {
-        if (!$orderIds) {
-            return [];
-        }
-
-        return DB::table('activity_log')
-            ->where('subject_type', Order::class)
-            ->whereIn('subject_id', $orderIds)
-            ->where('properties->attributes->status', OrderStatus::DELIVERED->value)
-            ->groupBy('subject_id')
-            ->selectRaw('subject_id, MAX(created_at) as at')
-            ->pluck('at', 'subject_id')
-            ->map(fn ($at) => Carbon::parse($at, 'UTC'))
-            ->all();
     }
 
     /** Distinct method labels of paid payments per order. */

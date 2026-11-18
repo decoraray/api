@@ -181,6 +181,21 @@ Route::prefix('v1')
                         Route::post('quotes/{quote}/payments', 'QuoteController@recordPayment');
                     });
 
+                    // costs.view
+                    Route::middleware('permission:costs.view')->group(function () {
+                        Route::get('orders/{order:uuid}/costs', 'OrderCostController@show');
+                        Route::get('reports/order-profit', 'OrderCostController@report');
+                        Route::get('costing/settings', 'OrderCostController@settings');
+                    });
+
+                    // costs.manage
+                    Route::middleware('permission:costs.manage')->group(function () {
+                        Route::post('orders/{order:uuid}/costs', 'OrderCostController@store');
+                        Route::put('order-costs/{orderCost}', 'OrderCostController@update');
+                        Route::delete('order-costs/{orderCost}', 'OrderCostController@destroy');
+                        Route::put('costing/settings', 'OrderCostController@updateSettings');
+                    });
+
                     // finance.view
                     Route::middleware('permission:finance.view')->group(function () {
                         Route::get('reports/delivered-orders', 'OrderReportController@delivered');
