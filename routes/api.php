@@ -292,10 +292,24 @@ Route::prefix('v1')
                     Route::middleware('permission:production.view')->group(function () {
                         Route::get('work-orders', 'WorkOrderController@index');
                         Route::get('work-orders/{workOrder}', 'WorkOrderController@show');
+                        Route::get('work-orders/{workOrder}/materials', 'WorkOrderMaterialController@index');
+                        Route::get('material-shortages', 'WorkOrderMaterialController@shortages');
+                    });
+
+                    // production.view or bom.manage
+                    Route::get('products/{product}/bom', 'BomController@show')->middleware('permission:production.view|bom.manage');
+
+                    // bom.manage
+                    Route::middleware('permission:bom.manage')->group(function () {
+                        Route::put('products/{product}/bom', 'BomController@update');
                     });
 
                     // production.update
                     Route::middleware('permission:production.update')->group(function () {
+                        Route::put('work-orders/{workOrder}/materials', 'WorkOrderMaterialController@update');
+                        Route::post('work-orders/{workOrder}/materials/reserve', 'WorkOrderMaterialController@reserve');
+                        Route::post('work-orders/{workOrder}/materials/release', 'WorkOrderMaterialController@release');
+                        Route::post('work-orders/{workOrder}/materials/{material}/consume', 'WorkOrderMaterialController@consume');
                         Route::post('orders/{order:uuid}/work-orders', 'WorkOrderController@storeForOrder');
                         Route::post('work-orders/{workOrder}/stage', 'WorkOrderController@move');
                         Route::post('work-orders/{workOrder}/complete', 'WorkOrderController@complete');

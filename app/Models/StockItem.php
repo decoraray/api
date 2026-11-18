@@ -37,6 +37,7 @@ class StockItem extends Model
         'unit' => StockUnit::class,
         'thickness_mm' => 'float',
         'quantity' => 'float',
+        'reserved' => 'float',
         'reorder_point' => 'float',
         'average_cost' => 'integer',
         'active' => 'boolean',
@@ -44,6 +45,7 @@ class StockItem extends Model
 
     protected $attributes = [
         'quantity' => 0,
+        'reserved' => 0,
         'average_cost' => 0,
         'active' => true,
     ];
@@ -67,6 +69,12 @@ class StockItem extends Model
         return $query->where('active', true)
             ->whereNotNull('reorder_point')
             ->whereColumn('quantity', '<=', 'reorder_point');
+    }
+
+    /** On hand minus what is held for work orders. */
+    public function getAvailableAttribute(): float
+    {
+        return round($this->quantity - $this->reserved, 3);
     }
 
     public function getIsLowAttribute(): bool

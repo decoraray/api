@@ -138,6 +138,11 @@ class Product extends Model
         return $this->hasMany(Material::class);
     }
 
+    public function bomLines()
+    {
+        return $this->hasMany(BomLine::class);
+    }
+
     public function variations()
     {
         return $this->hasMany(Variation::class);
