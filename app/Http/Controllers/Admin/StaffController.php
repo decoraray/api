@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Illuminate\Validation\Rule;
+
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -11,11 +13,10 @@ use App\Http\Resources\Admin\AdminUserResource;
 
 class StaffController extends Controller
 {
-    protected array $staffRoles = ['SuperAdmin', 'Sales', 'Technic', 'Warehouse', 'Admin'];
 
     public function index(Request $request)
     {
-        $users = User::role($this->staffRoles)
+        $users = User::role(User::STAFF_ROLES)
             ->with('roles')
             ->orderBy('created_at', 'desc')
             ->paginate(15);
@@ -31,7 +32,7 @@ class StaffController extends Controller
             'email' => 'required|email|unique:users,email',
             'phone' => 'required|string|max:255|unique:users,phone',
             'password' => 'required|string|min:6',
-            'role' => 'required|in:SuperAdmin,Sales,Technic,Warehouse,Admin',
+            'role' => ['required', Rule::in(User::STAFF_ROLES)],
         ]);
 
         $user = User::create([
@@ -56,10 +57,10 @@ class StaffController extends Controller
             'name' => 'sometimes|nullable|string|max:255',
             'surname' => 'sometimes|nullable|string|max:255',
             'password' => 'sometimes|nullable|string|min:6',
-            'role' => 'required|in:SuperAdmin,Sales,Technic,Warehouse,Admin',
+            'role' => ['required', Rule::in(User::STAFF_ROLES)],
         ]);
 
-        $oldRole = $user->roles->whereIn('name', $this->staffRoles)->first()?->name;
+        $oldRole = $user->roles->whereIn('name', User::STAFF_ROLES)->first()?->name;
         $newRole = $validated['role'];
 
         if ($oldRole === 'SuperAdmin' && $newRole !== 'SuperAdmin' && $user->is(auth()->user())) {
@@ -92,7 +93,7 @@ class StaffController extends Controller
             $user->update($updateData);
         }
 
-        if ($oldRole !== $newRole || $user->roles->whereIn('name', $this->staffRoles)->isEmpty()) {
+        if ($oldRole !== $newRole || $user->roles->whereIn('name', User::STAFF_ROLES)->isEmpty()) {
             $user->syncRoles([$newRole]);
         }
 
@@ -103,7 +104,7 @@ class StaffController extends Controller
 
     public function removeAccess(Request $request, User $user)
     {
-        $oldRole = $user->roles->whereIn('name', $this->staffRoles)->first()?->name;
+        $oldRole = $user->roles->whereIn('name', User::STAFF_ROLES)->first()?->name;
 
         if ($oldRole === null) {
             return response()->json([
