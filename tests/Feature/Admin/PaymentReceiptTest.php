@@ -79,7 +79,7 @@ class PaymentReceiptTest extends TestCase
         $this->assertNull($a->payment_id);
         $this->assertSame($u->id, $a->uploaded_by);
         $this->assertSame('image/jpeg', $a->mime);
-        $this->assertStringStartsWith('receipts/', $a->path);
+        $this->assertMatchesRegularExpression('#^\d{4}/\d{2}/[0-9a-f-]{36}\.jpg$#', $a->path);
         $this->assertStringEndsWith('.jpg', $a->path);
         Storage::disk('receipts')->assertExists($a->path);
         Storage::disk('public')->assertMissing($a->path);

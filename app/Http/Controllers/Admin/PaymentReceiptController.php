@@ -34,7 +34,7 @@ class PaymentReceiptController extends Controller
             abort(422, 'فقط تصویر (JPG، PNG، WebP) یا PDF قابل بارگذاری است.');
         }
 
-        $path = $file->storeAs('receipts/' . now()->format('Y/m'), Str::uuid() . '.' . $ext, 'receipts');
+        $path = $file->storeAs(now()->format('Y/m'), Str::uuid() . '.' . $ext, 'receipts');
 
         $attachment = PaymentAttachment::create([
             'disk' => 'receipts',
