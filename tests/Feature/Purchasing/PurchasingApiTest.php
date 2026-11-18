@@ -253,5 +253,10 @@ class PurchasingApiTest extends PurchasingTestCase
         $this->patchJson("/api/v1/admin/staff/{$staff->id}", ['role' => 'Purchasing'], $this->header('SuperAdmin'))->assertStatus(200);
 
         $this->getJson('/api/v1/admin/suppliers', $this->header($staff->fresh()))->assertStatus(200);
+
+        // the admin learns what they may do from /user
+        $permissions = $this->getJson('/api/v1/user', $this->header($staff->fresh()))->assertStatus(200)->json('permissions');
+        $this->assertContains('purchasing.manage', $permissions);
+        $this->assertContains('costs.view', $permissions);
     }
 }
