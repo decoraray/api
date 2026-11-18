@@ -84,6 +84,11 @@ Route::prefix('v1')
         Route::post('/delete', 'CartController@delete');
         Route::post('/clear', 'CartController@clear');
 
+        // payment receipt file: the temporary relative signature is the credential (works in <img src>);
+        // links are only issued in admin responses that already show the payment.
+        Route::get('admin/payment-receipts/{attachment}/file', 'Admin\\PaymentReceiptController@file')
+            ->middleware(['signed:relative', 'throttle:120,1'])->name('payment-receipt-file');
+
         // verify payment
         Route::post('/payment-verify', 'PaymentController@verify')->name('payment-verify');
 
@@ -175,6 +180,9 @@ Route::prefix('v1')
                         Route::post('links', 'LinkController@store');
                         Route::patch('links/{link}', 'LinkController@update');
                     });
+
+                    // payments.record or orders.create: receipt upload (attached when the payment is recorded)
+                    Route::post('payment-receipts', 'PaymentReceiptController@store')->middleware('permission:payments.record|orders.create');
 
                     // payments.record
                     Route::middleware('permission:payments.record')->group(function () {

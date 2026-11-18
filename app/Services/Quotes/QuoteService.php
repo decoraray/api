@@ -18,12 +18,14 @@ class QuoteService
     /**
      * Record a payment on a quote. The first payment creates the production order.
      */
-    public function recordPayment(Quote $quote, int $amount, string $method, string $paidAt, ?string $reference, ?User $staff): Quote
+    public function recordPayment(Quote $quote, int $amount, string $method, string $paidAt, ?string $reference, ?User $staff, array $receiptIds = []): Quote
     {
         $createdOrder = null;
         $recorded = null;
+        $receipts = app(\App\Services\Payment\PaymentReceiptRules::class);
+        $receipts->assertAllowed(PaymentMethods::fromName($method), $receiptIds);
 
-        $result = DB::transaction(function () use ($quote, $amount, $method, $paidAt, $reference, $staff, &$createdOrder, &$recorded) {
+        $result = DB::transaction(function () use ($quote, $amount, $method, $paidAt, $reference, $staff, $receiptIds, $receipts, &$createdOrder, &$recorded) {
             $quote = Quote::whereKey($quote->getKey())->lockForUpdate()->firstOrFail();
             $quote->load('lines');
 
@@ -67,6 +69,7 @@ class QuoteService
             $payment->created_at = $paidAtDate;
             $payment->updated_at = $paidAtDate;
             $payment->save();
+            $receipts->attach($payment, $receiptIds, $staff);
             $recorded = $payment;
 
             $quote->status = $amount >= $totals['remaining'] ? 'paid' : 'deposit_paid';

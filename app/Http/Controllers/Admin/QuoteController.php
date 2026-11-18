@@ -133,9 +133,11 @@ class QuoteController extends Controller
             'method' => ['required', 'in:CARD,CASH,CASH_RECEIVED,CHEQUE,OTHER'],
             'paid_at' => ['required', 'date_format:Y-m-d'],
             'reference' => ['nullable', 'string', 'max:255'],
+            'receipt_ids' => ['nullable', 'array', 'max:10'],
+            'receipt_ids.*' => ['integer', 'distinct'],
         ]);
 
-        $quote = $service->recordPayment($quote, (int) $data['amount'], $data['method'], $data['paid_at'], $data['reference'] ?? null, $request->user());
+        $quote = $service->recordPayment($quote, (int) $data['amount'], $data['method'], $data['paid_at'], $data['reference'] ?? null, $request->user(), $data['receipt_ids'] ?? []);
 
         return (new QuoteAdminResource($this->loaded($quote)))->response()->setStatusCode(201);
     }

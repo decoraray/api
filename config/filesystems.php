@@ -44,6 +44,15 @@ return [
             'throw' => false,
         ],
 
+        // Payment receipts (card-to-card slips, cheques). Private: no URL; served only
+        // through the signed payment-receipt-file route. Mounted from the host in prod.
+        'receipts' => [
+            'driver' => 'local',
+            'root' => storage_path('app/receipts'),
+            'visibility' => 'private',
+            'throw' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

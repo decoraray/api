@@ -56,7 +56,7 @@ class CrmOrderConsistencyTest extends TestCase
     private function pay(Quote $q, User $sales, int $amount)
     {
         return $this->postJson("/api/v1/admin/quotes/{$q->id}/payments", [
-            'amount' => $amount, 'method' => 'CARD', 'paid_at' => '2026-11-10',
+            'amount' => $amount, 'method' => 'CASH_RECEIVED', 'paid_at' => '2026-11-10',
         ], $this->h($sales));
     }
 

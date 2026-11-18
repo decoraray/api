@@ -19,7 +19,16 @@ class AdminRoutePermissionsTest extends TestCase
      */
     protected array $publicAdminRoutes = [
         'POST api/v1/admin/login',
+        // Receipt file for <img src>: guarded by a temporary signature instead (asserted below).
+        'GET api/v1/admin/payment-receipts/{attachment}/file',
     ];
+
+    public function test_receipt_file_route_requires_a_signature()
+    {
+        $route = Route::getRoutes()->getByName('payment-receipt-file');
+        $this->assertNotNull($route);
+        $this->assertContains('signed:relative', $route->gatherMiddleware());
+    }
 
     public function test_every_admin_route_requires_a_permission()
     {

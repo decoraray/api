@@ -24,6 +24,7 @@ class FakeSms implements SmsProviderClientInterface
 class QuoteApiTest extends TestCase
 {
     use RefreshDatabase;
+    use \Tests\Feature\Concerns\UploadsReceipts;
 
     private function header(string $role): array
     {
@@ -127,14 +128,14 @@ class QuoteApiTest extends TestCase
     {
         $h = $this->header('Sales');
         $q = $this->create();
-        $this->postJson("/api/v1/admin/quotes/{$q->id}/payments", ['amount' => 100, 'method' => 'CARD', 'paid_at' => '2026-11-15'], $h)->assertStatus(201);
+        $this->postJson("/api/v1/admin/quotes/{$q->id}/payments", ['amount' => 100, 'method' => 'CASH_RECEIVED', 'paid_at' => '2026-11-15'], $h)->assertStatus(201);
         $this->putJson("/api/v1/admin/quotes/{$q->id}", $this->payload(), $h)->assertStatus(422)->assertJsonStructure(['message']);
         $this->postJson("/api/v1/admin/quotes/{$q->id}/cancel", [], $h)->assertStatus(422);
 
         $c = $this->create();
         $this->postJson("/api/v1/admin/quotes/{$c->id}/cancel", [], $h)->assertOk()->assertJsonPath('data.status', 'cancelled');
         $this->putJson("/api/v1/admin/quotes/{$c->id}", $this->payload(), $h)->assertStatus(422);
-        $this->postJson("/api/v1/admin/quotes/{$c->id}/payments", ['amount' => 100, 'method' => 'CARD', 'paid_at' => '2026-11-15'], $h)->assertStatus(422);
+        $this->postJson("/api/v1/admin/quotes/{$c->id}/payments", ['amount' => 100, 'method' => 'CASH_RECEIVED', 'paid_at' => '2026-11-15'], $h)->assertStatus(422);
     }
 
     public function test_sent_and_public_view()
@@ -170,7 +171,7 @@ class QuoteApiTest extends TestCase
         $h = $this->header('Sales');
         $url = "/api/v1/admin/quotes/{$q->id}/payments";
 
-        $r = $this->postJson($url, ['amount' => 12000000, 'method' => 'CARD', 'paid_at' => '2026-11-10', 'reference' => 'R1'], $h)->assertStatus(201);
+        $r = $this->postJson($url, ['amount' => 12000000, 'method' => 'CARD', 'paid_at' => '2026-11-10', 'reference' => 'R1', 'receipt_ids' => [$this->uploadReceipt($h)]], $h)->assertStatus(201);
         $j = $r->json('data');
         $this->assertSame('deposit_paid', $j['status']);
         $this->assertNotNull($j['order_id']);
@@ -205,7 +206,7 @@ class QuoteApiTest extends TestCase
     public function test_overpayment_refused_and_nothing_created()
     {
         $q = $this->create();
-        $this->postJson("/api/v1/admin/quotes/{$q->id}/payments", ['amount' => 20000001, 'method' => 'CARD', 'paid_at' => '2026-11-10'], $this->header('Sales'))
+        $this->postJson("/api/v1/admin/quotes/{$q->id}/payments", ['amount' => 20000001, 'method' => 'CASH_RECEIVED', 'paid_at' => '2026-11-10'], $this->header('Sales'))
             ->assertStatus(422);
         $this->assertSame(0, Order::count());
         $this->assertNull($q->fresh()->order_id);
@@ -215,7 +216,7 @@ class QuoteApiTest extends TestCase
     public function test_technic_sees_custom_lines_without_prices_and_order_resources()
     {
         $q = $this->create();
-        $this->postJson("/api/v1/admin/quotes/{$q->id}/payments", ['amount' => 100, 'method' => 'CARD', 'paid_at' => '2026-11-10'], $this->header('Sales'))->assertStatus(201);
+        $this->postJson("/api/v1/admin/quotes/{$q->id}/payments", ['amount' => 100, 'method' => 'CASH_RECEIVED', 'paid_at' => '2026-11-10'], $this->header('Sales'))->assertStatus(201);
         $order = Order::first();
         $h = $this->header('Technic');
 

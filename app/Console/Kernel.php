@@ -28,6 +28,9 @@ class Kernel extends ConsoleKernel
         $schedule->command('instagram:process')->everyFiveMinutes()->withoutOverlapping(10);
         // Long-lived token lasts 60 days; refreshed when within 15 days of expiry.
         $schedule->command('instagram:refresh-token')->dailyAt('04:00')->timezone('Asia/Tehran');
+
+        // Receipts uploaded for a payment form that was never saved.
+        $schedule->command('receipts:prune')->dailyAt('03:30')->timezone('Asia/Tehran');
     }
 
     /**
