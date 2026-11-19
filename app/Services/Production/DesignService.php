@@ -113,19 +113,18 @@ class DesignService
     /** @param array<int, array> $parts validated parts in order */
     public function replaceParts(ProductDesign $design, array $parts): void
     {
-        DB::transaction(function () use ($design, $parts) {
+        $this->changingContent($design, function () use ($design, $parts) {
             $design->parts()->delete();
             foreach (array_values($parts) as $position => $part) {
                 $design->parts()->create(CuttingListService::partAttributes($part, $position));
             }
-            $design->touch();
         });
     }
 
     /** @param array<int, array{stock_item_id: int, quantity: float|string, note?: ?string}> $lines */
     public function replaceBom(ProductDesign $design, array $lines): void
     {
-        DB::transaction(function () use ($design, $lines) {
+        $this->changingContent($design, function () use ($design, $lines) {
             $design->bomLines()->delete();
             foreach ($lines as $line) {
                 $design->bomLines()->create([
@@ -134,8 +133,45 @@ class DesignService
                     'note' => $line['note'] ?? null,
                 ]);
             }
-            $design->touch();
         });
+    }
+
+    /** Gives or removes the «تأیید شده» badge. */
+    public function setApproved(ProductDesign $design, bool $approved, ?User $user): ProductDesign
+    {
+        $design->forceFill($approved
+            ? ['approved_at' => now(), 'approved_by' => $user?->id]
+            : ['approved_at' => null, 'approved_by' => null])->save();
+
+        return $design->refresh();
+    }
+
+    /**
+     * Runs a change to a design's parts or BOM in a transaction. If the parts or BOM end up different, the
+     * approval badge is removed: it always refers to the content that was approved.
+     */
+    public function changingContent(ProductDesign $design, callable $change): void
+    {
+        DB::transaction(function () use ($design, $change) {
+            $before = $this->contentOf($design);
+            $change();
+            $design->touch();
+            if ($design->approved_at && $this->contentOf($design) !== $before) {
+                $design->forceFill(['approved_at' => null, 'approved_by' => null])->save();
+            }
+        });
+    }
+
+    /** A comparable snapshot of a design's parts and BOM. */
+    private function contentOf(ProductDesign $design): string
+    {
+        $parts = $design->parts()->orderBy('position')->orderBy('id')->get()
+            ->map(fn ($p) => [$p->name, (int) $p->length_mm, (int) $p->width_mm, (int) $p->count, (int) $p->panel_material_id,
+                (int) $p->edge_length, (int) $p->edge_width, (bool) $p->grain_locked, $p->ops ?: [], $p->note])->all();
+        $bom = $design->bomLines()->orderBy('stock_item_id')->get()
+            ->map(fn ($l) => [(int) $l->stock_item_id, round((float) $l->quantity, 3), $l->note])->all();
+
+        return json_encode([$parts, $bom]);
     }
 
     public function saveMapping(ProductDesign $design, array $mapping): void

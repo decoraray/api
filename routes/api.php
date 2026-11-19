@@ -391,6 +391,12 @@ Route::prefix('v1')
                         Route::post('designs/{design}/bom-lines', 'DesignController@proposeBomLines');
                     });
 
+                    // designs.approve: the «تأیید شده» badge on a design (no role has it yet; SuperAdmin passes every gate)
+                    Route::middleware('permission:designs.approve')->group(function () {
+                        Route::post('designs/{design}/approval', 'DesignController@approve');
+                        Route::delete('designs/{design}/approval', 'DesignController@unapprove');
+                    });
+
                     // bom.manage and production.view: keep a work order's design on a product
                     Route::middleware(['permission:bom.manage', 'permission:production.view'])->group(function () {
                         Route::post('work-orders/{workOrder}/save-as-design', 'WorkOrderDesignController@saveAsDesign');

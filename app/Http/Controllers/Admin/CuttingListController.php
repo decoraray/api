@@ -83,7 +83,7 @@ class CuttingListController extends Controller
                 'dimensions' => $workOrder->dimensions,
                 'state' => $workOrder->state->value,
             ],
-            'design' => $workOrder->design_name ? ['id' => $workOrder->design_id, 'name' => $workOrder->design_name] : null,
+            'design' => $workOrder->design_name ? ['id' => $workOrder->design_id, 'name' => $workOrder->design_name, 'approved' => (bool) $workOrder->design_approved] : null,
             'customized' => $workOrder->customized,
             'source' => $parts->isEmpty() ? 'none' : 'work_order',
             'updated_at' => $parts->max('updated_at')?->toIso8601String(),

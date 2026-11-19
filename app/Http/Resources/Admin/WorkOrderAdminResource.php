@@ -32,6 +32,8 @@ class WorkOrderAdminResource extends JsonResource
             'design_id' => $this->design_id,
             'design_name' => $this->design_name,
             'customized' => (bool) $this->customized,
+            // Built from a design that was approved when copied (the badge is not shown once customised).
+            'design_approved' => (bool) $this->design_approved,
             // The line's catalog product (null for a custom line): designs to switch to come from it.
             'product_id' => $this->item?->product_id,
             'design_switchable' => $this->whenLoaded('logs', fn () => $this->state === WorkOrderState::WAITING
