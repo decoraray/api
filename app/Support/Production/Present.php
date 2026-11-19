@@ -5,6 +5,8 @@ namespace App\Support\Production;
 use App\Models\BomLine;
 use App\Models\ProductDesign;
 use App\Models\StockItem;
+use App\Services\Production\Drafts\DraftDesignService;
+use App\Services\Production\Drafts\TemplateRegistry;
 
 /** Shared JSON shapes for production responses. None of them carries a cost, for any role. */
 class Present
@@ -48,6 +50,30 @@ class Present
             'parts_count' => $design->parts_count ?? $design->parts()->count(),
             'bom_count' => $design->bom_lines_count ?? $design->bomLines()->count(),
             'updated_at' => $design->updated_at?->toIso8601String(),
+            'draft' => self::draft($design),
+        ];
+    }
+
+    /**
+     * How a design was generated from a template («پیش‌نویس خودکار»), or null for a hand-written design. `pending` is
+     * true until it is approved; `edited` when its parts or BOM changed by hand since it was last generated.
+     */
+    public static function draft(ProductDesign $design): ?array
+    {
+        if ($design->draft_template === null) {
+            return null;
+        }
+
+        $params = $design->draft_params ?? [];
+
+        return [
+            'template' => $design->draft_template,
+            'template_name' => app(TemplateRegistry::class)->get($design->draft_template)?->name(),
+            'params' => array_diff_key($params, array_flip(['guessed', 'source_dimensions'])),
+            'guessed' => (bool) ($params['guessed'] ?? false),
+            'source_dimensions' => $params['source_dimensions'] ?? null,
+            'edited' => app(DraftDesignService::class)->editedByHand($design),
+            'pending' => $design->isDraft(),
         ];
     }
 }

@@ -166,6 +166,12 @@ class DesignService
         });
     }
 
+    /** A fingerprint of a design's parts and BOM, to tell whether they changed since a moment (drafts keep one). */
+    public function contentHash(ProductDesign $design): string
+    {
+        return sha1($this->contentOf($design));
+    }
+
     /** A comparable snapshot of a design's parts and BOM. */
     private function contentOf(ProductDesign $design): string
     {
