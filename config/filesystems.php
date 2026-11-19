@@ -53,6 +53,16 @@ return [
             'throw' => false,
         ],
 
+        // Uploaded cutting layouts (optimizer screenshots/PDFs). A subfolder of the receipts volume, so it is
+        // mounted and backed up offsite without any server change. Served only through the signed
+        // cutting-layout-file route.
+        'layouts' => [
+            'driver' => 'local',
+            'root' => storage_path('app/receipts/cutting-layouts'),
+            'visibility' => 'private',
+            'throw' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

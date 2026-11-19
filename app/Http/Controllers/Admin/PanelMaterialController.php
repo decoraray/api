@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\PanelMaterial;
+use App\Services\Production\CuttingLayoutService;
 use App\Services\Production\CuttingListService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -35,6 +36,10 @@ class PanelMaterialController extends Controller
     public function update(Request $request, PanelMaterial $panelMaterial)
     {
         $panelMaterial->update($this->validated($request, $panelMaterial));
+        if ($panelMaterial->wasChanged(['sheet_length_mm', 'sheet_width_mm'])) {
+            // Layouts drawn on the old sheet size are outdated now.
+            app(CuttingLayoutService::class)->clearStaleApprovalsForMaterial($panelMaterial);
+        }
 
         return response()->json(['data' => $this->cutting->presentMaterial($panelMaterial)]);
     }
