@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Enums\OrderStatus;
 use Illuminate\Http\Request;
 use App\Http\Requests\CheckoutRequest;
+use App\Services\Payment\PaymentGatewayException;
 use App\Services\Payment\PaymentService;
 use Illuminate\Support\Facades\Redirect;
 use App\Http\Resources\OrderShowResource;
@@ -49,10 +50,18 @@ class PaymentController extends Controller
         }
         $payment = $this->createPayment($request, $order);
 
-        return response()->json(
-            ['url' => $this->paymentService->pay($payment, $request->gateway)],
-            201
-        );
+        try {
+            $url = $this->paymentService->pay($payment, $request->gateway);
+        } catch (PaymentGatewayException $e) {
+            report($e); // full gateway response goes to the log and Sentry
+
+            return response()->json([
+                'message' => 'اتصال به درگاه پرداخت ممکن نشد. لطفاً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.',
+                'order' => $order->uuid,
+            ], 502);
+        }
+
+        return response()->json(['url' => $url], 201);
     }
 
     private function createPayment(Request $request, Order $order): Payment
