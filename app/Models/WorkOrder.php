@@ -41,6 +41,7 @@ class WorkOrder extends Model
         'finished_at' => 'datetime',
         'panel_map' => 'array',
         'customized' => 'boolean',
+        'design_approved' => 'boolean',
     ];
 
     protected $attributes = [

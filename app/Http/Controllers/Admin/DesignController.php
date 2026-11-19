@@ -21,7 +21,7 @@ class DesignController extends Controller
 
     public function index(Request $request, Product $product)
     {
-        $designs = $product->designs()->withCount(['parts', 'bomLines'])
+        $designs = $product->designs()->with('approver:id,name')->withCount(['parts', 'bomLines'])
             ->when(!$request->boolean('include_inactive'), fn ($q) => $q->where('active', true))
             ->get();
 
@@ -133,6 +133,21 @@ class DesignController extends Controller
         ]);
     }
 
+    /** Gives the «تأیید شده» badge (designs.approve). It informs only; nothing is blocked without it. */
+    public function approve(Request $request, ProductDesign $design)
+    {
+        $design = $this->designs->setApproved($design, true, $request->user());
+
+        return response()->json(['data' => $this->detail($design)]);
+    }
+
+    public function unapprove(Request $request, ProductDesign $design)
+    {
+        $design = $this->designs->setApproved($design, false, $request->user());
+
+        return response()->json(['data' => $this->detail($design)]);
+    }
+
     /** The printable sheet of a design for a quantity: parts, summary and BOM lines × quantity. No cost. */
     public function sheet(Request $request, ProductDesign $design)
     {
@@ -141,7 +156,7 @@ class DesignController extends Controller
         $parts = $design->parts()->with('panelMaterial')->get();
 
         return response()->json([
-            'design' => ['id' => $design->id, 'name' => $design->name, 'dimensions' => $design->dimensions, 'note' => $design->note, 'active' => $design->active],
+            'design' => ['id' => $design->id, 'name' => $design->name, 'dimensions' => $design->dimensions, 'note' => $design->note, 'active' => $design->active, 'approved' => $design->isApproved()],
             'product' => ['id' => $design->product->id, 'title' => $design->product->title, 'dimensions' => $design->product->dimensions, 'one_off' => $design->product->one_off],
             'quantity' => $quantity,
             'updated_at' => $design->updated_at?->toIso8601String(),

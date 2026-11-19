@@ -123,8 +123,6 @@ class WorkOrderDesignService
                 if (!$design || ($expected && $design->product_id !== (int) $expected)) {
                     throw ValidationException::withMessages(['design_id' => ['طرحی از همین محصول را برای جایگزینی انتخاب کنید.']]);
                 }
-                $design->parts()->delete();
-                $design->bomLines()->delete();
                 $design->forceFill(['panel_map' => $workOrder->panel_map, 'source_work_order_id' => $workOrder->id])->save();
             } else {
                 $product = $this->targetProduct($workOrder, $catalogProductId, $data);
@@ -135,22 +133,32 @@ class WorkOrderDesignService
                 $design->forceFill(['panel_map' => $workOrder->panel_map, 'source_work_order_id' => $workOrder->id])->save();
             }
 
-            $this->designs->copyParts($workOrder->parts()->get(), $design);
+            // Overwriting with different parts or BOM removes the design's approval badge.
+            $this->designs->changingContent($design, function () use ($design, $workOrder) {
+                $design->parts()->delete();
+                $design->bomLines()->delete();
+                $this->designs->copyParts($workOrder->parts()->get(), $design);
 
-            $quantity = max(1, (int) $workOrder->quantity);
-            foreach ($workOrder->materials()->get() as $material) {
-                $perUnit = round($material->planned_quantity / $quantity, 3);
-                if ($perUnit > 0) {
-                    $design->bomLines()->create([
-                        'stock_item_id' => $material->stock_item_id,
-                        'quantity' => $perUnit,
-                        'note' => $material->note,
-                    ]);
+                $quantity = max(1, (int) $workOrder->quantity);
+                foreach ($workOrder->materials()->get() as $material) {
+                    $perUnit = round($material->planned_quantity / $quantity, 3);
+                    if ($perUnit > 0) {
+                        $design->bomLines()->create([
+                            'stock_item_id' => $material->stock_item_id,
+                            'quantity' => $perUnit,
+                            'note' => $material->note,
+                        ]);
+                    }
                 }
-            }
-            $design->touch();
+            });
+            $design->refresh();
 
-            $workOrder->forceFill(['design_id' => $design->id, 'design_name' => $design->name, 'customized' => false])->save();
+            $workOrder->forceFill([
+                'design_id' => $design->id,
+                'design_name' => $design->name,
+                'design_approved' => $design->isApproved(),
+                'customized' => false,
+            ])->save();
 
             activity()->performedOn($design)->causedBy($user)
                 ->withProperties(['work_order' => $workOrder->number, 'mode' => $data['mode']])
@@ -200,7 +208,7 @@ class WorkOrderDesignService
     private function copyDesign(WorkOrder $workOrder, ?ProductDesign $design): void
     {
         if (!$design) {
-            $workOrder->forceFill(['design_id' => null, 'design_name' => null, 'panel_map' => null, 'customized' => false])->save();
+            $workOrder->forceFill(['design_id' => null, 'design_name' => null, 'design_approved' => false, 'panel_map' => null, 'customized' => false])->save();
 
             return;
         }
@@ -217,6 +225,8 @@ class WorkOrderDesignService
         $workOrder->forceFill([
             'design_id' => $design->id,
             'design_name' => $design->name,
+            // Whether the design was approved when this work order copied it.
+            'design_approved' => $design->isApproved(),
             'panel_map' => $design->panel_map,
             'customized' => false,
         ])->save();
