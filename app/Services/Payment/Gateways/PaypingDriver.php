@@ -3,6 +3,8 @@
 namespace App\Services\Payment\Gateways;
 
 use App\Models\Payment;
+use App\Services\Payment\PaymentGatewayException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -39,21 +41,58 @@ class PaypingDriver implements GatewayInterface
             $amount = (int)$payment->amount;
         }
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $this->token,
-            'Content-Type' => 'application/json',
-            'Accept' => 'application/json',
-        ])->post($this->url . '/v3/pay', [
-            'payerName' => $user->name,
-            'amount' => $amount,
-            'payerIdentity' => $payment->user->mobile,
-            'returnUrl' => $this->callback,
-            'clientRefId' => $payment->uuid,
-            'description' => 'پرداخت از طریق سایت',
-            'nationalCode' => '',
-        ])->throw()->json();
+        // Fields per PayPing's PaymentModel (statics.payping.ir/openapi.json), which
+        // rejects unknown properties. Amounts are in Toman.
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $this->token,
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ])->timeout(30)->post($this->url . '/v3/pay', [
+                'payerName' => $user?->name,
+                'amount' => $amount,
+                'payerIdentity' => $user?->phone,
+                'returnUrl' => $this->callback,
+                'clientRefId' => $payment->uuid,
+                'description' => 'پرداخت از طریق سایت',
+            ]);
+        } catch (ConnectionException $e) {
+            $this->failPayment($payment, ['message' => $e->getMessage()]);
+            throw new PaymentGatewayException('PayPing unreachable: ' . $e->getMessage(), 'payping', null, null, $e);
+        }
 
-        return $response['paymentCode'];
+        if ($response->failed() || empty($response->json('paymentCode'))) {
+            $body = $response->json() ?? $response->body();
+            $this->failPayment($payment, $body);
+
+            // PayPing errors are RFC 7807 problem details: title (e.g. PolicyException,
+            // ValidationException), detail, metaData.errors[].message, paypingTraceId.
+            $errors = collect($response->json('metaData.errors') ?? [])->pluck('message')->filter()->implode('; ');
+            $message = sprintf(
+                'PayPing /v3/pay failed (%d %s): %s [paypingTraceId: %s]',
+                $response->status(),
+                $response->json('title') ?? 'error',
+                trim(($response->json('detail') ?? '') . ' ' . $errors) ?: mb_substr($response->body(), 0, 500),
+                $response->json('paypingTraceId') ?? '-',
+            );
+
+            Log::error($message, ['payment' => $payment->uuid, 'response' => $body]);
+
+            throw new PaymentGatewayException($message, 'payping', $response->status(), $body);
+        }
+
+        return $response->json('paymentCode');
+    }
+
+    private function failPayment(Payment $payment, mixed $error): void
+    {
+        // payments.error is a varchar(255) with no cast
+        $text = is_string($error) ? $error : json_encode($error, JSON_UNESCAPED_UNICODE);
+
+        $payment->update([
+            'status' => 'failed',
+            'error' => mb_substr((string) $text, 0, 255),
+        ]);
     }
 
     public function verify($payment)
@@ -93,14 +132,11 @@ class PaypingDriver implements GatewayInterface
             'amount' => $amount
         ]);
 
-        Log::info('Payment Payping verification response received', $response->json());
+        Log::info('Payment Payping verification response received', ['status' => $response->status(), 'response' => $response->json() ?? $response->body()]);
 
         if ($response->successful() && $response['amount'] == $amount) {
             if (isset($response['status']) && $response['status'] == '0') {
-                $payment->update([
-                    'status' => 'failed',
-                    'error' => $response->json(),
-                ]);
+                $this->failPayment($payment, $response->json() ?? $response->body());
             } else {
                 $payment->update([
                     'status' => 'paid',
@@ -109,10 +145,7 @@ class PaypingDriver implements GatewayInterface
                 ]);
             }
         } else {
-            $payment->update([
-                'status' => 'failed',
-                'error' => $response->json(),
-            ]);
+            $this->failPayment($payment, $response->json() ?? $response->body());
         }
 
         return $payment;

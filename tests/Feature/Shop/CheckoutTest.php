@@ -120,6 +120,66 @@ class CheckoutTest extends TestCase
         ]);
     }
 
+    public function test_online_checkout_sends_only_documented_payping_fields()
+    {
+        Shipping::factory()->create(['id' => 1]);
+        Http::fake([
+            '*/v3/pay' => Http::response(['paymentCode' => 'abc123'], 200),
+        ]);
+
+        $user = User::factory()->create(['phone' => '09120000000']);
+        $address = Address::factory()->create(['user_id' => $user->id]);
+        $variation = Variation::factory()->create(['price' => 100000]);
+
+        $this->postJson('/api/v1/add', ['variation' => $variation->id], $this->authHeader($user));
+
+        $this->postJson('/api/v1/checkout', [
+            'address_id' => $address->uuid,
+            'payment_method' => 'online',
+            'gateway' => 'payping',
+        ], $this->authHeader($user))->assertStatus(201);
+
+        Http::assertSent(function ($request) {
+            $allowed = ['amount', 'returnUrl', 'payerIdentity', 'payerName', 'description', 'clientRefId', 'isReversible', 'IsBlocked'];
+
+            return str_ends_with($request->url(), '/v3/pay')
+                && array_diff(array_keys($request->data()), $allowed) === []
+                && $request['payerIdentity'] === '09120000000';
+        });
+    }
+
+    public function test_online_checkout_returns_502_and_fails_payment_when_payping_rejects()
+    {
+        Shipping::factory()->create(['id' => 1]);
+        Http::fake([
+            '*/v3/pay' => Http::response([
+                'type' => 'https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1',
+                'title' => 'PolicyException',
+                'status' => 400,
+                'detail' => 'policy rejected',
+                'paypingTraceId' => 'TRACE-1',
+            ], 400),
+        ]);
+
+        $user = User::factory()->create();
+        $address = Address::factory()->create(['user_id' => $user->id]);
+        $variation = Variation::factory()->create(['price' => 100000]);
+
+        $this->postJson('/api/v1/add', ['variation' => $variation->id], $this->authHeader($user));
+
+        $response = $this->postJson('/api/v1/checkout', [
+            'address_id' => $address->uuid,
+            'payment_method' => 'online',
+            'gateway' => 'payping',
+        ], $this->authHeader($user));
+
+        $response->assertStatus(502)->assertJsonStructure(['message', 'order']);
+
+        $payment = \App\Models\Payment::where('user_id', $user->id)->firstOrFail();
+        $this->assertSame('failed', $payment->status);
+        $this->assertStringContainsString('PolicyException', $payment->error);
+    }
+
     public function test_checkout_requires_authentication()
     {
         $response = $this->postJson('/api/v1/checkout', [
