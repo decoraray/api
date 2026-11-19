@@ -3,6 +3,7 @@
 namespace Tests\Feature\Production;
 
 use App\Models\BomLine;
+use App\Models\Image;
 use App\Models\User;
 
 class DesignSheetTest extends CuttingTestCase
@@ -23,11 +24,25 @@ class DesignSheetTest extends CuttingTestCase
             ->assertJsonPath('groups.0.parts.2.count', 12)
             ->assertJsonPath('summary.0.pieces', 39)
             ->assertJsonPath('bom_lines.0.stock_item.code', 'HNG')
-            ->assertJsonPath('bom_lines.0.quantity', 12);
+            ->assertJsonPath('bom_lines.0.quantity', 12)
+            ->assertJsonPath('product.image', null);
         $this->assertStringNotContainsString('cost', json_encode($r->json()));
 
         $this->getJson("/api/v1/admin/designs/{$design->id}/sheet", $this->header('Technic'))
             ->assertJsonPath('quantity', 1)->assertJsonPath('groups.0.parts.2.count', 4);
+    }
+
+    public function test_sheet_carries_the_product_main_image()
+    {
+        $product = $this->damtv220();
+        $design = $product->designs()->first();
+        $chosen = Image::factory()->create(['product_id' => $product->id, 'image' => 'products/front.jpg']);
+        Image::factory()->create(['product_id' => $product->id, 'image' => 'products/side.jpg']);
+        $product->update(['thumbnail_id' => $chosen->id]);
+
+        $this->getJson("/api/v1/admin/designs/{$design->id}/sheet", $this->header('Technic'))
+            ->assertStatus(200)
+            ->assertJsonPath('product.image', config('app.url').'/storage/products/front.jpg');
     }
 
     public function test_quantity_bounds_and_permission()

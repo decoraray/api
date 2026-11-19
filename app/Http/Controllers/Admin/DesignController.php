@@ -152,12 +152,14 @@ class DesignController extends Controller
     public function sheet(Request $request, ProductDesign $design)
     {
         $quantity = (int) ($request->validate(['quantity' => ['nullable', 'integer', 'min:1', 'max:1000']])['quantity'] ?? 1);
-        $design->loadMissing('product');
+        $design->loadMissing('product.images');
         $parts = $design->parts()->with('panelMaterial')->get();
+        $product = $design->product;
 
         return response()->json([
             'design' => ['id' => $design->id, 'name' => $design->name, 'dimensions' => $design->dimensions, 'note' => $design->note, 'active' => $design->active, 'approved' => $design->isApproved(), 'draft' => $design->isDraft()],
-            'product' => ['id' => $design->product->id, 'title' => $design->product->title, 'dimensions' => $design->product->dimensions, 'one_off' => $design->product->one_off],
+            // image: the product's main picture, for printing on the sheet; null when it has none.
+            'product' => ['id' => $product->id, 'title' => $product->title, 'dimensions' => $product->dimensions, 'one_off' => $product->one_off, 'image' => $product->images->isNotEmpty() ? $product->thumbnail?->imagePath : null],
             'quantity' => $quantity,
             'updated_at' => $design->updated_at?->toIso8601String(),
             'bom_lines' => $design->bomLines()->with('stockItem')->get()->map(fn ($l) => Present::bomLine($l, $quantity))->values(),
