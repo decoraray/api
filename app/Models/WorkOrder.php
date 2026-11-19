@@ -73,6 +73,12 @@ class WorkOrder extends Model
     }
 
     /** The work order's own cutting list, per unit. */
+    /** The work order's own cutting layout, if one was generated for it. */
+    public function layout()
+    {
+        return $this->hasOne(CuttingLayout::class);
+    }
+
     public function parts()
     {
         return $this->hasMany(WorkOrderPart::class)->orderBy('position')->orderBy('id');

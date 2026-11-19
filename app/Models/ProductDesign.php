@@ -62,6 +62,11 @@ class ProductDesign extends Model
         return $this->belongsTo(Variation::class);
     }
 
+    public function layouts()
+    {
+        return $this->hasMany(CuttingLayout::class, 'design_id');
+    }
+
     public function parts()
     {
         return $this->hasMany(ProductPart::class, 'design_id')->orderBy('position')->orderBy('id');

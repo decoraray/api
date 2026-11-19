@@ -107,6 +107,8 @@ class DesignService
             ]);
         }
 
+        // Through the model, so uploaded layout files are removed too.
+        $design->layouts()->get()->each->delete();
         $design->delete();
     }
 
@@ -159,6 +161,8 @@ class DesignService
             if ($design->approved_at && $this->contentOf($design) !== $before) {
                 $design->forceFill(['approved_at' => null, 'approved_by' => null])->save();
             }
+            // Layouts made from the old parts are outdated now and lose their approval.
+            app(CuttingLayoutService::class)->clearStaleApprovals($design);
         });
     }
 

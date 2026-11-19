@@ -86,6 +86,10 @@ Route::prefix('v1')
 
         // payment receipt file: the temporary relative signature is the credential (works in <img src>);
         // links are only issued in admin responses that already show the payment.
+        // cutting layout upload: same scheme as payment receipts (links only in layout responses)
+        Route::get('admin/layouts/{layout}/file', 'Admin\\CuttingLayoutController@file')
+            ->middleware(['signed:relative', 'throttle:120,1'])->name('cutting-layout-file');
+
         Route::get('admin/payment-receipts/{attachment}/file', 'Admin\\PaymentReceiptController@file')
             ->middleware(['signed:relative', 'throttle:120,1'])->name('payment-receipt-file');
 
@@ -363,6 +367,7 @@ Route::prefix('v1')
                         Route::get('work-orders/{workOrder}/materials', 'WorkOrderMaterialController@index');
                         Route::get('material-shortages', 'WorkOrderMaterialController@shortages');
                         Route::get('work-orders/{workOrder}/cutting-list', 'CuttingListController@workOrder');
+                        Route::get('work-orders/{workOrder}/layout', 'CuttingLayoutController@workOrder');
                     });
 
                     // production.view or bom.manage
@@ -373,6 +378,8 @@ Route::prefix('v1')
                         Route::get('designs/{design}', 'DesignController@show');
                         Route::get('designs/{design}/cutting-list', 'DesignController@cuttingList');
                         Route::get('designs/{design}/bom', 'DesignController@bom');
+                        Route::get('designs/{design}/layouts', 'CuttingLayoutController@index');
+                        Route::get('layouts/{layout}', 'CuttingLayoutController@show');
                     });
 
                     // bom.manage
@@ -389,12 +396,19 @@ Route::prefix('v1')
                         Route::put('designs/{design}/cutting-list', 'DesignController@updateCuttingList');
                         Route::put('designs/{design}/bom', 'DesignController@updateBom');
                         Route::post('designs/{design}/bom-lines', 'DesignController@proposeBomLines');
+                        Route::post('designs/{design}/layouts', 'CuttingLayoutController@store');
+                        Route::post('designs/{design}/layouts/upload', 'CuttingLayoutController@upload');
+                        Route::put('layouts/{layout}', 'CuttingLayoutController@update');
+                        Route::post('layouts/{layout}/regenerate', 'CuttingLayoutController@regenerate');
+                        Route::delete('layouts/{layout}', 'CuttingLayoutController@destroy');
                     });
 
                     // designs.approve: the «تأیید شده» badge on a design (no role has it yet; SuperAdmin passes every gate)
                     Route::middleware('permission:designs.approve')->group(function () {
                         Route::post('designs/{design}/approval', 'DesignController@approve');
                         Route::delete('designs/{design}/approval', 'DesignController@unapprove');
+                        Route::post('layouts/{layout}/approval', 'CuttingLayoutController@approve');
+                        Route::delete('layouts/{layout}/approval', 'CuttingLayoutController@unapprove');
                     });
 
                     // bom.manage and production.view: keep a work order's design on a product
@@ -414,6 +428,7 @@ Route::prefix('v1')
                         Route::put('work-orders/{workOrder}/parts', 'WorkOrderDesignController@updateParts');
                         Route::post('work-orders/{workOrder}/parts/bom-lines', 'WorkOrderDesignController@proposeMaterials');
                         Route::post('work-orders/{workOrder}/design', 'WorkOrderDesignController@switchDesign');
+                        Route::post('work-orders/{workOrder}/layout', 'CuttingLayoutController@generateForWorkOrder');
                     });
 
                     // orders.invoice
