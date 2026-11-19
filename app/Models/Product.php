@@ -33,6 +33,10 @@ class Product extends Model
         'thumbnail_id',
     ];
 
+    protected $casts = [
+        'one_off' => 'boolean',
+    ];
+
 
     /**
      * Get the indexable data array for the model.
@@ -45,6 +49,12 @@ class Product extends Model
             ->logFillable()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
+    }
+
+    /** One-off products are made for a single customer and never reach the storefront or the search index. */
+    public function shouldBeSearchable(): bool
+    {
+        return !$this->one_off;
     }
 
     public function toSearchableArray()
@@ -94,6 +104,17 @@ class Product extends Model
         $query->where('active', 1);
     }
 
+    /** What the storefront may show: active, not a one-off, with an active variation. */
+    public function scopeStorefront($query)
+    {
+        $query->where('active', 1)->where('one_off', false)->hasActiveVariation();
+    }
+
+    public function scopeNotOneOff($query)
+    {
+        $query->where('one_off', false);
+    }
+
     public function scopeHasActiveVariation($query)
     {
         $query->whereHas('variations', function ($query) {
@@ -138,14 +159,10 @@ class Product extends Model
         return $this->hasMany(Material::class);
     }
 
-    public function bomLines()
+    /** Build designs («طرح ساخت»). Each holds its own cutting list and BOM. */
+    public function designs()
     {
-        return $this->hasMany(BomLine::class);
-    }
-
-    public function parts()
-    {
-        return $this->hasMany(ProductPart::class);
+        return $this->hasMany(ProductDesign::class)->orderByDesc('is_default')->orderBy('name');
     }
 
     public function variations()

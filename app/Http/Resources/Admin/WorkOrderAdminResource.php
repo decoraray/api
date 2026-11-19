@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Admin;
 
 use App\Enums\OrderStatus;
+use App\Enums\WorkOrderState;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 /** Deliberately carries no price, total or payment: the workshop works from the specification only. */
@@ -28,6 +29,13 @@ class WorkOrderAdminResource extends JsonResource
             'started_at' => $this->started_at,
             'finished_at' => $this->finished_at,
             'created_at' => $this->created_at,
+            'design_id' => $this->design_id,
+            'design_name' => $this->design_name,
+            'customized' => (bool) $this->customized,
+            // The line's catalog product (null for a custom line): designs to switch to come from it.
+            'product_id' => $this->item?->product_id,
+            'design_switchable' => $this->whenLoaded('logs', fn () => $this->state === WorkOrderState::WAITING
+                && !$this->materials()->where(fn ($q) => $q->where('reserved_quantity', '>', 0)->orWhere('consumed_quantity', '>', 0)->orWhere('wasted_quantity', '>', 0))->exists()),
             'order' => $order ? [
                 'id' => $order->id,
                 'uuid' => $order->uuid,

@@ -3,7 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\PanelMaterial;
-use App\Models\Product;
+use App\Models\ProductDesign;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ProductPartFactory extends Factory
@@ -11,8 +11,7 @@ class ProductPartFactory extends Factory
     public function definition()
     {
         return [
-            'product_id' => Product::factory(),
-            'variation_id' => null,
+            'design_id' => ProductDesign::factory(),
             'position' => 0,
             'name' => 'بغل',
             'length_mm' => 500,

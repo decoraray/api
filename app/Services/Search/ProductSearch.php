@@ -28,7 +28,12 @@ class ProductSearch
         $request->keyword = $request->keyword ?? $request->title;
         $cleanedKeyword = self::cleanKeyword($request->keyword);
 
-        $query = Product::active()
+        $isAdmin = $request->is('api/v1/admin/*');
+        // One-off products never reach the storefront; the admin sees them only when asking for them (they are inactive).
+        $oneOff = $isAdmin && $request->boolean('one_off');
+
+        $query = Product::query()
+            ->when($oneOff, fn ($q) => $q->where('one_off', true), fn ($q) => $q->active()->notOneOff())
             ->withListRelations()
             ->byCategory($request->category)
             ->byTag($request->tag)
@@ -41,7 +46,7 @@ class ProductSearch
 
         // Only apply hasActiveVariation filter for non-admin requests
         // Admin should see all products, including those without variations
-        if (!$request->is('api/v1/admin/*')) {
+        if (!$isAdmin) {
             $query->hasActiveVariation();
         }
 

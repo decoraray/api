@@ -11,6 +11,7 @@ use App\Models\Shipping;
 use App\Models\User;
 use App\Models\Variation;
 use App\Support\Channel;
+use App\Services\Production\DesignResolver;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -94,6 +95,7 @@ class OrderCreationService
                     'description' => $line['description'],
                     'dimensions' => $line['dimensions'],
                     'color' => $line['color'],
+                    'design_id' => $line['design_id'],
                 ]);
             }
 
@@ -159,8 +161,10 @@ class OrderCreationService
     private function resolveLines(array $input): array
     {
         $lines = [];
-        foreach ($input as $row) {
+        foreach (array_values($input) as $index => $row) {
             $variation = !empty($row['variation_id']) ? Variation::with('product.deal')->findOrFail($row['variation_id']) : null;
+            $designId = !empty($row['design_id']) ? (int) $row['design_id'] : null;
+            app(DesignResolver::class)->assertAllowed($designId, $variation?->product_id, "lines.$index.design_id");
             $lines[] = [
                 'title' => $row['title'] ?? $variation?->product->title,
                 'slug' => $variation?->product->slug ?? 'custom',
@@ -171,6 +175,7 @@ class OrderCreationService
                 'description' => $row['description'] ?? null,
                 'dimensions' => $row['dimensions'] ?? null,
                 'color' => $row['color'] ?? null,
+                'design_id' => $designId,
             ];
         }
 

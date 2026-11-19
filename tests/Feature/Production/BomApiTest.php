@@ -88,4 +88,21 @@ class BomApiTest extends MaterialTestCase
         $this->getJson($url, $this->header('Warehouse'))->assertStatus(403);
         $this->getJson($url, $this->header('Admin'))->assertStatus(403);
     }
+
+    public function test_old_route_creates_and_uses_default_designs()
+    {
+        $variation = Variation::factory()->create(['size' => '120']);
+        $sheet = $this->stock(0);
+        $url = "/api/v1/admin/products/{$variation->product_id}/bom";
+
+        $this->putJson($url, ['lines' => [['stock_item_id' => $sheet->id, 'quantity' => 1]]], $this->header('Technic'))->assertStatus(200);
+        $standard = \App\Models\ProductDesign::where('product_id', $variation->product_id)->sole();
+        $this->assertSame(['استاندارد', true, null], [$standard->name, $standard->is_default, $standard->variation_id]);
+
+        $this->putJson($url, ['variation_id' => $variation->id, 'lines' => [['stock_item_id' => $sheet->id, 'quantity' => 2]]], $this->header('Technic'))
+            ->assertStatus(200)->assertJsonPath('source', 'variation');
+        $own = \App\Models\ProductDesign::where('variation_id', $variation->id)->sole();
+        $this->assertFalse($own->is_default);
+        $this->assertSame([1.0], $standard->bomLines()->pluck('quantity')->all());
+    }
 }

@@ -26,6 +26,8 @@ class AdminOrderItemResource extends JsonResource
             'color' => $this->color ?? $this->variation?->color?->name,
             'dimensions' => $this->dimensions,
             'product_id' => $this->product?->id,
+            'variation_id' => $this->variation_id,
+            'design' => $this->design ? ['id' => $this->design->id, 'name' => $this->design->name] : null,
         ];
     }
 }

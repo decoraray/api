@@ -3,82 +3,67 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\BomLine;
 use App\Models\Product;
+use App\Services\Production\DesignService;
+use App\Support\Production\Present;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
+/**
+ * @deprecated Product-level BOM routes kept while the admin moves to designs (designs/{design}/bom).
+ * They read and write the variation's default design, else the product's default design.
+ */
 class BomController extends Controller
 {
-    /** The BOM that applies: the variation's own when it has one, else the product's. */
+    public function __construct(private DesignService $designs)
+    {
+    }
+
     public function show(Request $request, Product $product)
     {
-        $data = $request->validate([
-            'variation_id' => ['nullable', 'integer', Rule::exists('variations', 'id')->where('product_id', $product->id)],
-        ]);
+        $variationId = $this->variationId($request, $product);
+        [$design, $source] = $this->find($product, $variationId);
 
-        [$lines, $source] = BomLine::resolve($product->id, $data['variation_id'] ?? null);
-
-        return response()->json(['data' => $this->present($lines), 'source' => $source]);
+        return response()->json(['data' => $this->present($design), 'source' => $source]);
     }
 
-    /** Replaces the whole BOM of the product, or of one variation. An empty list clears it. */
     public function update(Request $request, Product $product)
     {
-        $data = $request->validate([
-            'variation_id' => ['nullable', 'integer', Rule::exists('variations', 'id')->where('product_id', $product->id)],
-            'lines' => ['present', 'array'],
-            'lines.*.stock_item_id' => ['required', 'integer', 'distinct', Rule::exists('stock_items', 'id')],
-            'lines.*.quantity' => ['required', 'numeric', 'gt:0', 'max:999999999', 'regex:/^\d+(\.\d{1,3})?$/'],
-            'lines.*.note' => ['nullable', 'string', 'max:190'],
-        ], [
-            'lines.*.stock_item_id.distinct' => 'هر قلم انبار فقط یک بار در فرمول ساخت می‌آید.',
-            'lines.*.quantity.required' => 'مقدار هر ماده را وارد کنید.',
-            'lines.*.quantity.gt' => 'مقدار هر ماده باید بیشتر از صفر باشد.',
-            'lines.*.quantity.regex' => 'مقدار حداکثر سه رقم اعشار دارد.',
-        ]);
+        $variationId = $this->variationId($request, $product);
+        $data = $request->validate(DesignController::bomRules(), DesignController::bomMessages());
 
-        $variationId = $data['variation_id'] ?? null;
+        $design = $this->designs->defaultFor($product, $variationId, true);
+        $this->designs->replaceBom($design, $data['lines']);
 
-        DB::transaction(function () use ($product, $variationId, $data) {
-            $scope = BomLine::where('product_id', $product->id);
-            $variationId ? $scope->where('variation_id', $variationId) : $scope->whereNull('variation_id');
-            $scope->delete();
-
-            foreach ($data['lines'] as $line) {
-                BomLine::create([
-                    'product_id' => $product->id,
-                    'variation_id' => $variationId,
-                    'stock_item_id' => $line['stock_item_id'],
-                    'quantity' => $line['quantity'],
-                    'note' => $line['note'] ?? null,
-                ]);
-            }
-        });
-
-        activity()->performedOn($product)->causedBy($request->user())
-            ->withProperties(['variation_id' => $variationId, 'lines' => count($data['lines'])])
+        activity()->performedOn($design)->causedBy($request->user())
+            ->withProperties(['product_id' => $product->id, 'variation_id' => $variationId, 'lines' => count($data['lines'])])
             ->log('bom-updated');
 
-        [$lines, $source] = BomLine::resolve($product->id, $variationId);
+        [$design, $source] = $this->find($product, $variationId);
 
-        return response()->json(['data' => $this->present($lines), 'source' => $source]);
+        return response()->json(['data' => $this->present($design), 'source' => $source]);
     }
 
-    private function present($lines): array
+    /** The variation's default design when it has a BOM, else the product's default. */
+    private function find(Product $product, ?int $variationId): array
     {
-        return $lines->map(fn (BomLine $line) => [
-            'id' => $line->id,
-            'stock_item' => [
-                'id' => $line->stockItem->id,
-                'code' => $line->stockItem->code,
-                'name' => $line->stockItem->name,
-                'unit' => $line->stockItem->unit->value,
-                'unit_label' => $line->stockItem->unit->label(),
-            ],
-            'quantity' => $line->quantity,
-            'note' => $line->note,
-        ])->values()->all();
+        if ($variationId && ($own = $this->designs->defaultFor($product, $variationId)) && $own->bomLines()->exists()) {
+            return [$own, 'variation'];
+        }
+        $shared = $this->designs->defaultFor($product, null);
+
+        return [$shared, $shared && $shared->bomLines()->exists() ? 'product' : 'none'];
+    }
+
+    private function present($design): array
+    {
+        return $design ? $design->bomLines()->with('stockItem')->get()->map(fn ($l) => Present::bomLine($l))->values()->all() : [];
+    }
+
+    private function variationId(Request $request, Product $product): ?int
+    {
+        return $request->validate([
+            'variation_id' => ['nullable', 'integer', Rule::exists('variations', 'id')->where('product_id', $product->id)],
+        ])['variation_id'] ?? null;
     }
 }

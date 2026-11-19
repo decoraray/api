@@ -209,6 +209,7 @@ class QuoteController extends Controller
             'lines.*.color' => ['nullable', 'string', 'max:255'],
             'lines.*.quantity' => ['required', 'integer', 'min:1'],
             'lines.*.unit_price' => ['required', 'integer', 'min:0'],
+            'lines.*.design_id' => ['nullable', 'integer'],
         ], [
             'phone.regex' => 'شماره موبایل معتبر نیست.',
         ]);
@@ -238,6 +239,12 @@ class QuoteController extends Controller
     private function syncLines(Quote $quote, array $lines): void
     {
         foreach (array_values($lines) as $i => $line) {
+            $designId = !empty($line['design_id']) ? (int) $line['design_id'] : null;
+            $productId = !empty($line['variation_id'])
+                ? \App\Models\Variation::whereKey($line['variation_id'])->value('product_id')
+                : ($line['product_id'] ?? null);
+            app(\App\Services\Production\DesignResolver::class)->assertAllowed($designId, $productId ? (int) $productId : null, "lines.$i.design_id");
+
             $quote->lines()->create([
                 'position' => $i + 1,
                 'product_id' => $line['product_id'] ?? null,
@@ -247,6 +254,7 @@ class QuoteController extends Controller
                 'color' => $line['color'] ?? null,
                 'quantity' => $line['quantity'],
                 'unit_price' => $line['unit_price'],
+                'design_id' => $designId,
             ]);
         }
     }

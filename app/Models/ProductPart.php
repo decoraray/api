@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * One wooden part of a product's cutting list, for one unit. Dimensions are as written on the
+ * One wooden part of a design's cutting list, for one unit. Dimensions are as written on the
  * workshop drawing; edge_length/edge_width are the number of lines drawn under each number.
  */
 class ProductPart extends Model
@@ -16,7 +16,7 @@ class ProductPart extends Model
     use HasFactory;
 
     protected $fillable = [
-        'product_id', 'variation_id', 'position', 'name', 'length_mm', 'width_mm', 'count',
+        'design_id', 'position', 'name', 'length_mm', 'width_mm', 'count',
         'panel_material_id', 'edge_length', 'edge_width', 'grain_locked', 'ops', 'note',
     ];
 
@@ -30,9 +30,9 @@ class ProductPart extends Model
         'ops' => AsEnumCollection::class . ':' . CuttingOp::class,
     ];
 
-    public function product()
+    public function design()
     {
-        return $this->belongsTo(Product::class);
+        return $this->belongsTo(ProductDesign::class, 'design_id');
     }
 
     public function panelMaterial()

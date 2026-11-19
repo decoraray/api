@@ -4,7 +4,7 @@ namespace Tests\Feature\Production;
 
 use App\Enums\OrderStatus;
 use App\Enums\ProductionStage;
-use App\Models\BomLine;
+use App\Services\Production\DesignResolver;
 use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Models\Variation;
@@ -19,7 +19,8 @@ class WorkOrderMaterialServiceTest extends MaterialTestCase
 {
     public function test_schema_and_grants()
     {
-        $this->assertTrue(Schema::hasColumns('bom_lines', ['product_id', 'variation_id', 'stock_item_id', 'quantity', 'note']));
+        $this->assertTrue(Schema::hasColumns('bom_lines', ['design_id', 'stock_item_id', 'quantity', 'note']));
+        $this->assertFalse(Schema::hasColumn('bom_lines', 'product_id'));
         $this->assertTrue(Schema::hasColumns('work_order_materials', ['work_order_id', 'stock_item_id', 'planned_quantity', 'reserved_quantity', 'consumed_quantity', 'wasted_quantity']));
         $this->assertTrue(Schema::hasColumn('stock_items', 'reserved'));
 
@@ -46,14 +47,12 @@ class WorkOrderMaterialServiceTest extends MaterialTestCase
         $this->bom($walnut->product, [[$white, 1.5]]);
         $this->bom($walnut->product, [[$brown, 1.5]], $walnut);
 
-        [$own, $ownSource] = BomLine::resolve($walnut->product_id, $walnut->id);
-        [$shared, $sharedSource] = BomLine::resolve($other->product_id, $other->id);
-        [$none, $noneSource] = BomLine::resolve($bare->product_id, $bare->id);
+        $resolve = fn ($productId, $variationId) => app(DesignResolver::class)->forLine(null, $productId, $variationId);
 
-        $this->assertSame([$brown->id, 'variation'], [$own[0]->stock_item_id, $ownSource]);
-        $this->assertSame([$white->id, 'product'], [$shared[0]->stock_item_id, $sharedSource]);
-        $this->assertSame([0, 'none'], [$none->count(), $noneSource]);
-        $this->assertSame('none', BomLine::resolve(null, null)[1]);
+        $this->assertSame($brown->id, $resolve($walnut->product_id, $walnut->id)->bomLines[0]->stock_item_id);
+        $this->assertSame($white->id, $resolve($other->product_id, $other->id)->bomLines[0]->stock_item_id);
+        $this->assertNull($resolve($bare->product_id, $bare->id));
+        $this->assertNull($resolve(null, null));
     }
 
     public function test_work_order_list_is_the_bom_times_its_quantity()

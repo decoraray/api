@@ -27,6 +27,7 @@ class ProductAdminListResource extends JsonResource
             'discount' => $this->when($request->user()?->can('prices.view'), $this->deal ? $this->deal->discount : 0),
             'price' => $this->when($request->user()?->can('prices.view'), $this->averagePrice),
             'dimensions' => $this->dimensions,
+            'one_off' => (bool) $this->one_off,
             'variation_count' => $this->variations->count(),
             'description' => Str::limit($this->description, 50),
             'categories' => $this->categories ? CategoryLightShowResource::collection($this->categories) : null,

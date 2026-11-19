@@ -53,8 +53,8 @@ class WorkOrderService
                     'description' => $item->description,
                 ]);
 
-                // The material list starts from the product's BOM; custom lines start empty.
-                app(WorkOrderMaterialService::class)->fillFromTemplate($created, $item);
+                // Parts and materials start as a copy of the line's design; a line without one starts empty.
+                app(WorkOrderDesignService::class)->fill($created, $item);
             }
 
             return $order->workOrders()->get();

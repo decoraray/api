@@ -49,6 +49,8 @@ class QuoteAdminResource extends JsonResource
                 'position' => $l->position,
                 'product_id' => $l->product_id,
                 'variation_id' => $l->variation_id,
+                'design_id' => $l->design_id,
+                'design' => $l->design ? ['id' => $l->design->id, 'name' => $l->design->name] : null,
                 'description' => $l->description,
                 'dimensions' => $l->dimensions,
                 'color' => $l->color,

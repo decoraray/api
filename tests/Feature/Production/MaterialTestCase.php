@@ -7,11 +7,13 @@ use App\Models\BomLine;
 use App\Models\Item;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\ProductDesign;
 use App\Models\StockItem;
 use App\Models\Variation;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderMaterial;
 use App\Services\Inventory\InventoryService;
+use App\Services\Production\DesignService;
 use App\Services\Production\WorkOrderMaterialService;
 
 abstract class MaterialTestCase extends ProductionTestCase
@@ -31,15 +33,24 @@ abstract class MaterialTestCase extends ProductionTestCase
         return $item->refresh();
     }
 
-    protected function bom(Product $product, array $lines, ?Variation $variation = null): void
+    /** The product's default design, or the variation's default design, made on first use. */
+    protected function design(Product $product, ?Variation $variation = null): ProductDesign
     {
+        return app(DesignService::class)->defaultFor($product, $variation?->id, true);
+    }
+
+    protected function bom(Product $product, array $lines, ?Variation $variation = null): ProductDesign
+    {
+        $design = $this->design($product, $variation);
         foreach ($lines as [$stockItem, $quantity]) {
-            BomLine::create(['product_id' => $product->id, 'variation_id' => $variation?->id, 'stock_item_id' => $stockItem->id, 'quantity' => $quantity]);
+            BomLine::create(['design_id' => $design->id, 'stock_item_id' => $stockItem->id, 'quantity' => $quantity]);
         }
+
+        return $design;
     }
 
     /** A confirmed order with one line of the given variation (or a custom line), and its work order. */
-    protected function workOrderFor(?Variation $variation, int $quantity = 1): WorkOrder
+    protected function workOrderFor(?Variation $variation, int $quantity = 1, ?ProductDesign $design = null): WorkOrder
     {
         $order = Order::factory()->create(['status' => OrderStatus::CONFIRMED->value]);
         Item::create([
@@ -49,6 +60,7 @@ abstract class MaterialTestCase extends ProductionTestCase
             'quantity' => $quantity,
             'product_id' => $variation?->product_id,
             'variation_id' => $variation?->id,
+            'design_id' => $design?->id,
             'order_id' => $order->id,
         ]);
 

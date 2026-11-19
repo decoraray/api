@@ -28,6 +28,10 @@ class WorkOrder extends Model
         'state',
         'started_at',
         'finished_at',
+        'design_id',
+        'design_name',
+        'panel_map',
+        'customized',
     ];
 
     protected $casts = [
@@ -35,10 +39,13 @@ class WorkOrder extends Model
         'state' => WorkOrderState::class,
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
+        'panel_map' => 'array',
+        'customized' => 'boolean',
     ];
 
     protected $attributes = [
         'state' => 'waiting',
+        'customized' => false,
     ];
 
     public function getActivitylogOptions(): LogOptions
@@ -62,6 +69,18 @@ class WorkOrder extends Model
     public function materials()
     {
         return $this->hasMany(WorkOrderMaterial::class)->orderBy('id');
+    }
+
+    /** The work order's own cutting list, per unit. */
+    public function parts()
+    {
+        return $this->hasMany(WorkOrderPart::class)->orderBy('position')->orderBy('id');
+    }
+
+    /** The design it was made from (or saved as). Its name is also copied to design_name. */
+    public function design()
+    {
+        return $this->belongsTo(ProductDesign::class, 'design_id');
     }
 
     public function logs()

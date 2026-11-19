@@ -21,6 +21,7 @@ class Item extends Model
         'quantity',
         'dimensions',
         'color',
+        'design_id',
     ];
 
     public function order()
@@ -41,5 +42,10 @@ class Item extends Model
     public function variation()
     {
         return $this->belongsTo(Variation::class);
+    }
+
+    public function design()
+    {
+        return $this->belongsTo(ProductDesign::class, 'design_id');
     }
 }

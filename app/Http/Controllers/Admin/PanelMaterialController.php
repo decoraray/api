@@ -41,9 +41,9 @@ class PanelMaterialController extends Controller
 
     public function destroy(PanelMaterial $panelMaterial)
     {
-        if ($panelMaterial->parts()->exists()) {
+        if ($panelMaterial->parts()->exists() || \App\Models\WorkOrderPart::where('panel_material_id', $panelMaterial->id)->exists()) {
             throw ValidationException::withMessages([
-                'panel_material' => 'این ورق در لیست برش محصولات استفاده شده؛ به‌جای حذف، غیرفعالش کنید.',
+                'panel_material' => 'این ورق در لیست برش طرح‌ها یا دستورهای تولید استفاده شده؛ به‌جای حذف، غیرفعالش کنید.',
             ]);
         }
 

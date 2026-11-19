@@ -3,8 +3,6 @@
 namespace App\Services\Production;
 
 use App\Enums\WorkOrderState;
-use App\Models\BomLine;
-use App\Models\Item;
 use App\Models\StockItem;
 use App\Models\StockMovement;
 use App\Models\User;
@@ -25,27 +23,8 @@ class WorkOrderMaterialService
     {
     }
 
-    /** Copies the applicable BOM, times the work order's quantity. Does nothing if the list is already there. */
-    public function fillFromTemplate(WorkOrder $workOrder, ?Item $item = null): void
-    {
-        if ($workOrder->materials()->exists()) {
-            return;
-        }
-
-        $item ??= $workOrder->item;
-        [$lines] = BomLine::resolve($item?->product_id, $item?->variation_id);
-
-        foreach ($lines as $line) {
-            $workOrder->materials()->create([
-                'stock_item_id' => $line->stock_item_id,
-                'planned_quantity' => round($line->quantity * $workOrder->quantity, 3),
-                'note' => $line->note,
-            ]);
-        }
-    }
-
     /**
-     * Replaces the planned list.
+     * Replaces the planned list. The work order is then marked customised.
      *
      * @param array<int, array{stock_item_id: int, quantity: float|string, note?: ?string}> $lines
      */
@@ -81,6 +60,8 @@ class WorkOrderMaterialService
                     ['planned_quantity' => $planned, 'note' => $line['note'] ?? null],
                 );
             }
+
+            $workOrder->forceFill(['customized' => true])->save();
         });
     }
 
