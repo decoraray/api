@@ -19,6 +19,7 @@ class ProductDesign extends Model
     protected $fillable = [
         'product_id', 'variation_id', 'name', 'dimensions', 'note', 'is_default', 'active',
         'panel_map', 'source_work_order_id', 'created_by', 'approved_at', 'approved_by',
+        'draft_template', 'draft_params', 'draft_hash',
     ];
 
     protected $casts = [
@@ -26,6 +27,7 @@ class ProductDesign extends Model
         'active' => 'boolean',
         'panel_map' => 'array',
         'approved_at' => 'datetime',
+        'draft_params' => 'array',
     ];
 
     protected $attributes = [
@@ -42,6 +44,12 @@ class ProductDesign extends Model
     public function isApproved(): bool
     {
         return $this->approved_at !== null;
+    }
+
+    /** Generated from a template («پیش‌نویس خودکار») and not approved yet. */
+    public function isDraft(): bool
+    {
+        return $this->draft_template !== null && $this->approved_at === null;
     }
 
     public function getActivitylogOptions(): LogOptions

@@ -375,6 +375,9 @@ Route::prefix('v1')
                         Route::get('products/{product}/bom', 'BomController@show');
                         Route::get('products/{product}/cutting-list', 'CuttingListController@show');
                         Route::get('panel-materials', 'PanelMaterialController@index');
+                        // draft designs to review, and the templates they come from (before designs/{design})
+                        Route::get('designs/review', 'DesignDraftController@review');
+                        Route::get('design-templates', 'DesignDraftController@templates');
                         Route::get('designs/{design}', 'DesignController@show');
                         Route::get('designs/{design}/cutting-list', 'DesignController@cuttingList');
                         Route::get('designs/{design}/bom', 'DesignController@bom');
@@ -396,6 +399,9 @@ Route::prefix('v1')
                         Route::put('designs/{design}/cutting-list', 'DesignController@updateCuttingList');
                         Route::put('designs/{design}/bom', 'DesignController@updateBom');
                         Route::post('designs/{design}/bom-lines', 'DesignController@proposeBomLines');
+                        Route::post('designs/{design}/regenerate', 'DesignDraftController@regenerate');
+                        Route::get('design-drafts/settings', 'DesignDraftController@settings');
+                        Route::put('design-drafts/settings', 'DesignDraftController@updateSettings');
                         Route::post('designs/{design}/layouts', 'CuttingLayoutController@store');
                         Route::post('designs/{design}/layouts/upload', 'CuttingLayoutController@upload');
                         Route::put('layouts/{layout}', 'CuttingLayoutController@update');

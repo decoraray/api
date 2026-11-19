@@ -156,7 +156,7 @@ class DesignController extends Controller
         $parts = $design->parts()->with('panelMaterial')->get();
 
         return response()->json([
-            'design' => ['id' => $design->id, 'name' => $design->name, 'dimensions' => $design->dimensions, 'note' => $design->note, 'active' => $design->active, 'approved' => $design->isApproved()],
+            'design' => ['id' => $design->id, 'name' => $design->name, 'dimensions' => $design->dimensions, 'note' => $design->note, 'active' => $design->active, 'approved' => $design->isApproved(), 'draft' => $design->isDraft()],
             'product' => ['id' => $design->product->id, 'title' => $design->product->title, 'dimensions' => $design->product->dimensions, 'one_off' => $design->product->one_off],
             'quantity' => $quantity,
             'updated_at' => $design->updated_at?->toIso8601String(),

@@ -157,6 +157,7 @@ class WorkOrderDesignService
                 'design_id' => $design->id,
                 'design_name' => $design->name,
                 'design_approved' => $design->isApproved(),
+                'design_draft' => $design->isDraft(),
                 'customized' => false,
             ])->save();
 
@@ -208,7 +209,7 @@ class WorkOrderDesignService
     private function copyDesign(WorkOrder $workOrder, ?ProductDesign $design): void
     {
         if (!$design) {
-            $workOrder->forceFill(['design_id' => null, 'design_name' => null, 'design_approved' => false, 'panel_map' => null, 'customized' => false])->save();
+            $workOrder->forceFill(['design_id' => null, 'design_name' => null, 'design_approved' => false, 'design_draft' => false, 'panel_map' => null, 'customized' => false])->save();
 
             return;
         }
@@ -227,6 +228,7 @@ class WorkOrderDesignService
             'design_name' => $design->name,
             // Whether the design was approved when this work order copied it.
             'design_approved' => $design->isApproved(),
+            'design_draft' => $design->isDraft(),
             'panel_map' => $design->panel_map,
             'customized' => false,
         ])->save();

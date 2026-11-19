@@ -42,6 +42,7 @@ class WorkOrder extends Model
         'panel_map' => 'array',
         'customized' => 'boolean',
         'design_approved' => 'boolean',
+        'design_draft' => 'boolean',
     ];
 
     protected $attributes = [
