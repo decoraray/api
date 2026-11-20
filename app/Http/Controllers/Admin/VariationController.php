@@ -198,6 +198,7 @@ class VariationController extends Controller
 
     public function destroy(Variation $variation)
     {
+        \App\Support\DeleteGuard::variation($variation);
         $variation->delete();
         return response()->json(null, 204);
     }

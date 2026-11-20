@@ -87,6 +87,7 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
+        \App\Support\DeleteGuard::category($category);
         $category->delete();
         return $category;
     }

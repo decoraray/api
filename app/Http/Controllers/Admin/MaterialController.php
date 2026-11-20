@@ -99,6 +99,7 @@ class MaterialController extends Controller
      */
     public function destroy(Material $material)
     {
+        \App\Support\DeleteGuard::material($material);
         $material->delete();
 
         return response()->json(null, 204);
