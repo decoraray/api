@@ -193,12 +193,16 @@ class QuoteApiTest extends TestCase
         $this->assertSame('150×90×35', $item->dimensions);
         $this->assertSame(10000000, (int) $item->price);
         $this->assertSame(2, (int) $item->quantity);
+        $workOrder = \App\Models\WorkOrder::where('order_id', $order->id)->sole();
+        $this->assertSame($item->id, $workOrder->item_id);
+        $this->assertSame('waiting', $workOrder->state->value ?? $workOrder->state);
 
         $r2 = $this->postJson($url, ['amount' => 8500000, 'method' => 'CASH', 'paid_at' => '2026-11-12'], $h)->assertStatus(201);
         $this->assertSame($j['order_id'], $r2->json('data.order_id'));
         $this->assertSame(0, $r2->json('data.totals.remaining'));
         $this->assertCount(2, $r2->json('data.payments'));
         $this->assertSame(1, Order::count());
+        $this->assertSame(1, \App\Models\WorkOrder::count());
 
         $this->postJson($url, ['amount' => 1, 'method' => 'CASH', 'paid_at' => '2026-11-12'], $h)->assertStatus(422);
     }

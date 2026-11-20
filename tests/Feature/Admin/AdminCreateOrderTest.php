@@ -191,6 +191,10 @@ class AdminCreateOrderTest extends TestCase
             ->assertOk()
             ->assertJsonStructure(['shipping_methods' => [['id', 'name', 'price']], 'statuses', 'payment_methods', 'channels'])
             ->assertJsonFragment(['id' => 'direct', 'label' => 'مستقیم']);
+        $statuses = collect($this->getJson('/api/v1/admin/orders-options', $this->header('Sales'))->json('statuses'))->pluck('id');
+        $this->assertSame('CONFIRMED', $statuses->first());
+        $this->assertNotContains('PENDING', $statuses);
+        $this->assertNotContains('PAID', $statuses);
         $this->getJson('/api/v1/admin/orders-options', $this->header('Technic'))->assertStatus(403);
     }
 }

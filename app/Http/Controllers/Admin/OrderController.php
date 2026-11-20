@@ -56,7 +56,11 @@ class OrderController extends Controller
     {
         return response()->json([
             'shipping_methods' => ShippingListAdminResource::collection(Shipping::all()),
-            'statuses' => OrderStatus::values(),
+            // Staff orders start in production, so the waiting states are not offered.
+            'statuses' => array_values(array_filter(
+                OrderStatus::values(),
+                fn (array $s) => !in_array($s['id'], [OrderStatus::PENDING->name, OrderStatus::PAID->name], true),
+            )),
             'payment_methods' => \App\Enums\PaymentMethods::values(),
             'channels' => collect(\App\Support\Channel::labels())->map(fn ($label, $id) => ['id' => $id, 'label' => $label])->values(),
         ]);

@@ -163,6 +163,9 @@ class QuoteService
             ]);
         }
 
+        // The order is born confirmed, so it goes to the workshop at once.
+        app(\App\Services\Production\WorkOrderService::class)->createForOrder($order);
+
         return $order;
     }
 }

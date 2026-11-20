@@ -150,9 +150,7 @@ class PaymentController extends Controller
 
         if ($payment->status == 'paid') {
 
-            $payment->order->update([
-                'status' => OrderStatus::PAID,
-            ]);
+            $this->startProduction($payment->order);
             $payment->user->cart?->clear();
             app(OrderNotifier::class)->notify($payment->order, 'paid');
             if ($payment->order->payments()->where('status', 'paid')->count() === 1) {
@@ -163,5 +161,27 @@ class PaymentController extends Controller
         }
 
         return Redirect::to(config('app.front_url') . '/payments/success/');
+    }
+
+    /**
+     * A paid storefront order goes straight to production: confirmed, with its work orders.
+     * An order staff already moved on (e.g. cancelled) is left alone.
+     */
+    private function startProduction(Order $order): void
+    {
+        $current = $order->status instanceof OrderStatus ? $order->status : OrderStatus::tryFrom((string) $order->status);
+        if (!in_array($current, [OrderStatus::PENDING, OrderStatus::PAID], true)) {
+            return;
+        }
+
+        $order->update(['status' => OrderStatus::CONFIRMED]);
+
+        // The payment is already verified; a production hiccup must not show the customer an error.
+        try {
+            app(\App\Services\Production\WorkOrderService::class)->createForOrder($order);
+        } catch (\Throwable $e) {
+            Log::error('Failed to create work orders after payment', ['order' => $order->uuid, 'error' => $e->getMessage()]);
+            report($e);
+        }
     }
 }
