@@ -85,6 +85,12 @@ class ProductDesign extends Model
         return $this->hasMany(BomLine::class, 'design_id')->orderBy('id');
     }
 
+    /** Service adders one unit needs (vacuum, colour…); stock-linked adders live on the BOM. */
+    public function adders()
+    {
+        return $this->hasMany(DesignAdder::class, 'design_id')->orderBy('id');
+    }
+
     public function sourceWorkOrder()
     {
         return $this->belongsTo(WorkOrder::class, 'source_work_order_id');

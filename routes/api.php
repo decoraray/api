@@ -376,6 +376,7 @@ Route::prefix('v1')
                         Route::get('work-orders', 'WorkOrderController@index');
                         Route::get('work-orders/{workOrder}', 'WorkOrderController@show');
                         Route::get('work-orders/{workOrder}/materials', 'WorkOrderMaterialController@index');
+                        Route::get('work-orders/{workOrder}/adders', 'WorkOrderAdderController@index');
                         Route::get('material-shortages', 'WorkOrderMaterialController@shortages');
                         Route::get('work-orders/{workOrder}/cutting-list', 'CuttingListController@workOrder');
                         Route::get('work-orders/{workOrder}/layout', 'CuttingLayoutController@workOrder');
@@ -392,8 +393,18 @@ Route::prefix('v1')
                         Route::get('designs/{design}', 'DesignController@show');
                         Route::get('designs/{design}/cutting-list', 'DesignController@cuttingList');
                         Route::get('designs/{design}/bom', 'DesignController@bom');
+                        Route::get('designs/{design}/adders', 'DesignAdderController@index');
                         Route::get('designs/{design}/layouts', 'CuttingLayoutController@index');
                         Route::get('layouts/{layout}', 'CuttingLayoutController@show');
+                    });
+
+                    // cost adders: production picks from the catalog, costs.manage defines and prices it
+                    Route::middleware('permission:production.view|bom.manage')->group(function () {
+                        Route::get('cost-adders', 'CostAdderController@index');
+                    });
+                    Route::middleware('permission:costs.manage')->group(function () {
+                        Route::post('cost-adders', 'CostAdderController@store');
+                        Route::put('cost-adders/{costAdder}', 'CostAdderController@update');
                     });
 
                     // bom.manage
@@ -409,6 +420,8 @@ Route::prefix('v1')
                         Route::delete('designs/{design}', 'DesignController@destroy');
                         Route::put('designs/{design}/cutting-list', 'DesignController@updateCuttingList');
                         Route::put('designs/{design}/bom', 'DesignController@updateBom');
+                        Route::post('designs/{design}/adders', 'DesignAdderController@store');
+                        Route::delete('design-adders/{designAdder}', 'DesignAdderController@destroy');
                         Route::post('designs/{design}/bom-lines', 'DesignController@proposeBomLines');
                         Route::post('designs/{design}/regenerate', 'DesignDraftController@regenerate');
                         Route::get('design-drafts/settings', 'DesignDraftController@settings');
@@ -436,6 +449,9 @@ Route::prefix('v1')
                     // production.update
                     Route::middleware('permission:production.update')->group(function () {
                         Route::put('work-orders/{workOrder}/materials', 'WorkOrderMaterialController@update');
+                        Route::post('work-orders/{workOrder}/adders', 'WorkOrderAdderController@store');
+                        Route::put('work-order-adders/{workOrderAdder}', 'WorkOrderAdderController@update');
+                        Route::delete('work-order-adders/{workOrderAdder}', 'WorkOrderAdderController@destroy');
                         Route::post('work-orders/{workOrder}/materials/reserve', 'WorkOrderMaterialController@reserve');
                         Route::post('work-orders/{workOrder}/materials/release', 'WorkOrderMaterialController@release');
                         Route::post('work-orders/{workOrder}/materials/{material}/consume', 'WorkOrderMaterialController@consume');

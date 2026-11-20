@@ -5,7 +5,9 @@ namespace App\Services\Costing;
 use App\Enums\OrderCostCategory;
 use App\Enums\WorkOrderState;
 use App\Models\Order;
+use App\Enums\CostAdderGroup;
 use App\Models\OrderCost;
+use App\Models\WorkOrderAdder;
 use App\Models\StockMovement;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderMaterial;
@@ -80,6 +82,11 @@ class OrderCostService
                 });
         }
 
+        // Service adders (vacuum, colour…) at the unit cost each took when added.
+        $adders = $woIds
+            ? WorkOrderAdder::with('adder:id,name,group')->whereIn('work_order_id', $woIds)->orderBy('id')->get()->groupBy('work_order_id')
+            : collect();
+
         $direct = OrderCost::with('creator:id,name,surname')->whereIn('order_id', $orderIds)->orderBy('id')->get()->groupBy('order_id');
         $percent = $this->overheadPercent();
 
@@ -91,6 +98,7 @@ class OrderCostService
             $waste = 0;
             $hasMaterials = false;
             $rows = [];
+            $byGroup = array_fill_keys(array_column(CostAdderGroup::cases(), 'value'), 0);
 
             foreach ($jobs as $job) {
                 $used = $actual[$job->id] ?? [];
@@ -99,6 +107,21 @@ class OrderCostService
                 $value = $isActual ? $actualValue : (int) round($estimate[$job->id] ?? 0);
 
                 $material += $value;
+
+                // A cancelled job's adders were never done, so they cost nothing.
+                $jobAdders = $job->state === WorkOrderState::CANCELLED ? collect() : $adders->get($job->id, collect());
+                $adderLines = $jobAdders->map(fn (WorkOrderAdder $a) => [
+                    'id' => $a->id,
+                    'name' => $a->adder->name,
+                    'group' => $a->adder->group->value,
+                    'group_label' => $a->adder->group->label(),
+                    'quantity' => $a->quantity,
+                    'unit_cost' => $a->unit_cost,
+                    'amount' => $a->amount,
+                ])->values()->all();
+                foreach ($adderLines as $line) {
+                    $byGroup[$line['group']] += $line['amount'];
+                }
                 $waste += (int) round($used[StockMovement::TYPE_WASTE] ?? 0);
                 $hasMaterials = $hasMaterials || !empty($used) || !empty($hasLines[$job->id]);
 
@@ -109,6 +132,8 @@ class OrderCostService
                     'state' => $job->state->value,
                     'basis' => $isActual ? 'actual' : 'estimate',
                     'material_cost' => $value,
+                    'adder_cost' => array_sum(array_column($adderLines, 'amount')),
+                    'adders' => $adderLines,
                     'direct_cost' => (int) $costs->where('work_order_id', $job->id)->sum('amount'),
                 ];
             }
@@ -118,8 +143,9 @@ class OrderCostService
                 $byCategory[$category->value] = (int) $costs->filter(fn (OrderCost $c) => $c->category === $category)->sum('amount');
             }
             $directTotal = array_sum($byCategory);
-            $overhead = (int) round(($material + $directTotal) * $percent / 100);
-            $totalCost = $material + $directTotal + $overhead;
+            $addersTotal = array_sum($byGroup);
+            $overhead = (int) round(($material + $addersTotal + $directTotal) * $percent / 100);
+            $totalCost = $material + $addersTotal + $directTotal + $overhead;
             $revenue = DeliveredOrders::revenue($order);
             $profit = $revenue - $totalCost;
             $live = $jobs->filter(fn (WorkOrder $j) => $j->state !== WorkOrderState::CANCELLED);
@@ -130,6 +156,8 @@ class OrderCostService
                 'has_materials' => $hasMaterials,
                 'material_cost' => $material,
                 'waste_cost' => $waste,
+                'adders_total' => $addersTotal,
+                'adders_by_group' => $byGroup,
                 'direct_costs' => $byCategory,
                 'direct_total' => $directTotal,
                 'overhead_percent' => $percent,

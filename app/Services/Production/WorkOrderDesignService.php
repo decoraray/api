@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\ProductDesign;
 use App\Models\User;
 use App\Models\WorkOrder;
+use App\Services\Costing\CostAdderService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -59,6 +60,8 @@ class WorkOrderDesignService
 
             $workOrder->parts()->delete();
             $workOrder->materials()->delete();
+            // Adders copied from the old design give way to the new design's; ones added by hand stay.
+            $workOrder->adders()->where('from_design', true)->get()->each->delete();
             $this->copyDesign($workOrder, $design);
 
             return $workOrder->refresh();
@@ -138,6 +141,7 @@ class WorkOrderDesignService
                 $design->parts()->delete();
                 $design->bomLines()->delete();
                 $this->designs->copyParts($workOrder->parts()->get(), $design);
+                app(CostAdderService::class)->saveToDesign($workOrder, $design);
 
                 $quantity = max(1, (int) $workOrder->quantity);
                 foreach ($workOrder->materials()->get() as $material) {
@@ -222,6 +226,7 @@ class WorkOrderDesignService
                 'note' => $line->note,
             ]);
         }
+        app(CostAdderService::class)->copyToWorkOrder($design, $workOrder);
 
         $workOrder->forceFill([
             'design_id' => $design->id,

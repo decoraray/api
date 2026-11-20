@@ -119,7 +119,7 @@ class OrderProfitReport
     }
 
     /**
-     * By product: each line's price × quantity against its work order's material and direct costs.
+     * By product: each line's price × quantity against its work order's material, adder and direct costs.
      * Discount, shipping, order-level costs and overhead are not spread over products; they make one
      * «تخصیص‌نیافته» row so that the rows still add up to the totals.
      */
@@ -141,7 +141,7 @@ class OrderProfitReport
                 $label = $item->product_id ? ($titles[$item->product_id] ?? $item->title) : 'سفارشی';
                 $job = $jobs->firstWhere('id', $workOrderOf[$item->id] ?? null);
                 $revenue = (int) round($item->price * $item->quantity);
-                $cost = $job ? $job['material_cost'] + $job['direct_cost'] : 0;
+                $cost = $job ? $job['material_cost'] + $job['adder_cost'] + $job['direct_cost'] : 0;
                 $lineRevenue += $revenue;
                 $lineCost += $cost;
 
