@@ -243,7 +243,7 @@ class OrderNotificationTest extends TestCase
         $p = $this->payable();
         $this->verify()->assertRedirect(config('app.front_url') . '/payments/success/');
 
-        $this->assertSame('پرداخت شده', $p->order->fresh()->status);
+        $this->assertSame('تایید شده', $p->order->fresh()->status);
         $rows = $p->order->notifications()->get();
         $this->assertCount(1, $rows);
         $this->assertSame('paid', $rows[0]->event);
@@ -256,7 +256,7 @@ class OrderNotificationTest extends TestCase
         $p = $this->payable();
         $this->verify()->assertRedirect(config('app.front_url') . '/payments/success/');
 
-        $this->assertSame('پرداخت شده', $p->order->fresh()->status);
+        $this->assertSame('تایید شده', $p->order->fresh()->status);
         $n = $p->order->notifications()->first();
         $this->assertSame('failed', $n->status);
         $this->assertSame('provider down', $n->error);

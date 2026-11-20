@@ -55,9 +55,11 @@ class OrderCreationService
             $totals = $this->totals($lines, $shippingPrice, $discount);
 
             $payment = $data['payment'] ?? null;
-            $status = isset($data['status'])
-                ? OrderStatus::fromName($data['status'])
-                : ($payment ? OrderStatus::CONFIRMED : OrderStatus::PENDING);
+            // Staff orders go to production when saved; waiting states are not offered (an old form may still send one).
+            $status = isset($data['status']) ? OrderStatus::fromName($data['status']) : OrderStatus::CONFIRMED;
+            if (in_array($status, [OrderStatus::PENDING, OrderStatus::PAID], true)) {
+                $status = OrderStatus::CONFIRMED;
+            }
 
             $channel = $data['channel'] ?? Channel::DIRECT;
             if (!array_key_exists($channel, Channel::labels())) {

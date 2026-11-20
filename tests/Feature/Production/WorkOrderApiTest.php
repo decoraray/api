@@ -55,6 +55,58 @@ class WorkOrderApiTest extends ProductionTestCase
         $this->assertSame(Order::firstOrFail()->id, $workOrder->order_id);
     }
 
+    // --- started without staff action ------------------------------------------
+
+    private function paidCallback(Order $order)
+    {
+        \App\Models\Payment::create([
+            'uuid' => 'pay-wo', 'amount' => 1000, 'user_phone' => '09123456789', 'method' => 'online',
+            'user_id' => $order->user_id, 'order_id' => $order->id, 'gateway' => 'saman', 'status' => 'pending',
+        ]);
+        $this->mock(\App\Services\Payment\PaymentService::class, fn ($m) => $m->shouldReceive('verify')
+            ->andReturnUsing(fn ($payment) => tap($payment)->update(['status' => 'paid'])));
+
+        return $this->post('/api/v1/payment-verify', ['data' => json_encode(['clientRefId' => 'pay-wo']), 'gateway' => 'saman']);
+    }
+
+    public function test_paid_storefront_order_is_confirmed_with_work_orders()
+    {
+        $order = $this->order(OrderStatus::PENDING);
+
+        $this->paidCallback($order)->assertRedirect(config('app.front_url') . '/payments/success/');
+
+        $this->assertSame(OrderStatus::CONFIRMED->value, $this->orderStatus($order));
+        $this->assertSame(['کمد دیواری', 'میز تحریر'], WorkOrder::where('order_id', $order->id)->where('state', 'waiting')->orderBy('id')->pluck('title')->all());
+    }
+
+    public function test_payment_for_a_cancelled_order_starts_nothing()
+    {
+        $order = $this->order(OrderStatus::CANCELED);
+
+        $this->paidCallback($order)->assertRedirect(config('app.front_url') . '/payments/success/');
+
+        $this->assertSame(OrderStatus::CANCELED->value, $this->orderStatus($order));
+        $this->assertSame(0, WorkOrder::count());
+    }
+
+    public function test_staff_order_without_status_or_payment_starts_production()
+    {
+        foreach ([[], ['status' => 'PENDING'], ['status' => 'PAID']] as $i => $status) {
+            $this->postJson('/api/v1/admin/orders', [
+                'phone' => '0912000000' . $i,
+                'customer_name' => 'علی رضایی',
+                'lines' => [['title' => 'میز کنسول سفارشی', 'quantity' => 1, 'unit_price' => 5000000]],
+                'address' => 'تهران',
+                'shipping_id' => Shipping::factory()->create()->id,
+                'payment_method' => 'CARD',
+            ] + $status, $this->header('Sales'))->assertStatus(201);
+
+            $order = Order::latest('id')->firstOrFail();
+            $this->assertSame(OrderStatus::CONFIRMED->value, $this->orderStatus($order));
+            $this->assertSame(1, WorkOrder::where('order_id', $order->id)->where('state', 'waiting')->count());
+        }
+    }
+
     public function test_cancelling_the_order_cancels_open_work_orders_and_keeps_done_ones()
     {
         $order = $this->order(OrderStatus::CONFIRMED);
