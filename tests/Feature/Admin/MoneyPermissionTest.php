@@ -48,6 +48,9 @@ class MoneyPermissionTest extends TestCase
         $this->assertArrayNotHasKey('payableAmount', $json);
         $this->assertArrayNotHasKey('discount_amount', $json);
         $this->assertArrayNotHasKey('payments', $json);
+        // paid / remaining and the voided-payment amounts travel with payments: hidden too
+        $this->assertArrayNotHasKey('paid', $json);
+        $this->assertArrayNotHasKey('remaining', $json);
         $this->assertArrayHasKey('items', $json);
         $this->assertArrayNotHasKey('price', $json['items'][0] ?? []);
     }

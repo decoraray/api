@@ -95,6 +95,9 @@ class QuoteController extends Controller
         if (in_array($quote->status, ['deposit_paid', 'paid'], true)) {
             throw ValidationException::withMessages(['quote' => ['پیش‌فاکتور پرداخت‌شده قابل لغو نیست.']]);
         }
+        if ($quote->order_id) {
+            throw ValidationException::withMessages(['quote' => ['این پیش‌فاکتور سفارش دارد؛ به‌جای آن، سفارش را لغو کنید.']]);
+        }
         $quote->update(['status' => 'cancelled']);
 
         return new QuoteAdminResource($this->loaded($quote));
@@ -183,6 +186,9 @@ class QuoteController extends Controller
     {
         if (in_array($quote->status, ['deposit_paid', 'paid', 'cancelled'], true)) {
             throw ValidationException::withMessages(['quote' => ['پیش‌فاکتور پرداخت‌شده یا لغوشده قابل ویرایش نیست.']]);
+        }
+        if ($quote->order_id) {
+            throw ValidationException::withMessages(['quote' => ['این پیش‌فاکتور سفارش دارد؛ تغییرات را روی سفارش انجام دهید.']]);
         }
     }
 

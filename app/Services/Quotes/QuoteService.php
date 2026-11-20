@@ -92,6 +92,32 @@ class QuoteService
         return $result;
     }
 
+    /**
+     * Set a quote's paid status from the payments that still count (not voided): paid when they
+     * cover the payable total, deposit_paid when they cover part of it, sent when none remain.
+     * Draft and cancelled quotes are left alone.
+     */
+    public function syncPaymentStatus(Quote $quote): Quote
+    {
+        if (in_array($quote->status, ['draft', 'cancelled'], true)) {
+            return $quote;
+        }
+
+        $totals = QuoteTotals::for($quote->loadMissing('lines'));
+        $status = match (true) {
+            $totals['paid'] <= 0 => 'sent',
+            $totals['paid'] >= $totals['payable'] => 'paid',
+            default => 'deposit_paid',
+        };
+
+        if ($quote->status !== $status) {
+            $quote->status = $status;
+            $quote->save();
+        }
+
+        return $quote;
+    }
+
     private function createOrder(Quote $quote, array $totals, PaymentMethods $method): Order
     {
         $lead = $quote->lead_id ? \App\Models\Lead::find($quote->lead_id) : null;

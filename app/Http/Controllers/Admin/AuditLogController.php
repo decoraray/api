@@ -33,6 +33,7 @@ class AuditLogController extends Controller
         'supplier' => \App\Models\Supplier::class,
         'purchase_order' => \App\Models\PurchaseOrder::class,
         'order_cost' => \App\Models\OrderCost::class,
+        'payment' => \App\Models\Payment::class,
         'user' => User::class,
     ];
 

@@ -191,6 +191,12 @@ Route::prefix('v1')
                     // payments.record
                     Route::middleware('permission:payments.record')->group(function () {
                         Route::post('quotes/{quote}/payments', 'QuoteController@recordPayment');
+                        Route::patch('payments/{payment}', 'PaymentController@update');
+                    });
+
+                    // payments.void (SuperAdmin only): a voided payment is kept but no longer counted
+                    Route::middleware('permission:payments.void')->group(function () {
+                        Route::post('payments/{payment}/void', 'PaymentController@void');
                     });
 
                     // costs.view
