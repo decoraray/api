@@ -178,3 +178,86 @@ paths:
                 type: array
                 items:
                   type: integer
+
+  /payments/{paymentId}:
+    patch:
+      tags:
+        - Payments
+      summary: Correct a staff-recorded payment (permission payments.record).
+      description: >
+        Changes method, paid date and reference, and adds or removes receipts. The amount cannot be
+        changed (422): void the payment and record it again. Gateway and voided payments are refused (422).
+        Card-to-card and cheque payments must keep at least one receipt.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                method:
+                  type: string
+                  enum: [CARD, CASH, CASH_RECEIVED, CHEQUE, OTHER]
+                paid_at:
+                  type: string
+                  format: date
+                reference:
+                  type: string
+                  nullable: true
+                add_receipt_ids:
+                  type: array
+                  items:
+                    type: integer
+                remove_receipt_ids:
+                  type: array
+                  items:
+                    type: integer
+      responses:
+        "200":
+          description: The payment's order (same shape as GET /orders/uuid/{uuid}).
+        "403":
+          description: Missing payments.record.
+        "422":
+          description: Amount sent, gateway or voided payment, or receipt rules not met.
+
+  /payments/{paymentId}/void:
+    post:
+      tags:
+        - Payments
+      summary: Void a staff-recorded payment (permission payments.void, SuperAdmin).
+      description: >
+        The payment is kept with status "void", the reason, who voided it and when, and is no longer
+        counted in paid totals, balances or reports. The linked quote's status is recalculated.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: paymentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+      responses:
+        "200":
+          description: The payment's order (same shape as GET /orders/uuid/{uuid}).
+        "403":
+          description: Missing payments.void.
+        "422":
+          description: Reason missing, gateway payment, or already voided.

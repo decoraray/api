@@ -11,7 +11,7 @@ class PaymentShowAdminResource extends JsonResource
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
-            'name' => $this->user->name . ' ' . $this->user->surname,
+            'name' => trim(($this->user?->name ?? '') . ' ' . ($this->user?->surname ?? '')),
             'uuid' => $this->uuid,
             'amount' => $this->amount,
             'status' => $this->status,
@@ -21,6 +21,21 @@ class PaymentShowAdminResource extends JsonResource
             'method' => \App\Enums\PaymentMethods::tryFrom((string) $this->method)?->name,
             'method_label' => $this->method,
             'receipts' => $this->attachments->map->toReceipt()->values(),
+        ] + self::correctionFields($this->resource, $request);
+    }
+
+    /** Void details and what the current user may do with a staff-recorded payment. */
+    public static function correctionFields(\App\Models\Payment $payment, $request): array
+    {
+        $user = $request->user();
+
+        return [
+            'staff_recorded' => $payment->isStaffRecorded(),
+            'voided_at' => $payment->voided_at,
+            'voided_by' => $payment->voided_by ? $payment->voidedBy?->name : null,
+            'void_reason' => $payment->void_reason,
+            'can_edit' => $payment->isCorrectable() && (bool) $user?->can('payments.record'),
+            'can_void' => $payment->isCorrectable() && (bool) $user?->can('payments.void'),
         ];
     }
 }

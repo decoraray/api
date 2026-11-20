@@ -60,8 +60,8 @@ class QuoteAdminResource extends JsonResource
             ], $hidden ? ['unit_price' => 1, 'line_total' => 1] : []))->values();
 
             $out['payments'] = $this->order_id && !$hidden
-                ? \App\Models\Payment::with('attachments')->where('order_id', $this->order_id)->where('status', 'paid')->orderBy('created_at')->orderBy('id')->get()
-                    ->map(function ($p) {
+                ? \App\Models\Payment::with('attachments', 'voidedBy')->where('order_id', $this->order_id)->whereIn('status', [\App\Models\Payment::STATUS_PAID, \App\Models\Payment::STATUS_VOID])->orderBy('created_at')->orderBy('id')->get()
+                    ->map(function ($p) use ($request) {
                         $enum = PaymentMethods::tryFrom((string) $p->method);
 
                         return [
@@ -72,7 +72,8 @@ class QuoteAdminResource extends JsonResource
                             'paid_at' => $p->created_at,
                             'reference' => $p->ref_id,
                             'receipts' => $p->attachments->map->toReceipt()->values(),
-                        ];
+                            'status' => $p->status,
+                        ] + PaymentShowAdminResource::correctionFields($p, $request);
                     })->values()
                 : [];
         }
