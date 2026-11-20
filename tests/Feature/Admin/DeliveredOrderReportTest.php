@@ -8,6 +8,8 @@ use App\Models\Quote;
 use App\Models\User;
 use App\Services\Auth\AuthService;
 use App\Services\Reports\DeliveredOrderReport;
+use App\Services\Reports\DeliveredOrders;
+use Illuminate\Http\Request;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -169,6 +171,71 @@ class DeliveredOrderReportTest extends TestCase
         $this->assertSame(0, $row['remaining']);
         $this->assertSame('قفسه', $row['items'][0]['title']);
         $this->assertSame(2, $row['items'][0]['quantity']);
+    }
+
+    public function test_overpayment_does_not_hide_another_orders_debt(): void
+    {
+        // each invoice is worth 19,500,000
+        $over = $this->invoice(OrderStatus::DELIVERED->value, '2026-11-05 09:00:00', [[21500000, 'نقدی']]);
+        $under = $this->invoice(OrderStatus::DELIVERED->value, '2026-11-06 09:00:00', [[17500000, 'نقدی']]);
+
+        $r = $this->getJson(self::URL . '?from=2026-11-01&to=2026-11-30', $this->as('SuperAdmin'))->assertOk();
+
+        $rows = collect($r->json('rows'))->keyBy('order_id');
+        $this->assertSame([0, 2000000], [$rows[$over->order_id]['remaining'], $rows[$over->order_id]['overpaid']]);
+        $this->assertSame([2000000, 0], [$rows[$under->order_id]['remaining'], $rows[$under->order_id]['overpaid']]);
+        $this->assertSame(Order::find($over->order_id)->uuid, $rows[$over->order_id]['uuid']);
+        $this->assertSame(2000000, $r->json('summary.remaining_sum'));
+        $this->assertSame(2000000, $r->json('summary.overpaid_sum'));
+    }
+
+    public function test_previous_period(): void
+    {
+        $this->assertSame(['2026-09-23', '2026-10-22'], DeliveredOrders::previous(Request::create('/', 'GET', ['jalali_year' => 1405, 'jalali_month' => 8]), '2026-10-23', '2026-11-21'));
+        $this->assertSame(DeliveredOrderReport::monthRange(1404, 12), DeliveredOrders::previous(Request::create('/', 'GET', ['jalali_year' => 1405, 'jalali_month' => 1]), '2026-03-21', '2026-04-20'));
+        $this->assertSame(['2026-10-22', '2026-10-31'], DeliveredOrders::previous(Request::create('/'), '2026-11-01', '2026-11-10'));
+
+        $this->invoice(OrderStatus::DELIVERED->value, '2026-11-05 09:00:00');                       // Aban 1405
+        $this->invoice(OrderStatus::DELIVERED->value, '2026-10-01 09:00:00', [[1000000, 'نقدی']]); // Mehr 1405
+        $this->invoice(OrderStatus::DELIVERED->value, '2026-10-02 09:00:00');                       // Mehr 1405
+        $this->invoice(OrderStatus::DELIVERED->value, '2026-08-01 09:00:00');                       // earlier
+
+        $r = $this->getJson(self::URL . '?jalali_year=1405&jalali_month=8', $this->as('SuperAdmin'))->assertOk();
+        $this->assertSame(1, $r->json('summary.count'));
+        $this->assertSame(['from' => '2026-09-23', 'to' => '2026-10-22'], $r->json('previous.period'));
+        $this->assertSame(2, $r->json('previous.summary.count'));
+        $this->assertSame(1000000, $r->json('previous.summary.paid_sum'));
+    }
+
+    public function test_csv_export(): void
+    {
+        $a = $this->invoice(OrderStatus::DELIVERED->value, '2026-11-05 09:00:00', [[5000000, 'نقدی'], [4000000, 'چک']]);
+        $this->invoice(OrderStatus::DELIVERED->value, '2026-11-10 09:00:00');
+        foreach ([['میز', 2, 'گردویی', '120x60'], ['قفسه', 1, null, null]] as [$title, $qty, $color, $dims]) {
+            DB::table('items')->insert([
+                'title' => $title, 'slug' => $title, 'order_id' => $a->order_id, 'quantity' => $qty, 'price' => 1, 'discount' => 0,
+                'color' => $color, 'dimensions' => $dims, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+
+        $res = $this->get(self::URL . '?from=2026-11-01&to=2026-11-30&format=csv', $this->as('SuperAdmin'))->assertOk();
+        $this->assertStringContainsString('text/csv', $res->headers->get('Content-Type'));
+        $this->assertStringContainsString('delivered-orders-2026-11-01-2026-11-30.csv', $res->headers->get('Content-Disposition'));
+
+        $body = $res->streamedContent();
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $body);
+        $lines = array_map('str_getcsv', preg_split('/\r?\n/', trim(substr($body, 3))));
+        $this->assertSame('شماره سفارش', $lines[0][0]);
+        $this->assertCount(3, $lines); // header + 2 orders
+        $last = $lines[2]; // older delivery last
+        $this->assertSame('میز × 2 (گردویی، 120x60) | قفسه × 1', $last[5]);
+        $this->assertSame(['19500000', '9000000', '10500000', '0', 'نقدی، چک', '1405/08/14'], array_slice($last, 6));
+    }
+
+    public function test_csv_requires_finance_view(): void
+    {
+        $this->get(self::URL . '?from=2026-11-01&to=2026-11-30&format=csv', $this->as('Sales'))->assertStatus(403);
+        $this->getJson(self::URL . '?from=2026-11-01&to=2026-11-30&format=xls', $this->as('SuperAdmin'))->assertStatus(422);
     }
 
     public function test_validation(): void

@@ -97,4 +97,62 @@ class OrderProfitReportTest extends CostingTestCase
         $this->getJson(self::URL . '?from=2026-11-01&to=2026-11-30', $this->header($finance))->assertStatus(403);
         $this->getJson(self::URL . '?from=2026-11-01&to=2026-11-30', $this->header('SuperAdmin'))->assertStatus(200);
     }
+
+    public function test_previous_period_totals_follow_the_channel_filter()
+    {
+        $now = $this->costedOrder(10000000);                                            // instagram, Aban
+        $before = $this->costedOrder(8000000);                                          // instagram, Mehr
+        $site = $this->costedOrder(6000000, [['میز', 6000000, 1]], ['channel' => 'website']); // website, Mehr
+        $this->deliver($now, '2026-11-05 09:00:00');
+        $this->deliver($before, '2026-10-05 09:00:00');
+        $this->deliver($site, '2026-10-06 09:00:00');
+
+        $r = $this->getJson(self::URL . '?jalali_year=1405&jalali_month=8&channel=instagram', $this->header('Accounting'))->assertStatus(200);
+
+        $r->assertJsonPath('totals.count', 1)
+            ->assertJsonPath('previous.period', ['from' => '2026-09-23', 'to' => '2026-10-22'])
+            ->assertJsonPath('previous.totals.count', 1)
+            ->assertJsonPath('previous.totals.revenue', 8000000);
+    }
+
+    public function test_csv_by_product_adds_up_and_by_order_lists_every_order()
+    {
+        $desk = Product::factory()->create(['title' => 'میز تحریر']);
+        $order = $this->costedOrder(10300000, [['میز', 6000000, 1, $desk->id], ['سفارشی', 4000000, 1]]);
+        OrderCost::create(['order_id' => $order->id, 'category' => 'transport', 'amount' => 300000]);
+        $this->deliver($order, '2026-11-05 09:00:00');
+        for ($i = 0; $i < 41; $i++) {   // more than one JSON page
+            $this->deliver($this->costedOrder(1000000, [['میز', 1000000, 1]]), '2026-11-06 09:00:00');
+        }
+        $headers = $this->header('Accounting');
+        $q = self::URL . '?from=2026-11-01&to=2026-11-30';
+
+        $totals = $this->getJson("{$q}&group_by=product", $headers)->json('totals');
+        $res = $this->get("{$q}&group_by=product&format=csv", $headers)->assertStatus(200);
+        $this->assertStringContainsString('order-profit-product-2026-11-01-2026-11-30.csv', $res->headers->get('Content-Disposition'));
+        $lines = $this->csvLines($res->streamedContent());
+        $this->assertSame(['محصول', 'تعداد سفارش', 'تعداد فروش', 'فروش (تومان)', 'بهای تمام‌شده (تومان)', 'سود (تومان)', 'حاشیه (٪)'], $lines[0]);
+        $body = array_slice($lines, 1);
+        $this->assertContains('تخصیص‌نیافته', array_column($body, 0));
+        $this->assertSame($totals['revenue'], (int) array_sum(array_column($body, 3)));
+        $this->assertSame($totals['profit'], (int) array_sum(array_column($body, 5)));
+
+        $byOrder = $this->csvLines($this->get("{$q}&format=csv&page=1", $headers)->assertStatus(200)->streamedContent());
+        $this->assertCount(1 + 42, $byOrder);
+        $this->assertSame('برآوردی', end($byOrder)[8]);
+    }
+
+    public function test_finance_view_alone_cannot_export_profit()
+    {
+        $finance = $this->staff('Sales', ['finance.view']);
+
+        $this->get(self::URL . '?from=2026-11-01&to=2026-11-30&format=csv', $this->header($finance))->assertStatus(403);
+    }
+
+    private function csvLines(string $body): array
+    {
+        $this->assertStringStartsWith("\xEF\xBB\xBF", $body);
+
+        return array_map('str_getcsv', preg_split('/\r?\n/', trim(substr($body, 3))));
+    }
 }

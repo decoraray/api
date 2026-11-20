@@ -9,6 +9,7 @@ use App\Enums\PaymentMethods;
 use App\Services\Dashboard\DashboardReport;
 use App\Services\Jdf\Jdf;
 use App\Services\Quotes\QuoteTotals;
+use App\Support\CsvDownload;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -43,19 +44,27 @@ class DeliveredOrderReport
         $rows = [];
         $sumTotal = 0;
         $sumPaid = 0;
+        $sumRemaining = 0;
+        $sumOverpaid = 0;
 
         foreach ($orders as $order) {
             $when = $order->delivered_on;
             $quote = $order->quote;
             $total = DeliveredOrders::revenue($order);
             $paidAmount = (int) ($paid[$order->id] ?? 0);
+            // Each order's own balance: one customer's overpayment never offsets another's debt.
+            $remaining = max(0, $total - $paidAmount);
+            $overpaid = max(0, $paidAmount - $total);
             $sumTotal += $total;
             $sumPaid += $paidAmount;
+            $sumRemaining += $remaining;
+            $sumOverpaid += $overpaid;
 
             $userName = trim(($order->user?->name ?? '') . ' ' . ($order->user?->surname ?? ''));
 
             $rows[] = [
                 'order_id' => $order->id,
+                'uuid' => $order->uuid,
                 'source' => $order->source,
                 'quote_id' => $quote?->id,
                 'quote_number' => $quote?->number,
@@ -65,7 +74,8 @@ class DeliveredOrderReport
                 'address' => $order->address ?: null,
                 'total' => $total,
                 'paid' => $paidAmount,
-                'remaining' => max(0, $total - $paidAmount),
+                'remaining' => $remaining,
+                'overpaid' => $overpaid,
                 'methods' => $methods[$order->id] ?? [],
                 'items' => $order->items->map(fn ($i) => [
                     'title' => $i->title,
@@ -93,10 +103,38 @@ class DeliveredOrderReport
                 'count' => count($rows),
                 'total_sum' => $sumTotal,
                 'paid_sum' => $sumPaid,
-                'remaining_sum' => max(0, $sumTotal - $sumPaid),
+                'remaining_sum' => $sumRemaining,
+                'overpaid_sum' => $sumOverpaid,
             ],
             'rows' => $rows,
         ];
+    }
+
+    /** The report as CSV rows (one line per order, items in one cell), headed by Persian column names. */
+    public function csv(array $report): array
+    {
+        $header = ['شماره سفارش', 'پیش‌فاکتور', 'مشتری', 'تلفن', 'شهر', 'اقلام', 'مبلغ سفارش (تومان)', 'پرداخت‌شده (تومان)', 'مانده (تومان)', 'اضافه‌پرداخت (تومان)', 'روش پرداخت', 'تاریخ تحویل'];
+
+        $rows = array_map(fn (array $r) => [
+            $r['order_id'],
+            $r['quote_number'] ?? '',
+            $r['customer_name'] ?? '',
+            $r['phone'] ?? '',
+            $r['city'] ?? '',
+            implode(' | ', array_map(function (array $i) {
+                $extra = implode('، ', array_filter([$i['color'] ?? null, $i['dimensions'] ?? null]));
+
+                return $i['title'] . ' × ' . $i['quantity'] . ($extra !== '' ? " ({$extra})" : '');
+            }, $r['items'])),
+            $r['total'],
+            $r['paid'],
+            $r['remaining'],
+            $r['overpaid'],
+            implode('، ', $r['methods']),
+            CsvDownload::jalali($r['delivered_at']),
+        ], $report['rows']);
+
+        return [$header, $rows];
     }
 
     /** Sum of paid payments per order. */
