@@ -5,6 +5,7 @@ namespace Tests\Feature\Production;
 use App\Models\BomLine;
 use App\Models\Image;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 
 class DesignSheetTest extends CuttingTestCase
 {
@@ -45,7 +46,28 @@ class DesignSheetTest extends CuttingTestCase
             ->assertJsonPath('product.image', config('app.url').'/storage/products/front.jpg');
     }
 
-    public function test_quantity_bounds_and_permission()
+    public function test_sheet_image_serves_the_main_picture_from_the_api()
+    {
+        Storage::fake('public');
+        $product = $this->damtv220();
+        $design = $product->designs()->first();
+        $url = "/api/v1/admin/designs/{$design->id}/sheet/image";
+
+        $this->get($url, $this->header('Technic'))->assertStatus(404); // no picture yet
+
+        Storage::disk('public')->put('image/front.jpg', 'front-bytes');
+        Storage::disk('public')->put('image/side.jpg', 'side-bytes');
+        $chosen = Image::factory()->create(['product_id' => $product->id, 'image' => 'image/front.jpg']);
+        Image::factory()->create(['product_id' => $product->id, 'image' => 'image/side.jpg']);
+        $product->update(['thumbnail_id' => $chosen->id]);
+
+        $r = $this->get($url, $this->header('Technic'))->assertStatus(200);
+        $this->assertSame('front-bytes', $r->streamedContent());
+
+        $this->get($url, $this->header('Warehouse'))->assertStatus(403);
+    }
+
+        public function test_quantity_bounds_and_permission()
     {
         $design = $this->design($this->damtv220());
         $url = "/api/v1/admin/designs/{$design->id}/sheet";

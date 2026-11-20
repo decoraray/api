@@ -230,6 +230,7 @@ Route::prefix('v1')
                         Route::get('products/one-off', 'DesignController@oneOffProducts');
                         Route::get('products/{product}/designs', 'DesignController@index');
                         Route::get('designs/{design}/sheet', 'DesignController@sheet');
+                        Route::get('designs/{design}/sheet/image', 'DesignController@sheetImage');
                     });
 
                     // catalog.view + prices.view (must precede products/{product} in the route list)
