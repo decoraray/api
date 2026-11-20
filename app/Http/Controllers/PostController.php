@@ -11,12 +11,12 @@ class PostController extends Controller
 {
     public function index()
     {
-        return PostListResource::collection(Post::all());
+        return PostListResource::collection(Post::published()->get());
     }
 
     public function show($slug, $categorySlug = null)
     {
-        $query = Post::where('slug', $slug)->byCategory($categorySlug);
+        $query = Post::published()->where('slug', $slug)->byCategory($categorySlug);
 
         $post = $query->first();
 

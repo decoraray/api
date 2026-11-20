@@ -179,6 +179,98 @@ paths:
                 items:
                   type: integer
 
+  /leads/{leadId}/activities/{activityId}:
+    patch:
+      tags:
+        - Leads
+      summary: Edit the text of a note, call or message (permission leads.manage; author or SuperAdmin).
+      description: System and channel activities (stage changes, quotes, website enquiries, Instagram) are read-only (422). Sets edited_at.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body:
+                  type: string
+                  maxLength: 5000
+      responses:
+        "200":
+          description: The lead with its timeline (each activity has can_edit and edited_at).
+        "403":
+          description: Not the author and not SuperAdmin.
+        "422":
+          description: System activity, or empty body.
+    delete:
+      tags:
+        - Leads
+      summary: Delete a note, call or message (same rules as edit). The text is kept in the audit log.
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: The lead with its timeline.
+
+  /campaigns/{campaignId}:
+    delete:
+      tags:
+        - Campaigns
+      summary: Delete a draft campaign (permission campaigns.manage). Queued, sent and cancelled campaigns are refused (422).
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Deleted.
+        "422":
+          description: Not a draft.
+
+  /sms-opt-outs/{optOutId}:
+    delete:
+      tags:
+        - Campaigns
+      summary: Remove a staff-added SMS opt-out (permission campaigns.manage). Opt-outs from the customer's own reply are refused (422).
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Removed.
+        "422":
+          description: The customer opted out themselves.
+
+  /posts:
+    post:
+      tags:
+        - Blog
+      summary: Create a post (permission blog.manage). Multipart; images[0] becomes the cover.
+      security:
+        - BearerAuth: []
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [title, slug]
+              properties:
+                title: { type: string }
+                slug: { type: string }
+                subtitle: { type: string }
+                content: { type: string }
+                writer: { type: string }
+                status: { type: boolean, description: "false hides the post from /v1/blog" }
+                categories:
+                  type: array
+                  items: { type: integer }
+                images:
+                  type: array
+                  items: { type: string, format: binary }
+      responses:
+        "201":
+          description: The post.
+
   /payments/{paymentId}:
     patch:
       tags:

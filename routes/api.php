@@ -139,8 +139,10 @@ Route::prefix('v1')
                         Route::post('campaigns/{campaign}/test', 'CampaignController@test');
                         Route::post('campaigns/{campaign}/send', 'CampaignController@send');
                         Route::post('campaigns/{campaign}/cancel', 'CampaignController@cancel');
+                        Route::delete('campaigns/{campaign}', 'CampaignController@destroy');
                         Route::get('sms-opt-outs', 'SmsOptOutController@index');
                         Route::post('sms-opt-outs', 'SmsOptOutController@store');
+                        Route::delete('sms-opt-outs/{optOut}', 'SmsOptOutController@destroy');
                     });
 
                     // Instagram: connection, toggles, health (settings.manage); rules read by leads.manage too
@@ -180,6 +182,8 @@ Route::prefix('v1')
                         Route::patch('leads/{lead}', 'LeadController@update');
                         Route::post('leads/{lead}/stage', 'LeadController@stage');
                         Route::post('leads/{lead}/activities', 'LeadController@activity');
+                        Route::patch('leads/{lead}/activities/{activity}', 'LeadController@updateActivity');
+                        Route::delete('leads/{lead}/activities/{activity}', 'LeadController@destroyActivity');
                         Route::get('links', 'LinkController@index');
                         Route::post('links', 'LinkController@store');
                         Route::patch('links/{link}', 'LinkController@update');
