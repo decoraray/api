@@ -97,6 +97,8 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        \App\Support\DeleteGuard::product($product);
+
         // delete images from disk
         $product->images->each(function ($image) {
             $image->delete();

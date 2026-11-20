@@ -69,6 +69,8 @@ class ColorController extends Controller
 
     public function destroy(Color $color)
     {
+        \App\Support\DeleteGuard::color($color);
+
         return $color->delete();
     }
 
