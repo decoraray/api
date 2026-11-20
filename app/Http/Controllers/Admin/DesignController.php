@@ -10,6 +10,7 @@ use App\Services\Production\DesignService;
 use App\Services\Production\PanelMapping;
 use App\Support\Production\Present;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 /** Product designs («طرح ساخت»): listing, managing, their cutting list and BOM, and the printable design sheet. */
@@ -165,6 +166,23 @@ class DesignController extends Controller
             'bom_lines' => $design->bomLines()->with('stockItem')->get()->map(fn ($l) => Present::bomLine($l, $quantity))->values(),
             'warnings' => $this->cutting->fitWarnings($this->dimensionsOf($design), $parts),
         ] + $this->cutting->sheet($parts, $quantity));
+    }
+
+    /**
+     * The product's main picture as bytes from the API origin, so the admin can draw it into the printed sheet's PDF
+     * (/storage files carry no CORS headers, so the browser won't let a canvas read them).
+     */
+    public function sheetImage(ProductDesign $design)
+    {
+        $design->loadMissing('product.images');
+        $image = $design->product->images->isNotEmpty() ? $design->product->thumbnail : null;
+        $disk = Storage::disk('public');
+        abort_unless($image && $image->image && $disk->exists($image->image), 404);
+
+        return $disk->response($image->image, null, [
+            'Cache-Control' => 'private, max-age=3600',
+            'X-Content-Type-Options' => 'nosniff',
+        ], 'inline');
     }
 
     public static function bomRules(): array
