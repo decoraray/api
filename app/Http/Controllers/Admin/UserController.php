@@ -64,6 +64,8 @@ class UserController extends Controller
 
     public function destroy(User $user)
     {
+        \App\Support\DeleteGuard::customer($user);
+
         $user->delete();
 
         return response()->json(null, 204);
