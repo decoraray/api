@@ -6,6 +6,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Services\Reports\DeliveredOrders;
 use App\Support\Channel;
+use App\Support\CsvDownload;
 use Illuminate\Support\Collection;
 
 /** Profit of delivered orders in a period: per order, or grouped by channel, customer or product. */
@@ -26,21 +27,56 @@ class OrderProfitReport
         }
 
         $summaries = $this->costs->summaries($orders);
+
+        return ['orders' => $orders, 'summaries' => $summaries, 'totals' => $this->sumUp($summaries)];
+    }
+
+    /** Only the totals for a period (used for the previous-period comparison). */
+    public function totals(string $from, string $to, ?string $channel = null): array
+    {
+        return $this->data($from, $to, $channel)['totals'];
+    }
+
+    /** Report rows as CSV lines with Persian column names, for any grouping. */
+    public function csv(string $groupBy, array $rows): array
+    {
+        $money = ['فروش (تومان)', 'بهای تمام‌شده (تومان)', 'سود (تومان)', 'حاشیه (٪)'];
+        $amounts = fn (array $r) => [$r['revenue'], $r['total_cost'], $r['profit'], $r['margin'] ?? ''];
+
+        if ($groupBy === 'order') {
+            return [
+                ['شماره سفارش', 'مشتری', 'کانال', 'تاریخ تحویل', ...$money, 'وضعیت بها'],
+                array_map(fn (array $r) => [
+                    $r['order_id'], $r['customer_name'] ?? '', $r['channel_label'] ?? '', CsvDownload::jalali($r['delivered_at']),
+                    ...$amounts($r), $r['is_final'] ? 'قطعی' : 'برآوردی',
+                ], $rows),
+            ];
+        }
+
+        $first = ['channel' => 'کانال', 'customer' => 'مشتری', 'product' => 'محصول'][$groupBy];
+        $withQty = $groupBy === 'product';
+
+        return [
+            [$first, 'تعداد سفارش', ...($withQty ? ['تعداد فروش'] : []), ...$money],
+            array_map(fn (array $r) => [
+                $r['label'], $r['count'], ...($withQty ? [$r['quantity'] ?? 0] : []), ...$amounts($r),
+            ], $rows),
+        ];
+    }
+
+    private function sumUp(array $summaries): array
+    {
         $sum = fn (string $key) => (int) array_sum(array_column($summaries, $key));
         $revenue = $sum('revenue');
         $profit = $sum('profit');
 
         return [
-            'orders' => $orders,
-            'summaries' => $summaries,
-            'totals' => [
-                'count' => $orders->count(),
-                'revenue' => $revenue,
-                'total_cost' => $sum('total_cost'),
-                'profit' => $profit,
-                'margin' => $revenue > 0 ? round($profit / $revenue * 100, 1) : null,
-                'includes_estimates' => collect($summaries)->contains(fn ($s) => !$s['is_final']),
-            ],
+            'count' => count($summaries),
+            'revenue' => $revenue,
+            'total_cost' => $sum('total_cost'),
+            'profit' => $profit,
+            'margin' => $revenue > 0 ? round($profit / $revenue * 100, 1) : null,
+            'includes_estimates' => collect($summaries)->contains(fn ($s) => !$s['is_final']),
         ];
     }
 

@@ -47,6 +47,33 @@ class DeliveredOrders
     }
 
     /**
+     * The period before [from, to], as Gregorian [from, to]: the previous Jalali month when the request
+     * named a month (Farvardin goes back to Esfand of the year before), else as many days just before `from`.
+     */
+    public static function previous(Request $request, string $from, string $to): array
+    {
+        if ($request->filled('jalali_year')) {
+            $jy = (int) $request->input('jalali_year');
+            $jm = (int) $request->input('jalali_month');
+
+            return $jm === 1 ? DeliveredOrderReport::monthRange($jy - 1, 12) : DeliveredOrderReport::monthRange($jy, $jm - 1);
+        }
+
+        $days = (int) Carbon::parse($from)->diffInDays(Carbon::parse($to)) + 1;
+        $end = Carbon::parse($from)->subDay();
+
+        return [$end->copy()->subDays($days - 1)->format('Y-m-d'), $end->format('Y-m-d')];
+    }
+
+    /** Whether the request asks for the CSV file instead of JSON. */
+    public static function wantsCsv(Request $request): bool
+    {
+        $request->validate(['format' => ['nullable', 'in:json,csv']]);
+
+        return $request->input('format') === 'csv';
+    }
+
+    /**
      * Orders delivered within [from, to], newest delivery first. Each has `delivered_on` (Carbon, Tehran).
      *
      * @return Collection<int, Order>

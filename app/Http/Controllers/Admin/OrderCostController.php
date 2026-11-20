@@ -11,6 +11,7 @@ use App\Services\Costing\OrderProfitReport;
 use App\Services\Reports\DeliveredOrders;
 use App\Services\Settings;
 use App\Support\Channel;
+use App\Support\CsvDownload;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\Rule;
@@ -76,25 +77,40 @@ class OrderCostController extends Controller
     public function report(Request $request, OrderProfitReport $report)
     {
         [$from, $to] = DeliveredOrders::period($request);
+        $csv = DeliveredOrders::wantsCsv($request);
         $data = $request->validate([
             'group_by' => ['nullable', Rule::in(['order', 'channel', 'customer', 'product'])],
             'channel' => ['nullable', Rule::in(array_keys(Channel::labels()))],
             'page' => ['nullable', 'integer', 'min:1'],
         ]);
         $groupBy = $data['group_by'] ?? 'order';
+        $channel = $data['channel'] ?? null;
 
-        ['orders' => $orders, 'summaries' => $summaries, 'totals' => $totals] = $report->data($from, $to, $data['channel'] ?? null);
+        ['orders' => $orders, 'summaries' => $summaries, 'totals' => $totals] = $report->data($from, $to, $channel);
 
+        $rows = match ($groupBy) {
+            'order' => $orders->map(fn (Order $o) => $report->orderRow($o, $summaries[$o->id]))->values(),
+            'product' => collect($report->byProduct($orders, $summaries)),
+            default => collect($report->groupBy($orders, $summaries, $groupBy)),
+        };
+
+        if ($csv) {
+            [$header, $lines] = $report->csv($groupBy, $rows->all());
+
+            return CsvDownload::make("order-profit-{$groupBy}-{$from}-{$to}.csv", $header, $lines);
+        }
+
+        [$pFrom, $pTo] = DeliveredOrders::previous($request, $from, $to);
         $base = [
             'period' => ['from' => $from, 'to' => $to],
             'group_by' => $groupBy,
             'totals' => $totals,
+            'previous' => ['period' => ['from' => $pFrom, 'to' => $pTo], 'totals' => $report->totals($pFrom, $pTo, $channel)],
             'channels' => collect(Channel::labels())->map(fn ($label, $id) => ['id' => $id, 'name' => $label])->values(),
         ];
 
         if ($groupBy === 'order') {
             $page = (int) ($data['page'] ?? 1);
-            $rows = $orders->map(fn (Order $o) => $report->orderRow($o, $summaries[$o->id]));
             $paginator = new LengthAwarePaginator($rows->forPage($page, 40)->values(), $rows->count(), 40, $page);
 
             return response()->json($base + [
@@ -103,9 +119,7 @@ class OrderCostController extends Controller
             ]);
         }
 
-        $rows = $groupBy === 'product' ? $report->byProduct($orders, $summaries) : $report->groupBy($orders, $summaries, $groupBy);
-
-        return response()->json($base + ['rows' => $rows]);
+        return response()->json($base + ['rows' => $rows->all()]);
     }
 
     private function validated(Request $request, Order $order): array
