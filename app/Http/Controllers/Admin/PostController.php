@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Post;
-use App\Models\Image;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PostListResource;
 use App\Http\Resources\PostShowResource;
@@ -33,68 +32,51 @@ class PostController extends Controller
 
     public function store(CreatePostRequest $request)
     {
-        $post = new Post($request->all());
+        $post = new Post($request->safe()->except(['images', 'categories']));
+        $post->subtitle = (string) ($request->input('subtitle') ?? '');
         $post->save();
 
-        $post->categories()->attach($request->categories);
+        $post->categories()->sync($request->input('categories', []));
+        $this->storeCover($request, $post);
 
-        if (request()->hasFile('images')) {
-            return response()->json([
-                'message' => 'No file was uploaded.'
-            ], 422);
-        }
-
-        $images = $request->file('images');
-        if ($images != null) {
-            foreach ($images as $image) {
-                $image_path = $image->store('image', 'public');
-                Image::create([
-                    'image' => $image_path,
-                    'post_id' => $request->product_id ?? null,
-                ]);
-                $post->image = $image_path;
-                $post->save();
-
-                break; // TODO : it will end loop on first image, if post can support multiple images it will change 
-            }
-        }
-
-        return new PostShowResource($post);
+        return (new PostShowResource($post->fresh('categories')))->response()->setStatusCode(201);
     }
 
     public function update(UpdatePostRequest $request, Post $post)
     {
-        $post->update($request->all());
+        $post->update($request->safe()->except(['images', 'categories']));
 
-        if ($request->categories) {
-            // if categoryes are array get all , else plunk ids and get them
-            $categories = is_array($request->categories) ? $request->categories : $request->categories->pluck('id');
-            $post->categories()->sync($categories);
+        if ($request->has('categories')) {
+            $post->categories()->sync($request->input('categories') ?? []);
+        }
+        $this->storeCover($request, $post);
+
+        return new PostShowResource($post->fresh('categories'));
+    }
+
+    /** The first uploaded file becomes the post's cover image (posts have one image). */
+    private function storeCover($request, Post $post): void
+    {
+        $file = collect($request->file('images') ?? [])->first();
+        if (!$file) {
+            return;
         }
 
-        $images = $request->file('images');
-        if ($images != null) {
-            foreach ($images as $image) {
-                $image_path = $image->store('image', 'public');
-                Image::create([
-                    'image' => $image_path,
-                    'post_id' => $request->product_id ?? null,
-                ]);
-                $post->image = $image_path;
-                $post->save();
-
-                break; // TODO : it will end loop on first image, if post can support multiple images it will change 
-            }
+        $old = $post->image;
+        $post->image = $file->store('image', 'public');
+        $post->save();
+        if ($old && $old !== $post->image) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($old);
         }
-
-        return new PostShowResource($post);
     }
 
     public function destroy(Post $post)
     {
+        $image = $post->image;
         $post->delete();
-
-        // TODO : delete image too , 
+        if ($image) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($image);
+        }
 
         return response()->json(null, 204);
     }

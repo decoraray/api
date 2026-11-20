@@ -159,6 +159,22 @@ class CampaignController extends Controller
         return $line;
     }
 
+    /** Only drafts: once queued or sent, a campaign and its results are kept. */
+    public function destroy(Request $request, Campaign $campaign)
+    {
+        if (!$campaign->isEditable()) {
+            throw ValidationException::withMessages(['status' => ['فقط کمپین پیش‌نویس قابل حذف است.']]);
+        }
+
+        // Its tracked link was never sent to anyone: switch it off (links keep their history).
+        $campaign->trackedLink?->update(['active' => false]);
+        activity()->performedOn($campaign)->causedBy($request->user())
+            ->withProperties(['name' => $campaign->name])->log('campaign-draft-deleted');
+        $campaign->delete();
+
+        return response()->json(['message' => 'کمپین حذف شد.']);
+    }
+
     private function assertEditable(?Campaign $campaign): void
     {
         if (!$campaign || !$campaign->isEditable()) {

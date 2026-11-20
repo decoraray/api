@@ -43,6 +43,20 @@ class SmsOptOutController extends Controller
         return response()->json(self::row($row), $created ? 201 : 200);
     }
 
+    /** Staff-added opt-outs only: a customer who replied to opt out stays opted out. */
+    public function destroy(Request $request, SmsOptOut $optOut)
+    {
+        if ($optOut->source !== 'staff') {
+            throw ValidationException::withMessages(['opt_out' => ['این شماره خودش لغو اشتراک کرده و قابل حذف نیست.']]);
+        }
+
+        activity()->performedOn($optOut)->causedBy($request->user())
+            ->withProperties(['phone' => $optOut->phone, 'note' => $optOut->note])->log('SMS opt-out removed');
+        $optOut->delete();
+
+        return response()->json(['message' => 'شماره از فهرست لغو پیامک برداشته شد.']);
+    }
+
     private static function row(SmsOptOut $o): array
     {
         return [
@@ -53,6 +67,7 @@ class SmsOptOutController extends Controller
             'created_by' => $o->creator ? trim($o->creator->name . ' ' . $o->creator->surname) : null,
             'note' => $o->note,
             'created_at' => $o->created_at,
+            'removable' => $o->source === 'staff',
         ];
     }
 }

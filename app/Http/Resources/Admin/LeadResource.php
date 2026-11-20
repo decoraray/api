@@ -78,6 +78,8 @@ class LeadResource extends JsonResource
                     : $a->data,
                 'user' => self::person($a->user),
                 'created_at' => $a->created_at,
+                'edited_at' => $a->edited_at,
+                'can_edit' => $a->editableBy($request->user()),
             ])->values();
         }
 

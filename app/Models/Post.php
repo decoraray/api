@@ -41,6 +41,12 @@ class Post extends Model
         return $this->belongsToMany(Category::class);
     }
 
+    /** Shown on the storefront: published, or never given a status (older posts). */
+    public function scopePublished($query)
+    {
+        $query->where(fn ($q) => $q->whereNull('status')->orWhere('status', true));
+    }
+
     public function scopeByCategory($query, $category)
     {
         if (!$category || $category == 'null') {

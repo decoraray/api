@@ -8,6 +8,7 @@ use App\Enums\LeadStage;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\LeadResource;
 use App\Models\Lead;
+use App\Models\LeadActivity;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Leads\LeadService;
@@ -100,6 +101,47 @@ class LeadController extends Controller
         $service->addActivity($lead, $data['type'], $data['body'], $request->user(), $data['next_follow_up_at'] ?? null);
 
         return (new LeadResource($this->loaded($lead, false)))->response()->setStatusCode(201);
+    }
+
+    /** Fix the text of a note/call/message: its author, or a SuperAdmin. */
+    public function updateActivity(Request $request, Lead $lead, LeadActivity $activity)
+    {
+        $this->assertChangeable($request, $lead, $activity);
+        $data = $request->validate(['body' => ['required', 'string', 'max:5000']]);
+
+        $old = $activity->body;
+        $activity->update(['body' => $data['body'], 'edited_at' => now()]);
+        $this->auditActivity($request, $lead, $activity, 'lead-activity-edited', $old);
+
+        return new LeadResource($this->loaded($lead, true));
+    }
+
+    public function destroyActivity(Request $request, Lead $lead, LeadActivity $activity)
+    {
+        $this->assertChangeable($request, $lead, $activity);
+
+        $this->auditActivity($request, $lead, $activity, 'lead-activity-deleted', $activity->body);
+        $activity->delete();
+
+        return new LeadResource($this->loaded($lead, true));
+    }
+
+    private function assertChangeable(Request $request, Lead $lead, LeadActivity $activity): void
+    {
+        abort_unless($activity->lead_id === $lead->id, 404);
+        if (!$activity->isWritten()) {
+            throw ValidationException::withMessages(['activity' => ['فعالیت‌های ثبت‌شده توسط سیستم قابل ویرایش یا حذف نیستند.']]);
+        }
+        abort_unless($activity->editableBy($request->user()), 403, 'فقط نویسنده یادداشت می‌تواند آن را تغییر دهد.');
+    }
+
+    private function auditActivity(Request $request, Lead $lead, LeadActivity $activity, string $event, ?string $oldBody): void
+    {
+        activity()
+            ->performedOn($lead)
+            ->causedBy($request->user())
+            ->withProperties(['activity_id' => $activity->id, 'type' => $activity->type, 'old_body' => $oldBody, 'author_id' => $activity->user_id])
+            ->log($event);
     }
 
     public function duplicates(Request $request)
