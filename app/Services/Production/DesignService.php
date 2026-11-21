@@ -49,6 +49,9 @@ class DesignService
             if ($source) {
                 $this->copyParts($source->parts()->get(), $design);
                 $this->copyBom($source->bomLines()->get(), $design);
+                foreach ($source->adders()->get() as $adder) {
+                    $design->adders()->create(['cost_adder_id' => $adder->cost_adder_id, 'quantity' => $adder->quantity]);
+                }
             }
 
             $makeDefault = $data['is_default'] ?? ($isFirst && empty($data['variation_id']));

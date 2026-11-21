@@ -73,6 +73,12 @@ class WorkOrder extends Model
         return $this->hasMany(WorkOrderMaterial::class)->orderBy('id');
     }
 
+    /** Service adders (vacuum, colour…) and the unit cost each took when added. */
+    public function adders()
+    {
+        return $this->hasMany(WorkOrderAdder::class)->orderBy('id');
+    }
+
     /** The work order's own cutting list, per unit. */
     /** The work order's own cutting layout, if one was generated for it. */
     public function layout()

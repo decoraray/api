@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\CostAdderGroup;
 use App\Enums\OrderCostCategory;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
@@ -25,7 +26,7 @@ class OrderCostController extends Controller
 
     public function show(Order $order)
     {
-        return response()->json(['data' => $this->costs->summary($order), 'categories' => OrderCostCategory::values()]);
+        return response()->json(['data' => $this->costs->summary($order), 'categories' => OrderCostCategory::values(), 'adder_groups' => CostAdderGroup::values()]);
     }
 
     public function store(Request $request, Order $order)
