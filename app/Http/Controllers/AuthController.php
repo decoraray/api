@@ -194,13 +194,13 @@ class AuthController extends Controller
     {
         $user = User::where('id', $request->user()->id)->first();
 
-        // filter nulls from request
-        $data = array_filter($request->all());
+        // Only validated fields; empty values keep the current ones.
+        $data = array_filter($request->validated(), fn ($v) => $v !== null && $v !== '');
 
         $user->update($data);
 
         $response = [
-            'user' => $user,
+            'user' => new UserShowResource($user->fresh()),
         ];
 
         return response($response, 200);
@@ -215,22 +215,32 @@ class AuthController extends Controller
 
     public function ChangePassword(Request $request)
     {
-        // validate request
         $request->validate([
-            'old_password' => 'required',
-            'new_password' => 'required|min:6',
+            'old_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed|different:old_password',
         ]);
 
         $user = User::where('id', $request->user()->id)->first();
 
-        if (!Hash::check($request->old_password, $user->password)) {
-            return response([
-                'message' => ['These credentials do not match our records.']
-            ], 404);
+        if (!$user->password || !Hash::check($request->old_password, $user->password)) {
+            return response()->json([
+                'message' => 'The current password is incorrect.',
+                'errors' => ['old_password' => ['رمز عبور فعلی درست نیست.']],
+            ], 422);
         }
 
         $user->password = Hash::make($request->new_password);
         $user->save();
+
+        if ($user->isStaff()) {
+            activity('auth')
+                ->enableLogging()
+                ->event('password_changed')
+                ->causedBy($user)
+                ->performedOn($user)
+                ->withProperties(['ip' => $request->ip()])
+                ->log('Staff password changed');
+        }
 
         $response = [
             'message' => 'Password changed successfully',
