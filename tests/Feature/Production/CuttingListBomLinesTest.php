@@ -28,6 +28,23 @@ class CuttingListBomLinesTest extends CuttingTestCase
         $this->assertSame([$hinge->id], BomLine::pluck('stock_item_id')->all());
     }
 
+    public function test_a_sheet_item_counted_in_square_metres_gets_the_area_with_waste()
+    {
+        $product = $this->damtv220();
+        $m2 = $this->stock(0, ['code' => 'MDF-16-M2', 'kind' => 'mdf_sheet', 'unit' => 'square_metre']);
+        $hdf = $this->stock(0, ['code' => 'HDF-3-WH', 'kind' => 'mdf_sheet', 'unit' => 'sheet']);
+
+        $r = $this->postJson("/api/v1/admin/products/{$product->id}/cutting-list/bom-lines", ['mapping' => [
+            ['panel_material_id' => $this->body16()->id, 'sheet_stock_item_id' => $m2->id],
+            ['panel_material_id' => $this->back3()->id, 'sheet_stock_item_id' => $hdf->id],
+        ]], $this->header('SuperAdmin'))->assertStatus(200);
+
+        // 2.761 m² of 16 mm parts with 20% waste = 3.3132, rounded up to 3.32 m²; the HDF stays in sheets.
+        $this->assertSame([['MDF-16-M2', 3.32], ['HDF-3-WH', 0.07]],
+            array_map(fn ($l) => [$l['stock_item']['code'], $l['quantity']], $r->json('data')));
+        $r->assertJsonPath('data.0.stock_item.unit_label', 'متر مربع');
+    }
+
     public function test_wrong_kind_of_stock_item_is_rejected()
     {
         $product = $this->damtv220();

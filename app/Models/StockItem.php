@@ -81,4 +81,36 @@ class StockItem extends Model
     {
         return $this->active && $this->reorder_point !== null && $this->quantity <= $this->reorder_point;
     }
+
+    /** The area of one sheet in m², for a sheet item with a recorded size; null otherwise. */
+    public function sheetAreaM2(): ?float
+    {
+        if ($this->unit !== StockUnit::SHEET || !$this->length_mm || !$this->width_mm) {
+            return null;
+        }
+
+        return $this->length_mm * $this->width_mm / 1_000_000;
+    }
+
+    /** A price per m² as a price per one of this item's units: per sheet by its size, or as is when counted in m². */
+    public function perUnitFromPerM2(int $perM2): ?int
+    {
+        if ($this->unit === StockUnit::SQUARE_METRE) {
+            return $perM2;
+        }
+        $area = $this->sheetAreaM2();
+
+        return $area === null ? null : (int) round($perM2 * $area);
+    }
+
+    /** The average cost per m²: by the sheet's size, or the average itself when counted in m²; null otherwise. */
+    public function getAverageCostPerM2Attribute(): ?int
+    {
+        if ($this->unit === StockUnit::SQUARE_METRE) {
+            return $this->average_cost;
+        }
+        $area = $this->sheetAreaM2();
+
+        return $area === null ? null : (int) round($this->average_cost / $area);
+    }
 }

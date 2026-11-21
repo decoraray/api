@@ -3,6 +3,7 @@
 namespace App\Services\Production;
 
 use App\Enums\CuttingOp;
+use App\Enums\StockUnit;
 use App\Models\PanelMaterial;
 use App\Models\StockItem;
 use App\Support\PersianText;
@@ -133,7 +134,10 @@ class CuttingListService
             // The real sheet's size beats the material's default when the stock item records one.
             $length = $sheet->length_mm && $sheet->width_mm ? $sheet->length_mm : $material->sheet_length_mm;
             $width = $sheet->length_mm && $sheet->width_mm ? $sheet->width_mm : $material->sheet_width_mm;
-            $add($sheet, $this->sheets($group['area_mm2'], $material->waste_percent, $length, $width));
+            // An item counted in m² takes the area with waste, i.e. "sheets" of 1 m × 1 m.
+            $add($sheet, $sheet->unit === StockUnit::SQUARE_METRE
+                ? $this->sheets($group['area_mm2'], $material->waste_percent, 1000, 1000)
+                : $this->sheets($group['area_mm2'], $material->waste_percent, $length, $width));
 
             $band = $mapping[$materialId]['edge_band'] ?? null;
             if ($band && $group['edge_mm'] > 0) {

@@ -7,6 +7,7 @@ enum StockUnit: string
     case SHEET = 'sheet';
     case PIECE = 'piece';
     case METER = 'meter';
+    case SQUARE_METRE = 'square_metre';
     case KG = 'kg';
     case PACK = 'pack';
 
@@ -16,6 +17,7 @@ enum StockUnit: string
             self::SHEET => 'ورق',
             self::PIECE => 'عدد',
             self::METER => 'متر',
+            self::SQUARE_METRE => 'متر مربع',
             self::KG => 'کیلوگرم',
             self::PACK => 'بسته',
         };

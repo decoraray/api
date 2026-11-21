@@ -84,7 +84,7 @@ class StockItemController extends Controller
         $note = $data['note'] ?? null;
 
         $movement = match ($data['type']) {
-            StockMovement::TYPE_IN => $inventory->receive($stockItem, $quantity, isset($data['unit_cost']) ? (int) $data['unit_cost'] : null, $request->user(), $note),
+            StockMovement::TYPE_IN => $inventory->receive($stockItem, $quantity, $request->unitCost(), $request->user(), $note),
             StockMovement::TYPE_OUT => $inventory->issue($stockItem, $quantity, $request->user(), $note),
             StockMovement::TYPE_ADJUST => $inventory->adjust($stockItem, $quantity, $request->user(), $note),
         };
