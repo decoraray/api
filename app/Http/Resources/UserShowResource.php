@@ -16,6 +16,9 @@ class UserShowResource extends JsonResource
     {
         $data = [
             'name' => $this->name . ' ' . $this->surname,
+            // The parts of `name`, for profile forms.
+            'first_name' => $this->name,
+            'last_name' => $this->surname,
             'email' => $this->email,
             'phone' => (string)$this->national_code . (string)$this->phone,
             'roles' => $this->roles->pluck('name'),
