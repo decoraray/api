@@ -253,4 +253,62 @@ class StockItemApiTest extends InventoryTestCase
         $item = $this->stocked(2, 500000);
         $this->getJson("/api/v1/admin/stock-items/{$item->id}", $admin)->assertJsonPath('data.stock_value', 1000000);
     }
+
+    // --- square metres --------------------------------------------------------------
+
+    public function test_an_item_can_be_counted_in_square_metres()
+    {
+        $id = $this->postJson('/api/v1/admin/stock-items', ['code' => 'MIRROR', 'name' => 'آینه', 'kind' => 'other', 'unit' => 'square_metre'], $this->header('Warehouse'))
+            ->assertStatus(201)
+            ->assertJsonPath('data.unit', 'square_metre')
+            ->assertJsonPath('data.unit_label', 'متر مربع')
+            ->json('data.id');
+
+        $this->postJson("/api/v1/admin/stock-items/{$id}/movements", ['type' => 'in', 'quantity' => 1.255], $this->header('Warehouse'))
+            ->assertStatus(201)
+            ->assertJsonPath('data.quantity', 1.255);
+    }
+
+    public function test_cost_per_square_metre_is_shown_for_sized_sheets_and_m2_items_with_costs_view()
+    {
+        $sheet = $this->stocked(1, 19423620, $this->mdf());
+        $unsized = $this->stocked(1, 1000000, $this->mdf(['code' => 'MDF-X', 'length_mm' => null, 'width_mm' => null]));
+        $glass = $this->stocked(2, 4000000, ['code' => 'GLASS', 'kind' => 'other', 'unit' => 'square_metre']);
+        $withCosts = $this->header($this->staff('Warehouse', ['costs.view']));
+
+        $this->getJson("/api/v1/admin/stock-items/{$sheet->id}", $withCosts)->assertJsonPath('data.average_cost_per_m2', 2900000);
+        $this->getJson("/api/v1/admin/stock-items/{$glass->id}", $withCosts)->assertJsonPath('data.average_cost_per_m2', 4000000);
+        $this->getJson("/api/v1/admin/stock-items/{$unsized->id}", $withCosts)->assertJsonMissingPath('data.average_cost_per_m2');
+        $this->getJson("/api/v1/admin/stock-items/{$sheet->id}", $this->header('Warehouse'))->assertJsonMissingPath('data.average_cost_per_m2');
+    }
+
+    public function test_a_sheet_receipt_can_be_priced_per_square_metre()
+    {
+        $sheet = StockItem::factory()->create($this->mdf());
+        $url = "/api/v1/admin/stock-items/{$sheet->id}/movements";
+
+        $this->postJson($url, ['type' => 'in', 'quantity' => 5, 'unit_cost_per_m2' => 2900000], $this->header('Warehouse'))->assertStatus(403);
+        $this->assertSame(0.0, $sheet->refresh()->quantity);
+
+        $this->postJson($url, ['type' => 'in', 'quantity' => 5, 'unit_cost_per_m2' => 2900000], $this->header($this->staff('Warehouse', ['costs.view'])))
+            ->assertStatus(201)
+            ->assertJsonPath('movement.unit_cost', 19423620)
+            ->assertJsonPath('data.average_cost', 19423620)
+            ->assertJsonPath('data.average_cost_per_m2', 2900000);
+    }
+
+    public function test_a_square_metre_price_is_refused_where_it_cannot_be_converted()
+    {
+        $manager = $this->header($this->staff('Warehouse', ['costs.view']));
+        $hinge = StockItem::factory()->create(['code' => 'HINGE', 'kind' => 'hardware', 'unit' => 'piece']);
+        $sheet = StockItem::factory()->create($this->mdf());
+
+        $this->postJson("/api/v1/admin/stock-items/{$hinge->id}/movements", ['type' => 'in', 'quantity' => 4, 'unit_cost_per_m2' => 100000], $manager)
+            ->assertStatus(422)->assertJsonValidationErrors('unit_cost_per_m2');
+        $this->postJson("/api/v1/admin/stock-items/{$sheet->id}/movements", ['type' => 'in', 'quantity' => 4, 'unit_cost' => 1, 'unit_cost_per_m2' => 100000], $manager)
+            ->assertStatus(422);
+        $this->postJson("/api/v1/admin/stock-items/{$sheet->id}/movements", ['type' => 'out', 'quantity' => 1, 'note' => 'x', 'unit_cost_per_m2' => 100000], $manager)
+            ->assertStatus(422);
+        $this->assertSame(0, StockMovement::count());
+    }
 }

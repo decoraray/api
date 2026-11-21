@@ -32,6 +32,7 @@ class StockItemResource extends JsonResource
             'active' => $this->active,
             'note' => $this->note,
             'average_cost' => $this->when($seesCosts, $this->average_cost),
+            'average_cost_per_m2' => $this->when($seesCosts && $this->average_cost_per_m2 !== null, fn () => $this->average_cost_per_m2),
             'stock_value' => $this->when($seesCosts, fn () => (int) round($this->quantity * $this->average_cost)),
             'updated_at' => $this->updated_at,
         ];
