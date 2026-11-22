@@ -30,6 +30,7 @@ class UserSeeder extends Seeder
         'Admin' => ['viewer@decoraray.test', '09000000002', 'مدیر (فقط خواندنی)'],
         'Sales' => ['sales@decoraray.test', '09000000003', 'فروش'],
         'Technic' => ['technic@decoraray.test', '09000000004', 'فنی'],
+        'Catalog' => ['catalog@decoraray.test', '09000000008', 'مدیر محصولات'],
         'Warehouse' => ['warehouse@decoraray.test', '09000000005', 'انبار'],
         'Purchasing' => ['purchasing@decoraray.test', '09000000006', 'خرید'],
         'Accounting' => ['accounting@decoraray.test', '09000000007', 'حسابداری'],
