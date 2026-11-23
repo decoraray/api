@@ -62,6 +62,7 @@ class DraftDesignServiceTest extends DraftTestCase
     public function test_regenerating_an_untouched_draft_replaces_its_content_and_keeps_the_design()
     {
         $design = $this->cabinetDraft();
+        $rails = $this->rails();
 
         $again = $this->drafts()->regenerate($design, null, ['width' => 80, 'height' => 180, 'depth' => 40, 'shelves' => 3, 'doors' => 2, 'drawers' => 2, 'back' => 1], false);
 
@@ -69,7 +70,9 @@ class DraftDesignServiceTest extends DraftTestCase
         $this->assertSame('استاندارد', $again->name);
         $this->assertTrue($again->is_default);
         $this->assertSame(2, $again->parts()->where('name', 'جلو کشو')->value('count'));
-        $this->assertSame(2.0, $this->bomOf($again)[$this->items['slide']->id]);
+        // Drawers take the longest rail that fits 40 − 5 cm, not the old slide item.
+        $this->assertSame(2.0, $this->bomOf($again)[$rails[35]->stock_item_id]);
+        $this->assertArrayNotHasKey($this->items['slide']->id, $this->bomOf($again));
         $this->assertFalse($again->draft_params['guessed']);
         $this->assertSame('80*180*40', $again->draft_params['source_dimensions']);
     }

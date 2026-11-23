@@ -118,6 +118,7 @@ class DesignDraftApiTest extends DraftTestCase
     public function test_regenerate_adds_drawers()
     {
         [, , $tv] = $this->seeded();
+        $rails = $this->rails();
 
         $response = $this->postJson("/api/v1/admin/designs/{$tv->id}/regenerate", ['params' => ['drawers' => 2]], $this->header('Technic'))
             ->assertStatus(200)
@@ -127,7 +128,10 @@ class DesignDraftApiTest extends DraftTestCase
             ->assertJsonPath('data.draft.guessed', false);
 
         $this->assertSame(2, $tv->parts()->where('name', 'جلو کشو')->value('count'));
-        $this->assertEquals(2, $tv->bomLines()->where('stock_item_id', $this->items['slide']->id)->value('quantity'));
+        // Two pairs of the longest rail that fits the depth less 5 cm.
+        $fit = max(array_filter(array_keys($rails), fn ($l) => $l <= $response->json('data.draft.params.depth') - 5));
+        $this->assertEquals(2, $tv->bomLines()->where('stock_item_id', $rails[$fit]->stock_item_id)->value('quantity'));
+        $this->assertSame("ریل {$fit}", $response->json('data.draft.rules.adders.0.name'));
         $this->assertNotNull($response->json('data.parts_count'));
     }
 

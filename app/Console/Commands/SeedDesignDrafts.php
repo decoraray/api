@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\Production\Drafts\DraftException;
+use App\Services\Production\Drafts\DraftReport;
 use App\Services\Production\Drafts\DraftSeeder;
 use Illuminate\Console\Command;
 
@@ -44,7 +45,7 @@ class SeedDesignDrafts extends Command
             return self::FAILURE;
         }
 
-        $path = $this->writeReport($rows);
+        $path = DraftReport::write('design-drafts', self::COLUMNS, $rows);
 
         $counts = collect($rows)->countBy(fn ($r) => $r['outcome'] . ($r['outcome'] === DraftSeeder::SKIPPED ? ' — ' . mb_substr((string) $r['reason'], 0, 60) : ''))
             ->sortDesc();
@@ -52,25 +53,5 @@ class SeedDesignDrafts extends Command
         $this->info(($this->option('dry-run') ? 'Dry run. ' : '') . count($rows) . ' products considered. Report: ' . $path);
 
         return self::SUCCESS;
-    }
-
-    private function writeReport(array $rows): string
-    {
-        $dir = storage_path('app/reports');
-        if (!is_dir($dir)) {
-            mkdir($dir, 0775, true);
-        }
-        $path = $dir . '/design-drafts-' . now()->format('Ymd-His') . '.csv';
-
-        $file = fopen($path, 'w');
-        // A UTF-8 BOM so Excel shows the Persian text.
-        fwrite($file, "\xEF\xBB\xBF");
-        fputcsv($file, array_values(self::COLUMNS));
-        foreach ($rows as $row) {
-            fputcsv($file, array_map(fn ($key) => $row[$key] ?? '', array_keys(self::COLUMNS)));
-        }
-        fclose($file);
-
-        return $path;
     }
 }

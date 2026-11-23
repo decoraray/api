@@ -433,6 +433,11 @@ Route::prefix('v1')
                         Route::delete('layouts/{layout}', 'CuttingLayoutController@destroy');
                     });
 
+                    // draft bulk actions: approve needs designs.approve, the others bom.manage (checked per action)
+                    Route::middleware('permission:bom.manage|designs.approve')->group(function () {
+                        Route::post('designs/bulk', 'DesignDraftController@bulk');
+                    });
+
                     // designs.approve: the «تأیید شده» badge on a design (no role has it yet; SuperAdmin passes every gate)
                     Route::middleware('permission:designs.approve')->group(function () {
                         Route::post('designs/{design}/approval', 'DesignController@approve');

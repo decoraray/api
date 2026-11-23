@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\CostAdder;
 use App\Models\Item;
 use App\Models\ProductDesign;
+use App\Models\StockItem;
+use App\Services\Production\Drafts\DraftBulkActions;
 use App\Services\Production\Drafts\DraftDesignService;
 use App\Services\Production\Drafts\DraftEditedException;
 use App\Services\Production\Drafts\DraftException;
@@ -14,6 +17,7 @@ use App\Services\Production\Drafts\TemplateRegistry;
 use App\Support\Production\Present;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 /** Draft designs («پیش‌نویس خودکار»): the review queue, the templates, regenerating one, and the draft settings. */
 class DesignDraftController extends Controller
@@ -35,6 +39,7 @@ class DesignDraftController extends Controller
             'edited' => ['nullable', 'boolean'],
             'search' => ['nullable', 'string', 'max:100'],
             'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+            'ids_only' => ['nullable', 'boolean'],
         ]);
 
         $query = ProductDesign::query()
@@ -55,6 +60,14 @@ class DesignDraftController extends Controller
             $query->whereIn('id', $ids);
         }
 
+        // Every matching id (up to the bulk limit), for selecting all of them at once.
+        if ($request->boolean('ids_only')) {
+            $total = (clone $query)->count();
+            $ids = $query->orderBy('id')->limit(DraftBulkActions::MAX)->pluck('id')->all();
+
+            return response()->json(['ids' => $ids, 'total' => $total]);
+        }
+
         $page = $query
             ->with(['product:id,title,dimensions', 'approver:id,name'])
             ->withCount(['parts', 'bomLines'])
@@ -70,6 +83,47 @@ class DesignDraftController extends Controller
             ->orderBy('name')->get(['id', 'name'])->map(fn ($c) => ['id' => $c->id, 'name' => $c->name])->all();
 
         return response()->json($page->toArray() + ['categories' => $categories]);
+    }
+
+    /** One action on many drafts. approve needs designs.approve; the others bom.manage. */
+    public function bulk(Request $request, DraftBulkActions $actions)
+    {
+        $data = $request->validate([
+            'action' => ['required', 'string', Rule::in(DraftBulkActions::ACTIONS)],
+            'ids' => ['required', 'array', 'min:1', 'max:' . DraftBulkActions::MAX],
+            'ids.*' => ['integer', 'distinct'],
+            'from_stock_item_id' => ['required_if:action,swap', 'nullable', 'integer', Rule::exists('stock_items', 'id')],
+            'to_stock_item_id' => ['required_if:action,swap', 'nullable', 'integer', 'different:from_stock_item_id', Rule::exists('stock_items', 'id')->where('active', true)],
+            'cost_adder_id' => ['required_if:action,add_adder', 'nullable', 'integer', Rule::exists('cost_adders', 'id')],
+            'quantity' => ['required_if:action,add_adder', 'nullable', 'numeric', 'gt:0', 'max:999999', 'regex:/^\d+(\.\d{1,3})?$/'],
+        ], [
+            'ids.max' => 'در هر بار حداکثر ' . DraftBulkActions::MAX . ' طرح را می‌توان انتخاب کرد.',
+            'to_stock_item_id.different' => 'قلم جایگزین باید با قلم فعلی فرق داشته باشد.',
+            'to_stock_item_id.exists' => 'قلم جایگزین باید فعال باشد.',
+            'quantity.gt' => 'مقدار باید بیشتر از صفر باشد.',
+            'quantity.regex' => 'مقدار حداکثر سه رقم اعشار دارد.',
+        ]);
+
+        $permission = $data['action'] === 'approve' ? 'designs.approve' : 'bom.manage';
+        abort_unless($request->user()->can($permission), 403);
+
+        $args = [];
+        if ($data['action'] === 'swap') {
+            $args['from'] = StockItem::findOrFail($data['from_stock_item_id']);
+            $args['to'] = StockItem::findOrFail($data['to_stock_item_id']);
+            if ($args['from']->kind !== $args['to']->kind) {
+                throw ValidationException::withMessages(['to_stock_item_id' => ['قلم جایگزین باید از همان نوع باشد.']]);
+            }
+        }
+        if ($data['action'] === 'add_adder') {
+            $args['adder'] = CostAdder::findOrFail($data['cost_adder_id']);
+            if (!$args['adder']->active) {
+                throw ValidationException::withMessages(['cost_adder_id' => ['این افزودنی غیرفعال است.']]);
+            }
+            $args['quantity'] = (float) $data['quantity'];
+        }
+
+        return response()->json(['data' => $actions->run($data['action'], $data['ids'], $args, $request->user())]);
     }
 
     public function templates()
