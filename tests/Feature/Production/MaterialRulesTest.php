@@ -236,6 +236,20 @@ class MaterialRulesTest extends DraftTestCase
         $this->assertArrayNotHasKey($this->items['leg']->id, $bom);
     }
 
+    public function test_vacuum_is_a_cost_not_a_body_sheet()
+    {
+        $design = $this->draft('low_unit', 'میز تلویزیون DAMTV3', self::LOW);
+        $design->product->update(['description' => 'در بخش های مختلف آن نیز از روکش وکیوم استفاده شده. دستگیره فلزی استیل. جنس این کار چوب طبیعی روس می باشد.']);
+        app(DraftDesignService::class)->rebuild($design->refresh());
+
+        $bom = $this->bomOf($design->refresh());
+        $this->assertArrayHasKey($this->items['body_sheet']->id, $bom);
+        $this->assertArrayHasKey('روکش وکیوم', $this->serviceAddersOf($design));
+        // «دستگیره فلزی» is not metal legs, and bare «چوب طبیعی» is not veneer.
+        $this->assertArrayNotHasKey('روکش چوب طبیعی', $this->serviceAddersOf($design));
+        $this->assertArrayNotHasKey($this->codes['MDF16-RAW2']->id, $bom);
+    }
+
     public function test_no_handles_and_a_magnet_per_door()
     {
         $design = $this->draft('cabinet', 'کمد بدون دستگیره', ['width' => 80, 'height' => 180, 'depth' => 40, 'shelves' => 3, 'doors' => 2, 'drawers' => 0, 'back' => 1]);
@@ -460,6 +474,22 @@ class MaterialRulesTest extends DraftTestCase
         }
     }
 
+    public function test_rederive_reads_the_product_description()
+    {
+        $rules = MaterialRules::defaults();
+        app(DraftSettings::class)->save(['rules' => ['sheet_rules' => []] + $rules]);
+        $design = $this->draft('low_unit', 'میز تلویزیون DAMTV9', self::LOW);
+        $design->product->update(['description' => '<p>جنس نئوپان با روکش ملامینه</p>']);
+        app(DraftSettings::class)->save(['rules' => $rules]);
+
+        app(\App\Services\Production\Drafts\DraftRebuilder::class)->run();
+
+        $this->assertArrayHasKey($this->codes['NEOPAN16']->id, $this->bomOf($design->refresh()));
+        foreach (glob(storage_path('app/reports/design-drafts-rebuild-*.csv')) ?: [] as $f) {
+            unlink($f);
+        }
+    }
+
     public function test_rederive_filters_by_template_and_limit()
     {
         $this->draft('low_unit', 'میز A', self::LOW);
@@ -485,7 +515,7 @@ class MaterialRulesTest extends DraftTestCase
 
         $matches = $response->json('data.0.draft.rules.matches');
         $this->assertContains(['kind' => 'sheet', 'word' => 'هایگلاس', 'target' => 'هایگلاس ۱۶ میل'], $matches);
-        $this->assertContains(['kind' => 'hardware', 'word' => 'فلزی', 'target' => 'پایه فلزی'], $matches);
+        $this->assertContains(['kind' => 'hardware', 'word' => 'پایه فلز', 'target' => 'پایه فلزی'], $matches);
         $this->assertContains('یراق گونیا و پیچ', array_column($response->json('data.0.draft.rules.adders'), 'name'));
         $this->assertArrayNotHasKey('rules', $response->json('data.0.draft.params'));
         $this->assertStringNotContainsString('cost', $response->getContent());
