@@ -4,6 +4,7 @@ namespace App\Services\Production\Drafts;
 
 use App\Enums\StockItemKind;
 use App\Models\Category;
+use App\Models\CostAdder;
 use App\Models\PanelMaterial;
 use App\Models\Product;
 use App\Models\StockItem;
@@ -37,6 +38,8 @@ class DraftSettings
             'mapping' => $stored['mapping'] ?? [],
             'hardware' => array_merge(array_fill_keys(DesignTemplate::HARDWARE, null), $stored['hardware'] ?? []),
             'categories' => array_map('strval', $stored['categories'] ?? []),
+            // Material rules; the shipped defaults until they are first saved.
+            'rules' => isset($stored['rules']) ? MaterialRules::normalizeRules($stored['rules']) : MaterialRules::defaults(),
         ];
     }
 
@@ -49,7 +52,36 @@ class DraftSettings
             'hardware.*' => ['nullable', 'integer', Rule::exists('stock_items', 'id')->where('kind', StockItemKind::HARDWARE->value)],
             'categories' => ['sometimes', 'array'],
             'categories.*' => ['required', 'string', Rule::in([...$this->templates->keys(), self::SKIP])],
+        ] + $this->ruleRules();
+    }
+
+    /** Validation of the material rules: referenced items active and of the right kind, adders active. */
+    private function ruleRules(): array
+    {
+        $words = fn (string $list) => [
+            "rules.$list" => ['present_with:rules', 'array', 'max:100'],
+            "rules.$list.*.words" => ['present', 'array', 'max:30'],
+            "rules.$list.*.words.*" => ['required', 'string', 'max:50'],
+            "rules.$list.*.templates" => ['sometimes', 'array'],
+            "rules.$list.*.templates.*" => ['string', Rule::in($this->templates->keys())],
         ];
+        $item = fn (string $kind) => Rule::exists('stock_items', 'id')->where('kind', $kind)->where('active', true);
+        $adder = Rule::exists('cost_adders', 'id')->where('active', true);
+
+        return [
+            'rules' => ['sometimes', 'array:rail_clearance_cm,sheet_rules,hardware_rules,adder_rules,colour_tiers'],
+            'rules.rail_clearance_cm' => ['required_with:rules', 'integer', 'between:0,30'],
+            'rules.sheet_rules.*.sheet_stock_item_id' => ['required', 'integer', $item(StockItemKind::MDF_SHEET->value)],
+            'rules.hardware_rules.*.role' => ['required', 'string', Rule::in(MaterialRules::ROLES)],
+            'rules.hardware_rules.*.stock_item_id' => ['present', 'nullable', 'integer', $item(StockItemKind::HARDWARE->value)],
+            'rules.adder_rules.*.colour' => ['sometimes', 'boolean'],
+            'rules.adder_rules.*.cost_adder_id' => ['exclude_if:rules.adder_rules.*.colour,true', 'required', 'integer', $adder],
+            'rules.adder_rules.*.basis' => ['exclude_if:rules.adder_rules.*.colour,true', 'required', 'string', Rule::in(MaterialRules::BASES)],
+            'rules.adder_rules.*.factor' => ['sometimes', 'numeric', 'gt:0', 'max:1000'],
+            'rules.colour_tiers' => ['present_with:rules', 'array', 'max:10'],
+            'rules.colour_tiers.*.max_cm' => ['present', 'nullable', 'integer', 'min:1', 'max:1000'],
+            'rules.colour_tiers.*.cost_adder_id' => ['required', 'integer', $adder],
+        ] + $words('sheet_rules') + $words('hardware_rules') + $words('adder_rules');
     }
 
     public function messages(): array
@@ -60,6 +92,11 @@ class DraftSettings
             'back_panel_material_id.different' => 'ورق پشت‌بند باید با ورق بدنه فرق داشته باشد.',
             'hardware.*.exists' => 'یراق‌آلات باید از اقلام انبار با نوع «یراق» باشند.',
             'categories.*.in' => 'الگوی انتخاب‌شده برای دسته نامعتبر است.',
+            'rules.sheet_rules.*.sheet_stock_item_id.exists' => 'ورق قاعده باید قلم فعال انبار از نوع «ورق» باشد.',
+            'rules.hardware_rules.*.stock_item_id.exists' => 'یراق قاعده باید قلم فعال انبار از نوع «یراق» باشد.',
+            'rules.adder_rules.*.cost_adder_id.exists' => 'افزودنی قاعده باید فعال باشد.',
+            'rules.colour_tiers.*.cost_adder_id.exists' => 'افزودنی ردهٔ رنگ باید فعال باشد.',
+            'rules.*.*.words.*.max' => 'هر واژه حداکثر ۵۰ نویسه است.',
         ];
     }
 
@@ -81,6 +118,13 @@ class DraftSettings
         }
         if (array_key_exists('hardware', $data)) {
             $current['hardware'] = array_merge($current['hardware'], array_map(fn ($v) => $v === null ? null : (int) $v, $data['hardware']));
+        }
+        // Rules are stored only once saved; until then the defaults follow the catalog.
+        $stored = json_decode((string) $this->settings->get(self::KEY, '{}'), true) ?: [];
+        if (array_key_exists('rules', $data)) {
+            $current['rules'] = MaterialRules::normalizeRules($data['rules']);
+        } elseif (!isset($stored['rules'])) {
+            unset($current['rules']);
         }
         foreach (['body_panel_material_id', 'back_panel_material_id'] as $key) {
             if (array_key_exists($key, $data)) {
@@ -180,7 +224,22 @@ class DraftSettings
             // Every category (children too: products sit in them) with its product count, for the template map.
             'category_options' => Category::query()->withCount('products')->orderBy('name')->get(['id', 'name', 'slug', 'parent_id'])
                 ->map(fn ($c) => ['id' => $c->id, 'name' => $c->name, 'slug' => $c->slug, 'parent_id' => $c->parent_id, 'products_count' => $c->products_count])->all(),
+            'rules' => $s['rules'],
+            'rule_refs' => $this->ruleRefs($s['rules']),
             'missing' => $this->missing(),
+        ];
+    }
+
+    /** Names of the stock items and adders the rules refer to, for showing them. No cost. */
+    private function ruleRefs(array $rules): array
+    {
+        $itemIds = array_filter([...array_column($rules['sheet_rules'], 'sheet_stock_item_id'), ...array_column($rules['hardware_rules'], 'stock_item_id')]);
+        $adderIds = array_filter([...array_column($rules['adder_rules'], 'cost_adder_id'), ...array_column($rules['colour_tiers'], 'cost_adder_id')]);
+
+        return [
+            'stock_items' => (object) StockItem::whereIn('id', $itemIds)->get()->mapWithKeys(fn ($i) => [$i->id => Present::stockItem($i)])->all(),
+            'cost_adders' => (object) CostAdder::whereIn('id', $adderIds)->get()
+                ->mapWithKeys(fn ($a) => [$a->id => ['id' => $a->id, 'name' => $a->name, 'group' => $a->group->value, 'basis' => $a->basis->value, 'active' => $a->active]])->all(),
         ];
     }
 }

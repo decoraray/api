@@ -3,6 +3,7 @@
 namespace App\Support\Production;
 
 use App\Models\BomLine;
+use App\Models\CostAdder;
 use App\Models\ProductDesign;
 use App\Models\StockItem;
 use App\Services\Production\Drafts\DraftDesignService;
@@ -69,11 +70,31 @@ class Present
         return [
             'template' => $design->draft_template,
             'template_name' => app(TemplateRegistry::class)->get($design->draft_template)?->name(),
-            'params' => array_diff_key($params, array_flip(['guessed', 'source_dimensions'])),
+            'params' => array_diff_key($params, array_flip(['guessed', 'source_dimensions', 'rules'])),
             'guessed' => (bool) ($params['guessed'] ?? false),
             'source_dimensions' => $params['source_dimensions'] ?? null,
             'edited' => app(DraftDesignService::class)->editedByHand($design),
             'pending' => $design->isDraft(),
+            'rules' => self::draftRules($params['rules'] ?? null),
+        ];
+    }
+
+    /**
+     * What the material rules chose for a draft: the words that matched, warnings, and every adder with its quantity
+     * (rails and stock-linked ones too). Names only, no cost. Null for drafts made before the rules.
+     */
+    public static function draftRules(?array $rules): ?array
+    {
+        if ($rules === null) {
+            return null;
+        }
+        $ids = array_map(fn ($i) => (int) $i[0], $rules['items'] ?? []);
+        $names = $ids ? CostAdder::whereIn('id', $ids)->pluck('name', 'id')->all() : [];
+
+        return [
+            'matches' => array_values($rules['matches'] ?? []),
+            'warnings' => array_values($rules['warnings'] ?? []),
+            'adders' => array_map(fn ($i) => ['id' => (int) $i[0], 'name' => $names[(int) $i[0]] ?? '؟', 'quantity' => (float) $i[1]], $rules['items'] ?? []),
         ];
     }
 }
