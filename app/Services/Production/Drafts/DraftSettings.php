@@ -69,7 +69,9 @@ class DraftSettings
         $adder = Rule::exists('cost_adders', 'id')->where('active', true);
 
         return [
-            'rules' => ['sometimes', 'array:rail_clearance_cm,sheet_rules,hardware_rules,adder_rules,colour_tiers'],
+            'rules' => ['sometimes', 'prohibited_if:reset_rules,true', 'array:rail_clearance_cm,sheet_rules,hardware_rules,adder_rules,colour_tiers'],
+            // Back to the shipped defaults, which then follow the catalog again.
+            'reset_rules' => ['sometimes', 'boolean'],
             'rules.rail_clearance_cm' => ['required_with:rules', 'integer', 'between:0,30'],
             'rules.sheet_rules.*.sheet_stock_item_id' => ['required', 'integer', $item(StockItemKind::MDF_SHEET->value)],
             'rules.hardware_rules.*.role' => ['required', 'string', Rule::in(MaterialRules::ROLES)],
@@ -121,7 +123,9 @@ class DraftSettings
         }
         // Rules are stored only once saved; until then the defaults follow the catalog.
         $stored = json_decode((string) $this->settings->get(self::KEY, '{}'), true) ?: [];
-        if (array_key_exists('rules', $data)) {
+        if (!empty($data['reset_rules'])) {
+            unset($current['rules']);
+        } elseif (array_key_exists('rules', $data)) {
             $current['rules'] = MaterialRules::normalizeRules($data['rules']);
         } elseif (!isset($stored['rules'])) {
             unset($current['rules']);

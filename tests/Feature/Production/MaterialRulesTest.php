@@ -133,6 +133,17 @@ class MaterialRulesTest extends DraftTestCase
         $this->assertCount(1, $settings['rules']['sheet_rules']);
     }
 
+    public function test_reset_rules_to_the_defaults()
+    {
+        app(DraftSettings::class)->save(['rules' => $this->validRules()]);
+
+        $this->putJson('/api/v1/admin/design-drafts/settings', ['reset_rules' => true], $this->header('Technic'))
+            ->assertOk()
+            ->assertJsonPath('data.rules.rail_clearance_cm', 5);
+
+        $this->assertEquals(MaterialRules::defaults(), app(DraftSettings::class)->get()['rules']);
+    }
+
     public function test_settings_without_rules_still_save()
     {
         $this->putJson('/api/v1/admin/design-drafts/settings', ['hardware' => ['leg' => null]], $this->header('Technic'))->assertOk();
