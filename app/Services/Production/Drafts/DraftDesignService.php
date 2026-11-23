@@ -169,7 +169,9 @@ class DraftDesignService
     private function fill(ProductDesign $design, DesignTemplate $template, array $params, array $parts, DraftMaterials $materials, array $meta): void
     {
         $settings = $this->settings->get();
-        $resolved = $this->rules->resolve($design->product, $template, $params, $parts, $materials, $settings['rules'], $settings['hardware']);
+        // Read the words fresh: callers may have loaded the product with only some columns.
+        $product = Product::select(['id', 'title', 'description'])->findOrFail($design->product_id);
+        $resolved = $this->rules->resolve($product, $template, $params, $parts, $materials, $settings['rules'], $settings['hardware']);
 
         $used = collect($parts)->pluck('panel_material_id')->unique()->all();
         $panelMap = collect($settings['mapping'])->whereIn('panel_material_id', $used)

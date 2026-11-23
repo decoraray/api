@@ -39,18 +39,21 @@ class MaterialRules
         $sheets = [
             [['هایگلاس', 'های گلاس', 'براق'], 'HIGLOSS16'],
             [['نئوپان'], 'NEOPAN16'],
-            [['روکش چوب', 'چوب طبیعی', 'ونیر'], 'MDF16-RAW2'],
-            [['وکیوم', 'ممبران'], 'MDF16-RAW1'],
+            // Veneer only; bare «چوب طبیعی» is solid wood, which has no stock item yet.
+            [['روکش چوب', 'ونیر'], 'MDF16-RAW2'],
+            [['ممبران'], 'MDF16-RAW1'],
             [$colourWords, 'MDF16-RAW2'],
         ];
         $hardware = [
-            ['leg', ['فلزی', 'پایه فلز'], 'LEG-METAL'],
+            // Not bare «فلزی»: descriptions say «دستگیره فلزی» too.
+            ['leg', ['پایه فلز'], 'LEG-METAL'],
             ['hinge', ['شیشه', 'ویترین'], 'HINGE-GLASS'],
             ['handle', ['دو سوراخ', 'دستگیره بلند'], 'HANDLE-2H'],
             ['handle', $noHandle, null],
         ];
         $adders = [
-            ['روکش چوب طبیعی', ['روکش چوب', 'چوب طبیعی', 'ونیر'], [], 'panel_area_m2', 1],
+            ['روکش چوب طبیعی', ['روکش چوب', 'ونیر'], [], 'panel_area_m2', 1],
+            // Vacuum cover is a cost on the fronts; the body sheet stays as it is.
             ['روکش وکیوم', ['وکیوم', 'ممبران'], [], 'front_area_m2', 1],
             [null, $colourWords, [], null, 1],
             ['مگنت درب', $noHandle, [], 'per_door', 1],
