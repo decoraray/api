@@ -2,12 +2,12 @@
 
 namespace App\Services\Production\Drafts;
 
-use App\Models\PanelMaterial;
+use App\Models\StockItem;
 
-/** The panel materials a draft's parts are cut from: the body, and the thin back (the body when none is set). */
+/** The MDF sheet items a draft's parts are cut from: the body, and the thin back (the body when none is set). */
 final class DraftMaterials
 {
-    public function __construct(public readonly PanelMaterial $body, public readonly ?PanelMaterial $back = null)
+    public function __construct(public readonly StockItem $body, public readonly ?StockItem $back = null)
     {
     }
 
@@ -16,7 +16,7 @@ final class DraftMaterials
         return (int) round($this->body->thickness_mm);
     }
 
-    public function back(): PanelMaterial
+    public function back(): StockItem
     {
         return $this->back ?? $this->body;
     }

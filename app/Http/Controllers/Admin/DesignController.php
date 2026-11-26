@@ -7,7 +7,9 @@ use App\Models\Product;
 use App\Models\ProductDesign;
 use App\Services\Production\CuttingListService;
 use App\Services\Production\DesignService;
-use App\Services\Production\PanelMapping;
+use App\Models\ProductPart;
+use App\Services\Production\CalculatedLines;
+use App\Services\Production\DesignEstimate;
 use App\Support\Production\Present;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -26,7 +28,11 @@ class DesignController extends Controller
             ->when(!$request->boolean('include_inactive'), fn ($q) => $q->where('active', true))
             ->get();
 
-        return response()->json(['data' => $designs->map(fn ($d) => Present::design($d))->values()]);
+        // The estimated cost per unit is shown only to users who may see costs; the key is absent otherwise.
+        $estimate = $request->user()?->can('costs.view') ? app(DesignEstimate::class) : null;
+
+        return response()->json(['data' => $designs->map(fn ($d) => Present::design($d)
+            + ($estimate ? ['estimated_cost' => $estimate->forDesign($d)] : []))->values()]);
     }
 
     /** One-off products and their active designs, for picking a design on a custom line. */
@@ -115,23 +121,93 @@ class DesignController extends Controller
         return response()->json(['data' => $this->bomLines($design)]);
     }
 
-    /** Proposed BOM lines for one unit. A mapping sent replaces the saved one; without one the saved mapping is used. */
-    public function proposeBomLines(Request $request, ProductDesign $design)
+    /**
+     * Parts, hand-entered BOM lines and service adders saved together (the design page's one save).
+     * Everything is validated first; nothing is saved when any of it is invalid.
+     */
+    public function updateContents(Request $request, ProductDesign $design)
     {
-        $data = $request->validate(PanelMapping::rules(), PanelMapping::messages());
-
-        if (isset($data['mapping'])) {
-            $this->designs->saveMapping($design, $data['mapping']);
-            $design->refresh();
+        $data = $request->validate(self::contentRules(), CuttingListService::partMessages() + self::bomMessages());
+        if ($data['parts']) {
+            DesignService::assertNoCalculatedItems($data['lines']);
         }
 
-        $parts = $design->parts()->with('panelMaterial')->get();
-        $lines = $this->cutting->proposeBomLines($parts, PanelMapping::resolve($design->panel_map, $parts));
+        $this->designs->saveContents($design, $data);
+        $this->log($request, $design, 'design-contents-updated', ['parts' => count($data['parts']), 'lines' => count($data['lines'])]);
 
-        return response()->json([
-            'data' => PanelMapping::presentLines($lines),
-            'panel_map' => PanelMapping::present($design->panel_map),
-        ]);
+        return response()->json(['data' => $this->detail($design->refresh())]);
+    }
+
+    /**
+     * What unsaved parts, hand lines and adders come to, without saving anything: the per-sheet summary, fit warnings
+     * and resulting material lines, and for users with `costs.view` their cost at today's prices.
+     */
+    public function calculate(Request $request, ProductDesign $design)
+    {
+        $data = $request->validate(self::contentRules(), CuttingListService::partMessages() + self::bomMessages());
+        if ($data['parts']) {
+            DesignService::assertNoCalculatedItems($data['lines']);
+        }
+
+        $parts = collect($data['parts'])->values()->map(fn ($part, $position) => new ProductPart(CuttingListService::partAttributes($part, $position)));
+        $this->cutting->loadSheets($parts);
+        $calculated = $this->cutting->calculatedLines($parts);
+
+        // Hand lines, plus what stock-linked adders put on the saved calculated lines, plus the calculated lines.
+        $quantities = [];
+        foreach ($data['lines'] as $line) {
+            $quantities[(int) $line['stock_item_id']] = round((float) $line['quantity'], 3);
+        }
+        if ($parts->isNotEmpty()) {
+            foreach ($design->bomLines()->with('stockItem')->get() as $saved) {
+                if (CalculatedLines::isCalculatedKind($saved->stockItem?->kind) && ($rest = round($saved->quantity - (float) $saved->calculated_quantity, 3)) > 0) {
+                    $quantities[$saved->stock_item_id] = round(($quantities[$saved->stock_item_id] ?? 0) + $rest, 3);
+                }
+            }
+        }
+        foreach ($calculated as $id => $line) {
+            $quantities[$id] = round(($quantities[$id] ?? 0) + $line['quantity'], 3);
+        }
+
+        $items = \App\Models\StockItem::whereIn('id', array_keys($quantities))->get()->keyBy('id');
+        $lines = collect($quantities)->filter(fn ($q, $id) => $q > 0 && $items->has($id))->map(fn ($q, $id) => [
+            'stock_item' => Present::stockItem($items[$id]),
+            'quantity' => $q,
+            'calculated' => isset($calculated[$id]),
+        ])->values();
+
+        $body = [
+            'summary' => $this->cutting->summary($parts),
+            'warnings' => $this->cutting->fitWarnings($this->dimensionsOf($design), $parts),
+            'lines' => $lines,
+        ];
+
+        if ($request->user()?->can('costs.view')) {
+            $adders = collect($data['adders'] ?? $design->adders()->get(['cost_adder_id', 'quantity'])->toArray())
+                ->map(fn ($a) => ['cost_adder_id' => (int) $a['cost_adder_id'], 'quantity' => (float) $a['quantity']])->all();
+            $costs = app(DesignEstimate::class)->costs(
+                $lines->map(fn ($l) => ['stock_item_id' => $l['stock_item']['id'], 'quantity' => $l['quantity']])->all(),
+                $adders,
+            );
+            $body['lines'] = $lines->map(fn ($l) => $l + ['cost' => $costs['lines'][$l['stock_item']['id']] ?? 0])->values();
+            $body['costs'] = [
+                'material_cost' => $costs['material_cost'],
+                'adders' => collect($costs['adders'])->map(fn ($cost, $id) => ['cost_adder_id' => $id, 'cost' => $cost])->values(),
+                'adders_cost' => $costs['adders_cost'],
+                'total' => $costs['total'],
+            ];
+        }
+
+        return response()->json($body);
+    }
+
+    private static function contentRules(): array
+    {
+        return CuttingListService::partRules() + self::bomRules() + [
+            'adders' => ['sometimes', 'nullable', 'array'],
+            'adders.*.cost_adder_id' => ['required', 'integer', 'distinct', Rule::exists('cost_adders', 'id')],
+            'adders.*.quantity' => ['required', 'numeric', 'gt:0', 'max:999999999', 'regex:/^\d+(\.\d{1,3})?$/'],
+        ];
     }
 
     /** Gives the «تأیید شده» badge (designs.approve). It informs only; nothing is blocked without it. */
@@ -154,7 +230,7 @@ class DesignController extends Controller
     {
         $quantity = (int) ($request->validate(['quantity' => ['nullable', 'integer', 'min:1', 'max:1000']])['quantity'] ?? 1);
         $design->loadMissing('product.images');
-        $parts = $design->parts()->with('panelMaterial')->get();
+        $parts = $design->parts()->get();
         $product = $design->product;
 
         return response()->json([
@@ -220,7 +296,7 @@ class DesignController extends Controller
         $design->loadCount(['parts', 'bomLines']);
 
         return Present::design($design) + [
-            'panel_map' => PanelMapping::present($design->panel_map),
+            'product' => ['id' => $design->product?->id, 'title' => $design->product?->title, 'dimensions' => $design->product?->dimensions],
             'source_work_order_id' => $design->source_work_order_id,
         ] + $this->cuttingBody($design) + ['bom' => $this->bomLines($design)];
     }
@@ -228,7 +304,8 @@ class DesignController extends Controller
     /** The design's cutting list in the editor's shape. */
     private function cuttingBody(ProductDesign $design): array
     {
-        $parts = $design->parts()->with('panelMaterial')->get();
+        $parts = $design->parts()->get();
+        $this->cutting->loadSheets($parts);
 
         return [
             'data' => $parts->map(fn ($part) => $this->cutting->presentPart($part))->values(),

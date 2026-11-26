@@ -111,7 +111,7 @@ class DraftBulkActionsTest extends DraftTestCase
         $other = StockItem::factory()->mdf()->create(['name' => 'ورق دیگر']);
         // One draft has no MDF رنگی at all.
         $designs[2]->bomLines()->where('stock_item_id', $this->items['body_sheet']->id)->update(['stock_item_id' => $other->id]);
-        $designs[2]->forceFill(['panel_map' => array_map(fn ($r) => ['sheet_stock_item_id' => $r['sheet_stock_item_id'] === $this->items['body_sheet']->id ? $other->id : $r['sheet_stock_item_id']] + $r, $designs[2]->panel_map)])->save();
+        $designs[2]->parts()->where('stock_item_id', $this->items['body_sheet']->id)->update(['stock_item_id' => $other->id]);
         $quantity = (float) $designs[0]->bomLines()->where('stock_item_id', $this->items['body_sheet']->id)->value('quantity');
 
         $response = $this->bulk(['action' => 'swap', 'ids' => $this->ids($designs), 'from_stock_item_id' => $this->items['body_sheet']->id, 'to_stock_item_id' => $gloss->id], 'Technic')->assertOk();
@@ -121,7 +121,8 @@ class DraftBulkActionsTest extends DraftTestCase
             $design->refresh();
             $this->assertEquals($quantity, $design->bomLines()->where('stock_item_id', $gloss->id)->value('quantity'));
             $this->assertFalse($design->bomLines()->where('stock_item_id', $this->items['body_sheet']->id)->exists());
-            $this->assertSame($gloss->id, collect($design->panel_map)->firstWhere('panel_material_id', $this->body16()->id)['sheet_stock_item_id']);
+            $this->assertFalse($design->parts()->where('stock_item_id', $this->items['body_sheet']->id)->exists());
+            $this->assertTrue($design->parts()->where('stock_item_id', $gloss->id)->exists());
             $this->assertTrue(app(DraftDesignService::class)->editedByHand($design));
         }
         $sheet = $this->getJson("/api/v1/admin/designs/{$designs[0]->id}/sheet", $this->header('Technic'))->assertOk();

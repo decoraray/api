@@ -50,6 +50,8 @@ class WorkOrderService
                     'quantity' => $item->quantity,
                     'dimensions' => $item->dimensions,
                     'color' => $item->color,
+                    // The line's colour as a label; it does not change the parts.
+                    'color_id' => $item->color_id,
                     'description' => $item->description,
                 ]);
 

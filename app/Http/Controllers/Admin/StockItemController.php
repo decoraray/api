@@ -72,7 +72,13 @@ class StockItemController extends Controller
 
     public function update(StockItemRequest $request, StockItem $stockItem)
     {
-        $stockItem->update($request->validated());
+        $stockItem->fill($request->validated());
+        $resized = $stockItem->isDirty(['length_mm', 'width_mm']);
+        $stockItem->save();
+        // Layouts laid out on the old sheet size no longer match; they lose their approval.
+        if ($resized) {
+            app(\App\Services\Production\CuttingLayoutService::class)->clearStaleApprovalsForSheetItem($stockItem);
+        }
 
         return new StockItemResource($stockItem);
     }

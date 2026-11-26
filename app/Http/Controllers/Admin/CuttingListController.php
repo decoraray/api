@@ -8,7 +8,6 @@ use App\Models\ProductDesign;
 use App\Models\WorkOrder;
 use App\Services\Production\CuttingListService;
 use App\Services\Production\DesignService;
-use App\Services\Production\PanelMapping;
 use App\Support\Production\Present;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -45,28 +44,13 @@ class CuttingListController extends Controller
         return response()->json($this->body($product, $variationId));
     }
 
-    /** @deprecated Proposed BOM lines for one unit. Saves the mapping on the design, nothing else. */
-    public function bomLines(Request $request, Product $product)
-    {
-        $variationId = $this->variationId($request, $product);
-        $data = $request->validate(['mapping' => ['present', 'array']] + PanelMapping::rules(), PanelMapping::messages());
-
-        [$design] = $this->find($product, $variationId);
-        $parts = $design ? $design->parts()->with('panelMaterial')->get() : collect();
-        $lines = $this->cutting->proposeBomLines($parts, PanelMapping::resolve(PanelMapping::normalize($data['mapping']), $parts));
-        if ($design) {
-            $this->designs->saveMapping($design, $data['mapping']);
-        }
-
-        return response()->json(['data' => PanelMapping::presentLines($lines)]);
-    }
-
-    /** The cutting sheet of a work order: its own parts × its quantity, grouped by panel material, and its materials. */
+    /** The cutting sheet of a work order: its own parts × its quantity, grouped by sheet item, and its materials. */
     public function workOrder(WorkOrder $workOrder)
     {
-        $workOrder->loadMissing('item');
+        $workOrder->loadMissing(['item', 'colour']);
         $item = $workOrder->item;
-        $parts = $workOrder->parts()->with('panelMaterial')->get();
+        $parts = $workOrder->parts()->get();
+        $this->cutting->loadSheets($parts);
         $quantity = (int) $workOrder->quantity;
 
         $dimensions = $this->cutting->readableDimensions($workOrder->dimensions)
@@ -80,6 +64,7 @@ class CuttingListController extends Controller
                 'quantity' => $quantity,
                 'title' => $item?->title ?? $workOrder->title,
                 'color' => $workOrder->color,
+                'colour' => \App\Support\Orders\LineColour::present($workOrder->colour),
                 'dimensions' => $workOrder->dimensions,
                 'state' => $workOrder->state->value,
             ],
@@ -91,9 +76,9 @@ class CuttingListController extends Controller
             'materials' => $workOrder->materials()->with('stockItem')->get()->map(fn ($m) => [
                 'stock_item' => Present::stockItem($m->stockItem),
                 'quantity' => $m->planned_quantity,
+                'calculated' => $m->calculated_quantity !== null,
                 'note' => $m->note,
             ])->values(),
-            'panel_map' => PanelMapping::present($workOrder->panel_map),
             'warnings' => $this->cutting->fitWarnings($dimensions, $parts),
         ] + $this->cutting->sheet($parts, $quantity));
     }
@@ -112,7 +97,8 @@ class CuttingListController extends Controller
     private function body(Product $product, ?int $variationId): array
     {
         [$design, $source] = $this->find($product, $variationId);
-        $parts = $design ? $design->parts()->with('panelMaterial')->get() : collect();
+        $parts = $design ? $design->parts()->get() : collect();
+        $this->cutting->loadSheets($parts);
         $dimensions = $design && $this->cutting->readableDimensions($design->dimensions) ? $design->dimensions : $product->dimensions;
 
         return [

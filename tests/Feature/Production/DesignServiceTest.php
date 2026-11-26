@@ -39,12 +39,10 @@ class DesignServiceTest extends CuttingTestCase
         $source = $this->design($product);
         $sheet = $this->stock(0);
         BomLine::create(['design_id' => $source->id, 'stock_item_id' => $sheet->id, 'quantity' => 0.5]);
-        $source->update(['panel_map' => [['panel_material_id' => 1, 'sheet_stock_item_id' => $sheet->id, 'edge_band_stock_item_id' => null]]]);
 
         $copy = $this->designs()->create($product, ['name' => '۱۸۰ سانتی', 'copy_from_design_id' => $source->id], null);
         $this->assertSame(7, $copy->parts()->count());
         $this->assertSame(1, $copy->bomLines()->count());
-        $this->assertSame($source->panel_map, $copy->panel_map);
 
         $copy->parts()->first()->update(['length_mm' => 1800]);
         $this->assertSame(2000, $source->parts()->first()->length_mm);

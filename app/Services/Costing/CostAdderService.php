@@ -59,6 +59,38 @@ class CostAdderService
         $row->delete();
     }
 
+    /**
+     * Sets the design's service adders to exactly these (saving a whole design). Stock-linked adders live in the
+     * BOM lines and are not listed here. Call inside the design's content transaction.
+     *
+     * @param array<int, array{cost_adder_id: int, quantity: float|string}> $adders
+     */
+    public function replaceDesignServiceAdders(ProductDesign $design, array $adders): void
+    {
+        $wanted = collect($adders)->keyBy(fn ($a) => (int) $a['cost_adder_id']);
+        $known = CostAdder::whereIn('id', $wanted->keys())->get()->keyBy('id');
+        $current = $design->adders()->get()->keyBy('cost_adder_id');
+
+        foreach ($wanted->keys() as $id) {
+            $adder = $known->get($id);
+            if (!$adder || $adder->isStock()) {
+                throw ValidationException::withMessages(['adders' => ['فقط افزودنی‌های خدماتی اینجا ذخیره می‌شوند.']]);
+            }
+            // An inactive adder may stay on the design, but not be added anew.
+            if (!$current->has($id)) {
+                $this->assertActive($adder);
+            }
+        }
+
+        $current->reject(fn ($row, $id) => $wanted->has($id))->each->delete();
+        foreach ($wanted as $id => $row) {
+            DesignAdder::updateOrCreate(
+                ['design_id' => $design->id, 'cost_adder_id' => $id],
+                ['quantity' => round((float) $row['quantity'], 3)],
+            );
+        }
+    }
+
 
     // --- work orders -------------------------------------------------------------------------------------------
 

@@ -8,7 +8,7 @@ use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
 /**
- * A named way of building a product («طرح ساخت»): its own cutting list, BOM and panel mapping.
+ * A named way of building a product («طرح ساخت»): its own cutting list, BOM and adders.
  * A product can have any number of designs; one is the product's default and a variation can have its own default.
  */
 class ProductDesign extends Model
@@ -18,14 +18,13 @@ class ProductDesign extends Model
 
     protected $fillable = [
         'product_id', 'variation_id', 'name', 'dimensions', 'note', 'is_default', 'active',
-        'panel_map', 'source_work_order_id', 'created_by', 'approved_at', 'approved_by',
+        'source_work_order_id', 'created_by', 'approved_at', 'approved_by',
         'draft_template', 'draft_params', 'draft_hash',
     ];
 
     protected $casts = [
         'is_default' => 'boolean',
         'active' => 'boolean',
-        'panel_map' => 'array',
         'approved_at' => 'datetime',
         'draft_params' => 'array',
     ];

@@ -102,7 +102,7 @@ class SheetNestingTest extends TestCase
         foreach ($result['sheets'] as $sheet) {
             $indexes = array_unique(array_column($sheet['placements'], 'part_index'));
             $this->assertCount(1, $indexes);
-            $this->assertSame($sheet['panel_material_id'] === 1 ? [0] : [1], array_values($indexes));
+            $this->assertSame($sheet['stock_item_id'] === 1 ? [0] : [1], array_values($indexes));
         }
         $this->assertSame(array_sum(array_column($result['materials'], 'sheets')), $result['totals']['sheets']);
         $this->assertSame(array_sum(array_column($result['materials'], 'cuts')), $result['totals']['cuts']);

@@ -55,7 +55,7 @@ class DraftDesignServiceTest extends DraftTestCase
         $this->assertSame(6.0, $bom[$this->items['hinge']->id]);
         $this->assertSame(2.0, $bom[$this->items['handle']->id]);
         $this->assertArrayNotHasKey($this->items['slide']->id, $bom);
-        $this->assertSame(2, count($design->panel_map));
+        $this->assertSame(2, $design->parts()->distinct()->count('stock_item_id'));
         $this->assertFalse($this->drafts()->editedByHand($design));
     }
 

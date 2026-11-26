@@ -5,8 +5,8 @@ namespace App\Services\Production;
 /**
  * Lays parts out on sheets with guillotine cuts only (every cut runs edge to edge, as on a panel saw).
  *
- * Coordinates are in mm from the sheet's corner; x runs along the sheet length, y along its width. Each panel
- * material is packed on its own sheets. A grain-locked part keeps its length along the sheet length; other parts
+ * Coordinates are in mm from the sheet's corner; x runs along the sheet length, y along its width. Each sheet
+ * item is packed on its own sheets. A grain-locked part keeps its length along the sheet length; other parts
  * may be turned 90°. A placed part takes its size plus the kerf towards the remaining free space; the kerf is
  * not charged where the part ends at the edge of the usable area. Pure and deterministic: no database access,
  * and the same input always gives the same result.
@@ -22,7 +22,7 @@ class SheetNesting
     /**
      * @param array<int|string, array{name: string, sheet_length_mm: int, sheet_width_mm: int,
      *     parts: array<int, array{index: int, name: string, length_mm: int, width_mm: int, count: int, grain_locked: bool}>}> $materials
-     *     keyed by panel material id; part counts already multiplied by the number of units
+     *     keyed by sheet stock item id; part counts already multiplied by the number of units
      *
      * @throws NestingException when there are too many pieces or a part fits no sheet
      */
@@ -43,9 +43,9 @@ class SheetNesting
         foreach ($materials as $materialId => $material) {
             $packed = $this->nestMaterial($material, $kerf, $trim);
             foreach ($packed['sheets'] as $sheet) {
-                $sheets[] = ['panel_material_id' => (int) $materialId] + $sheet;
+                $sheets[] = ['stock_item_id' => (int) $materialId] + $sheet;
             }
-            $summaries[] = ['panel_material_id' => (int) $materialId, 'name' => $material['name']] + $this->stats($packed['sheets'], $material);
+            $summaries[] = ['stock_item_id' => (int) $materialId, 'name' => $material['name'], 'code' => $material['code'] ?? null] + $this->stats($packed['sheets'], $material);
         }
 
         $sheetArea = array_sum(array_map(fn ($s) => $s['length_mm'] * $s['width_mm'], $sheets));

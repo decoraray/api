@@ -387,11 +387,13 @@ Route::prefix('v1')
                         Route::get('products/{product}/bom', 'BomController@show');
                         Route::get('products/{product}/cutting-list', 'CuttingListController@show');
                         Route::get('panel-materials', 'PanelMaterialController@index');
+                        Route::get('sheet-items', 'SheetItemController@index');
                         // draft designs to review, and the templates they come from (before designs/{design})
                         Route::get('designs/review', 'DesignDraftController@review');
                         Route::get('design-templates', 'DesignDraftController@templates');
                         Route::get('designs/{design}', 'DesignController@show');
                         Route::get('designs/{design}/cutting-list', 'DesignController@cuttingList');
+                        Route::post('designs/{design}/calculate', 'DesignController@calculate');
                         Route::get('designs/{design}/bom', 'DesignController@bom');
                         Route::get('designs/{design}/adders', 'DesignAdderController@index');
                         Route::get('designs/{design}/layouts', 'CuttingLayoutController@index');
@@ -411,10 +413,6 @@ Route::prefix('v1')
                     Route::middleware('permission:bom.manage')->group(function () {
                         Route::put('products/{product}/bom', 'BomController@update');
                         Route::put('products/{product}/cutting-list', 'CuttingListController@update');
-                        Route::post('products/{product}/cutting-list/bom-lines', 'CuttingListController@bomLines');
-                        Route::post('panel-materials', 'PanelMaterialController@store');
-                        Route::put('panel-materials/{panelMaterial}', 'PanelMaterialController@update');
-                        Route::delete('panel-materials/{panelMaterial}', 'PanelMaterialController@destroy');
                         Route::post('products/{product}/designs', 'DesignController@store');
                         Route::put('designs/{design}', 'DesignController@update');
                         Route::delete('designs/{design}', 'DesignController@destroy');
@@ -422,7 +420,7 @@ Route::prefix('v1')
                         Route::put('designs/{design}/bom', 'DesignController@updateBom');
                         Route::post('designs/{design}/adders', 'DesignAdderController@store');
                         Route::delete('design-adders/{designAdder}', 'DesignAdderController@destroy');
-                        Route::post('designs/{design}/bom-lines', 'DesignController@proposeBomLines');
+                        Route::put('designs/{design}/contents', 'DesignController@updateContents');
                         Route::post('designs/{design}/regenerate', 'DesignDraftController@regenerate');
                         Route::get('design-drafts/settings', 'DesignDraftController@settings');
                         Route::put('design-drafts/settings', 'DesignDraftController@updateSettings');
@@ -464,7 +462,7 @@ Route::prefix('v1')
                         Route::post('work-orders/{workOrder}/stage', 'WorkOrderController@move');
                         Route::post('work-orders/{workOrder}/complete', 'WorkOrderController@complete');
                         Route::put('work-orders/{workOrder}/parts', 'WorkOrderDesignController@updateParts');
-                        Route::post('work-orders/{workOrder}/parts/bom-lines', 'WorkOrderDesignController@proposeMaterials');
+                        Route::patch('work-orders/{workOrder}/colour', 'WorkOrderDesignController@updateColour');
                         Route::post('work-orders/{workOrder}/design', 'WorkOrderDesignController@switchDesign');
                         Route::post('work-orders/{workOrder}/layout', 'CuttingLayoutController@generateForWorkOrder');
                     });

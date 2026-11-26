@@ -97,6 +97,7 @@ class OrderCreationService
                     'description' => $line['description'],
                     'dimensions' => $line['dimensions'],
                     'color' => $line['color'],
+                    'color_id' => $line['color_id'],
                     'design_id' => $line['design_id'],
                 ]);
             }
@@ -177,6 +178,7 @@ class OrderCreationService
                 'description' => $row['description'] ?? null,
                 'dimensions' => $row['dimensions'] ?? null,
                 'color' => $row['color'] ?? null,
+                'color_id' => \App\Support\Orders\LineColour::resolve($row['color_id'] ?? null, $variation?->id),
                 'design_id' => $designId,
             ];
         }

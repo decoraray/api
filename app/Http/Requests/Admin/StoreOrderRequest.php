@@ -34,6 +34,7 @@ class StoreOrderRequest extends FormRequest
             'lines.*.description' => ['nullable', 'string', 'max:1000'],
             'lines.*.dimensions' => ['nullable', 'string', 'max:255'],
             'lines.*.color' => ['nullable', 'string', 'max:255'],
+            'lines.*.color_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('colors', 'id')],
             'lines.*.design_id' => ['nullable', 'integer'],
 
             'address' => ['required', 'string', 'max:1000'],

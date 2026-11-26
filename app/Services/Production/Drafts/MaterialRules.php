@@ -327,7 +327,7 @@ class MaterialRules
         $back = $materials->back !== null && $materials->back->id !== $materials->body->id ? $materials->back->id : null;
         $area = fn ($p) => $p['length_mm'] * $p['width_mm'] * $p['count'] / 1_000_000;
         $isFront = fn ($p) => in_array($p['name'], self::FRONT_PARTS, true);
-        $isBack = fn ($p) => $back !== null && (int) $p['panel_material_id'] === $back;
+        $isBack = fn ($p) => $back !== null && (int) $p['stock_item_id'] === $back;
 
         return match ($basis) {
             'fixed' => 1.0,

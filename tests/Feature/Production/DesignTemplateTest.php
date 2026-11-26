@@ -24,7 +24,7 @@ class DesignTemplateTest extends CuttingTestCase
 
     private function asModels(array $parts)
     {
-        return collect($parts)->map(fn ($p) => (new ProductPart(CuttingListService::partAttributes($p, 0)))->setRelation('panelMaterial', null));
+        return collect($parts)->map(fn ($p) => (new ProductPart(CuttingListService::partAttributes($p, 0))));
     }
 
     public function test_every_template_gives_valid_parts_that_fit_inside_its_size()
@@ -51,7 +51,7 @@ class DesignTemplateTest extends CuttingTestCase
     {
         $cabinet = $this->registry()->get('cabinet');
         $parts = collect($cabinet->parts(['width' => 80, 'height' => 180, 'depth' => 40, 'shelves' => 3, 'doors' => 2, 'drawers' => 0, 'back' => 1], $this->draftMaterials()))
-            ->keyBy('name')->map(fn ($p) => [$p['length_mm'], $p['width_mm'], $p['count'], $p['panel_material_id'], $p['edge_length'], $p['edge_width']])->all();
+            ->keyBy('name')->map(fn ($p) => [$p['length_mm'], $p['width_mm'], $p['count'], $p['stock_item_id'], $p['edge_length'], $p['edge_width']])->all();
 
         $body = $this->body16()->id;
         $this->assertSame([
@@ -83,7 +83,7 @@ class DesignTemplateTest extends CuttingTestCase
         $this->assertSame(4, $parts['بغل کشو']['count']);
         $this->assertSame(4, $parts['پشت و جلوی داخلی کشو']['count']);
         $this->assertSame(2, $parts['کف کشو']['count']);
-        $this->assertSame($this->back3()->id, $parts['کف کشو']['panel_material_id']);
+        $this->assertSame($this->back3()->id, $parts['کف کشو']['stock_item_id']);
         $this->assertArrayNotHasKey('درب', $parts->all());
     }
 

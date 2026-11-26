@@ -14,10 +14,11 @@ class SaveWorkOrderDesignTest extends CuttingTestCase
     {
         $variation = Variation::factory()->create();
         $this->damtv220($variation->product);
-        $sheet = $this->stock(10, ['kind' => 'mdf_sheet', 'unit' => 'sheet']);
         $hinge = $this->stock(20);
         $workOrder = $this->workOrderFor($variation, 2);
-        $this->materials()->replacePlan($workOrder, [['stock_item_id' => $sheet->id, 'quantity' => 1.2], ['stock_item_id' => $hinge->id, 'quantity' => 8]]);
+        // Customised: its parts saved again (sheets follow them, for 2 units) and 8 hinges typed in.
+        $this->putJson("/api/v1/admin/work-orders/{$workOrder->id}/parts", ['parts' => $this->damtv220Parts()], $this->header('Technic'))->assertStatus(200);
+        $this->putJson("/api/v1/admin/work-orders/{$workOrder->id}/materials", ['lines' => [['stock_item_id' => $hinge->id, 'quantity' => 8]]], $this->header('Technic'))->assertStatus(200);
         $this->assertTrue($workOrder->fresh()->customized);
 
         $r = $this->postJson("/api/v1/admin/work-orders/{$workOrder->id}/save-as-design", ['mode' => 'new', 'name' => '۲۰۰ سانتی'], $this->header('Technic'))
@@ -27,7 +28,9 @@ class SaveWorkOrderDesignTest extends CuttingTestCase
         $this->assertSame($variation->product_id, $design->product_id);
         $this->assertFalse($design->is_default);
         $this->assertSame($workOrder->id, $design->source_work_order_id);
-        $this->assertEquals([[$sheet->id, 0.6], [$hinge->id, 4.0]], $design->bomLines->map(fn ($l) => [$l->stock_item_id, $l->quantity])->all());
+        // Hinges per unit; the sheets calculated again from the parts for one unit.
+        $this->assertEqualsCanonicalizing([[$hinge->id, 4.0], [$this->body16()->id, 0.5], [$this->back3()->id, 0.07]],
+            $design->bomLines->map(fn ($l) => [$l->stock_item_id, $l->quantity])->all());
 
         $workOrder->refresh();
         $this->assertSame([$design->id, '۲۰۰ سانتی', false], [$workOrder->design_id, $workOrder->design_name, $workOrder->customized]);

@@ -54,6 +54,8 @@ class QuoteAdminResource extends JsonResource
                 'description' => $l->description,
                 'dimensions' => $l->dimensions,
                 'color' => $l->color,
+                'color_id' => $l->color_id,
+                'colour' => \App\Support\Orders\LineColour::present($l->colour),
                 'quantity' => $l->quantity,
                 'unit_price' => $l->unit_price,
                 'line_total' => $l->quantity * $l->unit_price,

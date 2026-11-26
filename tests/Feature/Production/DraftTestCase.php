@@ -20,9 +20,9 @@ abstract class DraftTestCase extends CuttingTestCase
     /** Sheets, edge band and hardware in stock, the draft settings filled, and three mapped categories. */
     protected function configureDrafts(array $hardware = ['hinge', 'slide', 'handle', 'leg']): void
     {
-        $this->items['body_sheet'] = StockItem::factory()->mdf()->create();
-        $this->items['back_sheet'] = StockItem::factory()->mdf()->create(['name' => 'فیبر ۳', 'thickness_mm' => 3]);
         $this->items['edge'] = StockItem::factory()->create(['name' => 'نوار لبه سفید', 'kind' => 'edge_band', 'unit' => 'meter']);
+        $this->items['body_sheet'] = StockItem::factory()->mdf()->create(['default_edge_band_id' => $this->items['edge']->id]);
+        $this->items['back_sheet'] = StockItem::factory()->mdf()->create(['name' => 'فیبر ۳', 'thickness_mm' => 3, 'waste_percent' => 10]);
         foreach (['hinge' => 'لولا', 'slide' => 'ریل کشو', 'handle' => 'دستگیره', 'leg' => 'پایه'] as $role => $name) {
             $this->items[$role] = StockItem::factory()->create(['name' => $name]);
         }
@@ -32,12 +32,8 @@ abstract class DraftTestCase extends CuttingTestCase
         $this->chairs = Category::factory()->create(['name' => 'صندلی']);
 
         app(DraftSettings::class)->save([
-            'body_panel_material_id' => $this->body16()->id,
-            'back_panel_material_id' => $this->back3()->id,
-            'mapping' => [
-                ['panel_material_id' => $this->body16()->id, 'sheet_stock_item_id' => $this->items['body_sheet']->id, 'edge_band_stock_item_id' => $this->items['edge']->id],
-                ['panel_material_id' => $this->back3()->id, 'sheet_stock_item_id' => $this->items['back_sheet']->id, 'edge_band_stock_item_id' => null],
-            ],
+            'body_sheet_item_id' => $this->items['body_sheet']->id,
+            'back_sheet_item_id' => $this->items['back_sheet']->id,
             'hardware' => collect($hardware)->mapWithKeys(fn ($role) => [$role => $this->items[$role]->id])->all(),
             'categories' => [$this->cabinets->id => 'cabinet', $this->tvUnits->id => 'low_unit', $this->chairs->id => 'skip'],
         ]);

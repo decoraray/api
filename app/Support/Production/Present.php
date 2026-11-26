@@ -29,6 +29,8 @@ class Present
             'id' => $line->id,
             'stock_item' => self::stockItem($line->stockItem),
             'quantity' => round($line->quantity * $multiplier, 3),
+            // Sheets and edge band that follow from the parts: shown read-only, recalculated when parts are saved.
+            'calculated' => $line->calculated_quantity !== null,
             'note' => $line->note,
         ];
     }

@@ -111,8 +111,8 @@ class DraftRebuilder
     public function row(ProductDesign $design, string $outcome, ?string $reason): array
     {
         $rules = $design->draft_params['rules'] ?? [];
-        $bodyId = $this->settings->get()['body_panel_material_id'];
-        $bodySheet = collect($design->panel_map ?? [])->firstWhere('panel_material_id', $bodyId)['sheet_stock_item_id'] ?? null;
+        // The body sheet the rules chose, else the configured one.
+        $bodySheet = $rules['body_sheet_id'] ?? $this->settings->get()['body_sheet_item_id'];
 
         $items = collect($rules['items'] ?? []);
         $adders = CostAdder::whereIn('id', $items->pluck(0))->get()->keyBy('id');

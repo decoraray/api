@@ -30,6 +30,9 @@ class StockItemRequest extends FormRequest
             'length_mm' => ['nullable', 'integer', 'min:1', 'max:10000'],
             'width_mm' => ['nullable', 'integer', 'min:1', 'max:10000'],
             'sheet_type' => ['nullable', 'string', 'max:100'],
+            // MDF sheets: cutting allowance and the band their banded edges use.
+            'waste_percent' => ['sometimes', 'integer', 'min:0', 'max:100'],
+            'default_edge_band_id' => ['nullable', 'integer', Rule::exists('stock_items', 'id')->where('kind', StockItemKind::EDGE_BAND->value)],
             'reorder_point' => $quantity,
             'active' => ['sometimes', 'boolean'],
             'note' => ['nullable', 'string', 'max:500'],
@@ -41,6 +44,8 @@ class StockItemRequest extends FormRequest
         return [
             'code.unique' => 'این کد قبلاً ثبت شده است.',
             'thickness_mm.required' => 'ضخامت ورق MDF لازم است.',
+            'waste_percent.*' => 'درصد پرت باید بین ۰ تا ۱۰۰ باشد.',
+            'default_edge_band_id.exists' => 'نوار لبهٔ پیش‌فرض باید قلمی از نوع «نوار لبه» باشد.',
         ];
     }
 }

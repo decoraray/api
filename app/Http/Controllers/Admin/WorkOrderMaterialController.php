@@ -36,7 +36,7 @@ class WorkOrderMaterialController extends Controller
             'lines.*.quantity.regex' => 'مقدار حداکثر سه رقم اعشار دارد.',
         ]);
 
-        $this->materials->replacePlan($workOrder, $data['lines']);
+        $this->materials->replacePlan($workOrder, $data['lines'], true);
 
         return $this->list($workOrder);
     }
