@@ -10,6 +10,7 @@ use App\Services\Production\DesignService;
 use App\Models\ProductPart;
 use App\Services\Production\CalculatedLines;
 use App\Services\Production\DesignEstimate;
+use App\Services\Costing\SuggestedPrice;
 use App\Support\Production\Present;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -28,11 +29,22 @@ class DesignController extends Controller
             ->when(!$request->boolean('include_inactive'), fn ($q) => $q->where('active', true))
             ->get();
 
-        // The estimated cost per unit is shown only to users who may see costs; the key is absent otherwise.
+        // The estimated cost and suggested price per unit are shown only to users who may see costs; the keys are absent otherwise.
         $estimate = $request->user()?->can('costs.view') ? app(DesignEstimate::class) : null;
+        $pricing = $estimate ? app(SuggestedPrice::class) : null;
 
-        return response()->json(['data' => $designs->map(fn ($d) => Present::design($d)
-            + ($estimate ? ['estimated_cost' => $estimate->forDesign($d)] : []))->values()]);
+        return response()->json(['data' => $designs->map(function ($d) use ($estimate, $pricing) {
+            if (!$estimate) {
+                return Present::design($d);
+            }
+            $costs = $estimate->designCosts($d);
+
+            return Present::design($d) + [
+                'estimated_cost' => $costs['total'],
+                'suggested_price' => $pricing->for($costs['total']),
+                'incomplete' => $costs['missing'] !== [],
+            ];
+        })->values()]);
     }
 
     /** One-off products and their active designs, for picking a design on a custom line. */
@@ -195,7 +207,19 @@ class DesignController extends Controller
                 'adders' => collect($costs['adders'])->map(fn ($cost, $id) => ['cost_adder_id' => $id, 'cost' => $cost])->values(),
                 'adders_cost' => $costs['adders_cost'],
                 'total' => $costs['total'],
+                'suggested_price' => ($pricing = app(SuggestedPrice::class))->for($costs['total']),
+                'price_multiplier' => $pricing->multiplier(),
+                'incomplete' => $costs['missing'] !== [],
+                'missing' => $costs['missing'],
             ];
+            // A variation's default design is compared with what that variation sells for.
+            if ($design->variation_id && ($variation = $design->variation()->first())) {
+                $price = (int) $variation->price;
+                $body['costs']['current_price'] = $price;
+                if ($price > 0) {
+                    $body['costs']['margin'] = SuggestedPrice::margin($price, $costs['total']);
+                }
+            }
         }
 
         return response()->json($body);

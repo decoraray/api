@@ -9,6 +9,7 @@ use App\Models\Order;
 use App\Models\OrderCost;
 use App\Services\Costing\OrderCostService;
 use App\Services\Costing\OrderProfitReport;
+use App\Services\Costing\SuggestedPrice;
 use App\Services\Reports\DeliveredOrders;
 use App\Services\Settings;
 use App\Support\Channel;
@@ -51,28 +52,50 @@ class OrderCostController extends Controller
         return response()->json(['data' => $this->costs->summary($order->fresh())]);
     }
 
-    public function settings()
+    public function settings(SuggestedPrice $pricing)
     {
-        return response()->json(['overhead_percent' => $this->costs->overheadPercent()]);
+        return response()->json($this->settingsPayload($pricing));
     }
 
-    public function updateSettings(Request $request, Settings $settings)
+    /** Overhead and the suggested-price settings; any subset may be sent, and each change is logged on its own. */
+    public function updateSettings(Request $request, Settings $settings, SuggestedPrice $pricing)
     {
         $data = $request->validate([
-            'overhead_percent' => ['required', 'numeric', 'min:0', 'max:100', 'regex:/^\d+(\.\d{1,2})?$/'],
-        ], ['overhead_percent.max' => 'سربار حداکثر ۱۰۰ درصد است.']);
+            'overhead_percent' => ['sometimes', 'required', 'numeric', 'min:0', 'max:100', 'regex:/^\d+(\.\d{1,2})?$/'],
+            'price_multiplier' => ['sometimes', 'required', 'numeric', 'min:1', 'max:10', 'regex:/^\d+(\.\d{1,2})?$/'],
+            'price_rounding' => ['sometimes', 'required', 'integer', Rule::in(SuggestedPrice::ROUNDING_STEPS)],
+        ], [
+            'overhead_percent.max' => 'سربار حداکثر ۱۰۰ درصد است.',
+            'price_multiplier.min' => 'ضریب قیمت باید بین ۱ تا ۱۰ باشد.',
+            'price_multiplier.max' => 'ضریب قیمت باید بین ۱ تا ۱۰ باشد.',
+            'price_multiplier.regex' => 'ضریب قیمت حداکثر دو رقم اعشار دارد.',
+            'price_rounding.in' => 'گام گرد کردن باید یکی از ۱٬۰۰۰، ۱۰٬۰۰۰، ۵۰٬۰۰۰ یا ۱۰۰٬۰۰۰ تومان باشد.',
+        ]);
 
-        $old = $this->costs->overheadPercent();
-        $new = (float) $data['overhead_percent'];
-        $settings->set(OrderCostService::OVERHEAD_KEY, $new);
-
-        if ($old !== $new) {
-            activity()->causedBy($request->user())->event('updated')
-                ->withProperties(['old' => ['overhead_percent' => $old], 'attributes' => ['overhead_percent' => $new]])
-                ->log('costing-overhead');
+        $fields = [
+            'overhead_percent' => [OrderCostService::OVERHEAD_KEY, $this->costs->overheadPercent(), fn ($v) => (float) $v, 'costing-overhead'],
+            'price_multiplier' => [SuggestedPrice::MULTIPLIER_KEY, $pricing->multiplier(), fn ($v) => round((float) $v, 2), 'costing-price-multiplier'],
+            'price_rounding' => [SuggestedPrice::ROUNDING_KEY, $pricing->rounding(), fn ($v) => (int) $v, 'costing-price-rounding'],
+        ];
+        foreach ($fields as $field => [$key, $old, $cast, $log]) {
+            if (!array_key_exists($field, $data)) {
+                continue;
+            }
+            $new = $cast($data[$field]);
+            $settings->set($key, $new);
+            if ($old !== $new) {
+                activity()->causedBy($request->user())->event('updated')
+                    ->withProperties(['old' => [$field => $old], 'attributes' => [$field => $new]])
+                    ->log($log);
+            }
         }
 
-        return response()->json(['overhead_percent' => $new]);
+        return response()->json($this->settingsPayload($pricing));
+    }
+
+    private function settingsPayload(SuggestedPrice $pricing): array
+    {
+        return ['overhead_percent' => $this->costs->overheadPercent()] + $pricing->settings();
     }
 
     public function report(Request $request, OrderProfitReport $report)
