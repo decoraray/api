@@ -207,6 +207,7 @@ Route::prefix('v1')
                     Route::middleware('permission:costs.view')->group(function () {
                         Route::get('orders/{order:uuid}/costs', 'OrderCostController@show');
                         Route::get('reports/order-profit', 'OrderCostController@report');
+                        Route::get('reports/suggested-prices', 'SuggestedPriceController@index');
                         Route::get('costing/settings', 'OrderCostController@settings');
                     });
 
