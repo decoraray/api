@@ -387,6 +387,7 @@ Route::prefix('v1')
                         Route::get('products/{product}/bom', 'BomController@show');
                         Route::get('products/{product}/cutting-list', 'CuttingListController@show');
                         Route::get('panel-materials', 'PanelMaterialController@index');
+                        Route::get('sheet-items', 'SheetItemController@index');
                         // draft designs to review, and the templates they come from (before designs/{design})
                         Route::get('designs/review', 'DesignDraftController@review');
                         Route::get('design-templates', 'DesignDraftController@templates');

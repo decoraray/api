@@ -296,6 +296,7 @@ class DesignController extends Controller
         $design->loadCount(['parts', 'bomLines']);
 
         return Present::design($design) + [
+            'product' => ['id' => $design->product?->id, 'title' => $design->product?->title, 'dimensions' => $design->product?->dimensions],
             'source_work_order_id' => $design->source_work_order_id,
         ] + $this->cuttingBody($design) + ['bom' => $this->bomLines($design)];
     }
