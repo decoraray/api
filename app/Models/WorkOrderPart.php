@@ -11,7 +11,7 @@ class WorkOrderPart extends Model
 {
     protected $fillable = [
         'work_order_id', 'position', 'name', 'length_mm', 'width_mm', 'count',
-        'panel_material_id', 'edge_length', 'edge_width', 'grain_locked', 'ops', 'note',
+        'stock_item_id', 'edge_length', 'edge_width', 'grain_locked', 'ops', 'note',
     ];
 
     protected $casts = [
@@ -29,8 +29,9 @@ class WorkOrderPart extends Model
         return $this->belongsTo(WorkOrder::class);
     }
 
-    public function panelMaterial()
+    /** The MDF sheet stock item the part is cut from. */
+    public function stockItem()
     {
-        return $this->belongsTo(PanelMaterial::class);
+        return $this->belongsTo(StockItem::class);
     }
 }

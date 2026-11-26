@@ -12,7 +12,7 @@ use App\Models\WorkOrder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
-/** Owns every change to product designs: creating, copying, defaults, deleting, and their parts, BOM and mapping. */
+/** Owns every change to product designs: creating, copying, defaults, deleting, and their parts and BOM. */
 class DesignService
 {
     public const STANDARD = 'استاندارد';
@@ -42,7 +42,6 @@ class DesignService
                 'name' => $data['name'],
                 'dimensions' => $data['dimensions'] ?? $source?->dimensions,
                 'note' => $data['note'] ?? $source?->note,
-                'panel_map' => $source?->panel_map,
                 'created_by' => $user?->id,
             ]);
 
@@ -115,30 +114,91 @@ class DesignService
         $design->delete();
     }
 
-    /** @param array<int, array> $parts validated parts in order */
+    /**
+     * Replaces the parts; the sheet and edge band lines of the BOM follow them.
+     *
+     * @param array<int, array> $parts validated parts in order
+     */
     public function replaceParts(ProductDesign $design, array $parts): void
     {
-        $this->changingContent($design, function () use ($design, $parts) {
-            $design->parts()->delete();
-            foreach (array_values($parts) as $position => $part) {
-                $design->parts()->create(CuttingListService::partAttributes($part, $position));
+        $this->changingContent($design, fn () => $this->writeParts($design, $parts));
+    }
+
+    /**
+     * Replaces the lines entered by hand. On a design with parts its sheet and edge band lines follow the parts, so
+     * they may not be listed and are kept as they are.
+     *
+     * @param array<int, array{stock_item_id: int, quantity: float|string, note?: ?string}> $lines
+     */
+    public function replaceBom(ProductDesign $design, array $lines): void
+    {
+        $this->changingContent($design, fn () => $this->writeBom($design, $lines));
+    }
+
+    /**
+     * Parts, hand-entered BOM lines and service adders in one go: everything is saved or, on any error, nothing.
+     *
+     * @param array{parts: array, lines: array, adders?: ?array} $data validated
+     */
+    public function saveContents(ProductDesign $design, array $data): void
+    {
+        $this->changingContent($design, function () use ($design, $data) {
+            $this->writeParts($design, $data['parts']);
+            $this->writeBom($design, $data['lines']);
+            if (array_key_exists('adders', $data) && $data['adders'] !== null) {
+                app(\App\Services\Costing\CostAdderService::class)->replaceDesignServiceAdders($design, $data['adders']);
             }
         });
     }
 
-    /** @param array<int, array{stock_item_id: int, quantity: float|string, note?: ?string}> $lines */
-    public function replaceBom(ProductDesign $design, array $lines): void
+    private function writeParts(ProductDesign $design, array $parts): void
     {
-        $this->changingContent($design, function () use ($design, $lines) {
+        $hadParts = $design->parts()->exists();
+        $design->parts()->delete();
+        foreach (array_values($parts) as $position => $part) {
+            $design->parts()->create(CuttingListService::partAttributes($part, $position));
+        }
+        app(CalculatedLines::class)->applyToDesign($design, $hadParts);
+    }
+
+    private function writeBom(ProductDesign $design, array $lines): void
+    {
+        if (!$design->parts()->exists()) {
             $design->bomLines()->delete();
-            foreach ($lines as $line) {
-                $design->bomLines()->create([
-                    'stock_item_id' => $line['stock_item_id'],
-                    'quantity' => $line['quantity'],
-                    'note' => $line['note'] ?? null,
-                ]);
-            }
-        });
+            $this->createLines($design, $lines);
+
+            return;
+        }
+
+        $this->assertNoCalculatedItems($lines);
+        $design->bomLines()->with('stockItem')->get()
+            ->reject(fn ($line) => CalculatedLines::isCalculatedKind($line->stockItem?->kind))
+            ->each->delete();
+        $this->createLines($design, $lines);
+    }
+
+    private function createLines(ProductDesign $design, array $lines): void
+    {
+        foreach ($lines as $line) {
+            $design->bomLines()->create([
+                'stock_item_id' => $line['stock_item_id'],
+                'quantity' => $line['quantity'],
+                'note' => $line['note'] ?? null,
+            ]);
+        }
+    }
+
+    /** Sheets and edge band follow from the parts; typing them by hand on an owner with parts is refused. */
+    public static function assertNoCalculatedItems(array $lines, string $key = 'lines'): void
+    {
+        $ids = array_column($lines, 'stock_item_id');
+        $items = \App\Models\StockItem::whereIn('id', $ids)->get()
+            ->filter(fn ($item) => CalculatedLines::isCalculatedKind($item->kind));
+        if ($items->isNotEmpty()) {
+            throw ValidationException::withMessages([$key => [
+                'ورق و نوار لبه از روی قطعات حساب می‌شوند و دستی وارد نمی‌شوند: «' . $items->pluck('code')->join('»، «') . '».',
+            ]]);
+        }
     }
 
     /** Gives or removes the «تأیید شده» badge. */
@@ -179,17 +239,12 @@ class DesignService
     private function contentOf(ProductDesign $design): string
     {
         $parts = $design->parts()->orderBy('position')->orderBy('id')->get()
-            ->map(fn ($p) => [$p->name, (int) $p->length_mm, (int) $p->width_mm, (int) $p->count, (int) $p->panel_material_id,
+            ->map(fn ($p) => [$p->name, (int) $p->length_mm, (int) $p->width_mm, (int) $p->count, (int) $p->stock_item_id,
                 (int) $p->edge_length, (int) $p->edge_width, (bool) $p->grain_locked, $p->ops ?: [], $p->note])->all();
         $bom = $design->bomLines()->orderBy('stock_item_id')->get()
             ->map(fn ($l) => [(int) $l->stock_item_id, round((float) $l->quantity, 3), $l->note])->all();
 
         return json_encode([$parts, $bom]);
-    }
-
-    public function saveMapping(ProductDesign $design, array $mapping): void
-    {
-        $design->forceFill(['panel_map' => PanelMapping::normalize($mapping)])->save();
     }
 
     /**
@@ -239,6 +294,7 @@ class DesignService
                 'design_id' => $design->id,
                 'stock_item_id' => $line->stock_item_id,
                 'quantity' => $line->quantity,
+                'calculated_quantity' => $line->calculated_quantity,
                 'note' => $line->note,
             ]);
         }

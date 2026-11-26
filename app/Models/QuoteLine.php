@@ -8,7 +8,7 @@ class QuoteLine extends Model
 {
     protected $fillable = [
         'quote_id', 'position', 'product_id', 'variation_id', 'description',
-        'dimensions', 'color', 'quantity', 'unit_price', 'design_id',
+        'dimensions', 'color', 'color_id', 'quantity', 'unit_price', 'design_id',
     ];
 
     protected $casts = [
@@ -16,6 +16,12 @@ class QuoteLine extends Model
         'quantity' => 'integer',
         'unit_price' => 'integer',
     ];
+
+    /** The colour chosen from the Colours list; a label only. `color` is the free text kept beside it. */
+    public function colour()
+    {
+        return $this->belongsTo(Color::class, 'color_id');
+    }
 
     public function design()
     {

@@ -2,7 +2,7 @@
 
 namespace Database\Factories;
 
-use App\Models\PanelMaterial;
+use App\Models\StockItem;
 use App\Models\ProductDesign;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -17,7 +17,7 @@ class ProductPartFactory extends Factory
             'length_mm' => 500,
             'width_mm' => 380,
             'count' => 2,
-            'panel_material_id' => PanelMaterial::factory(),
+            'stock_item_id' => StockItem::factory()->mdf(),
             'edge_length' => 0,
             'edge_width' => 0,
             'grain_locked' => false,

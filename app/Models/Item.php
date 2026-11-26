@@ -21,8 +21,15 @@ class Item extends Model
         'quantity',
         'dimensions',
         'color',
+        'color_id',
         'design_id',
     ];
+
+    /** The colour chosen from the Colours list; a label only. `color` is the free text kept beside it. */
+    public function colour()
+    {
+        return $this->belongsTo(Color::class, 'color_id');
+    }
 
     public function order()
     {

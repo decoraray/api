@@ -6,13 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\ProductDesign;
 use App\Models\WorkOrder;
 use App\Services\Production\CuttingListService;
-use App\Services\Production\PanelMapping;
 use App\Services\Production\WorkOrderDesignService;
 use App\Support\Production\Present;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-/** A work order's own design: editing its parts, materials from parts, switching design, saving it as a design. */
+/** A work order's own design: editing its parts, its colour, switching design, saving it as a design. */
 class WorkOrderDesignController extends Controller
 {
     public function __construct(private WorkOrderDesignService $service)
@@ -31,17 +30,20 @@ class WorkOrderDesignController extends Controller
         return app(CuttingListController::class)->workOrder($workOrder);
     }
 
-    /** Proposed material lines for the whole work order. Saves the mapping when one is sent, nothing else. */
-    public function proposeMaterials(Request $request, WorkOrder $workOrder)
+    /** The colour label. It changes no parts or materials and does not mark the work order customised. */
+    public function updateColour(Request $request, WorkOrder $workOrder)
     {
-        $data = $request->validate(PanelMapping::rules(), PanelMapping::messages());
+        $data = $request->validate(['color_id' => ['present', 'nullable', 'integer', Rule::exists('colors', 'id')]]);
 
-        $lines = $this->service->proposeFromParts($workOrder, $data['mapping'] ?? null);
+        if (in_array($workOrder->state, [\App\Enums\WorkOrderState::DONE, \App\Enums\WorkOrderState::CANCELLED], true)) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['color_id' => ['رنگ دستور تولیدِ تمام‌شده یا لغوشده قابل تغییر نیست.']]);
+        }
+        $workOrder->forceFill(['color_id' => $data['color_id']])->save();
+        activity()->performedOn($workOrder)->causedBy($request->user())
+            ->withProperties(['color_id' => $data['color_id']])
+            ->log('work-order-colour-updated');
 
-        return response()->json([
-            'data' => PanelMapping::presentLines($lines),
-            'panel_map' => PanelMapping::present($workOrder->refresh()->panel_map),
-        ]);
+        return app(CuttingListController::class)->workOrder($workOrder->refresh());
     }
 
     public function switchDesign(Request $request, WorkOrder $workOrder)

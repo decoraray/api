@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Production;
 
-use App\Models\PanelMaterial;
+use App\Models\StockItem;
 use App\Models\Product;
 use App\Models\ProductPart;
 use App\Models\Variation;
@@ -35,7 +35,8 @@ class CuttingListApiTest extends CuttingTestCase
             ->assertJsonPath('data.2.grain_locked', true)
             ->assertJsonPath('data.1.ops', ['edge_fold', 'cnc'])
             ->assertJsonPath('data.0.note', 'لبه خم ۱۰ سانت')
-            ->assertJsonPath('data.6.panel_material.name', 'پشت‌بند ۳ میل')
+            ->assertJsonPath('data.6.sheet.code', 'HDF-3-WH')
+            ->assertJsonPath('summary.0.sheet.code', 'MDF-16-WAL')
             ->assertJsonPath('summary.0.area_m2', 2.761)
             ->assertJsonPath('summary.0.sheets', 0.5)
             ->assertJsonPath('summary.0.edge_m', 2.6)
@@ -49,7 +50,7 @@ class CuttingListApiTest extends CuttingTestCase
         $walnut = Variation::factory()->create();
         $other = Variation::factory()->create(['product_id' => $walnut->product_id]);
         $headers = $this->header('Technic');
-        $part = fn ($name) => ['name' => $name, 'length_mm' => 500, 'width_mm' => 380, 'count' => 1, 'panel_material_id' => $this->body16()->id, 'edge_length' => 0, 'edge_width' => 0];
+        $part = fn ($name) => ['name' => $name, 'length_mm' => 500, 'width_mm' => 380, 'count' => 1, 'stock_item_id' => $this->body16()->id, 'edge_length' => 0, 'edge_width' => 0];
 
         $this->putJson($this->url($walnut->product_id), ['parts' => [$part('مشترک')]], $headers)->assertStatus(200);
         $this->putJson($this->url($walnut->product_id), ['variation_id' => $walnut->id, 'parts' => [$part('گردویی')]], $headers)
@@ -71,9 +72,10 @@ class CuttingListApiTest extends CuttingTestCase
     {
         $product = $this->damtv220();
         $foreign = Variation::factory()->create();
-        $inactive = PanelMaterial::factory()->create(['active' => false]);
+        $inactive = StockItem::factory()->mdf()->create(['active' => false]);
+        $hinge = StockItem::factory()->create();
         $headers = $this->header('Technic');
-        $good = ['name' => 'بغل', 'length_mm' => 500, 'width_mm' => 380, 'count' => 1, 'panel_material_id' => $this->body16()->id, 'edge_length' => 0, 'edge_width' => 0];
+        $good = ['name' => 'بغل', 'length_mm' => 500, 'width_mm' => 380, 'count' => 1, 'stock_item_id' => $this->body16()->id, 'edge_length' => 0, 'edge_width' => 0];
 
         $cases = [
             'parts.0.edge_length' => ['edge_length' => 3],
@@ -82,12 +84,13 @@ class CuttingListApiTest extends CuttingTestCase
             'parts.0.length_mm' => ['length_mm' => 5001],
             'parts.0.width_mm' => ['width_mm' => 0],
             'parts.0.count' => ['count' => 0],
-            'parts.0.panel_material_id' => ['panel_material_id' => $inactive->id],
+            'parts.0.stock_item_id' => ['stock_item_id' => $inactive->id],
+            'parts.0.stock_item_id ' => ['stock_item_id' => $hinge->id],
             'parts.0.name' => ['name' => ''],
         ];
         foreach ($cases as $field => $override) {
             $this->putJson($this->url($product), ['parts' => [array_merge($good, $override)]], $headers)
-                ->assertStatus(422)->assertJsonValidationErrors($field);
+                ->assertStatus(422)->assertJsonValidationErrors(trim($field));
         }
         $this->putJson($this->url($product), ['variation_id' => $foreign->id, 'parts' => [$good]], $headers)
             ->assertStatus(422)->assertJsonValidationErrors('variation_id');
@@ -98,7 +101,7 @@ class CuttingListApiTest extends CuttingTestCase
     public function test_fit_warning_does_not_block_saving()
     {
         $product = Product::factory()->create(['dimensions' => '200*40*40']);
-        $part = ['name' => 'صفحه', 'length_mm' => 2100, 'width_mm' => 400, 'count' => 1, 'panel_material_id' => $this->body16()->id, 'edge_length' => 0, 'edge_width' => 0];
+        $part = ['name' => 'صفحه', 'length_mm' => 2100, 'width_mm' => 400, 'count' => 1, 'stock_item_id' => $this->body16()->id, 'edge_length' => 0, 'edge_width' => 0];
 
         $this->putJson($this->url($product), ['parts' => [$part]], $this->header('Technic'))
             ->assertStatus(200)

@@ -119,36 +119,31 @@ class DraftBulkActions
         return self::DONE;
     }
 
-    /** Moves BOM lines (merging) and panel mapping entries from one stock item to another of the same kind. */
+    /**
+     * Swaps one stock item for another of the same kind. A sheet moves the parts cut from it (their BOM lines
+     * follow); any other item moves its BOM line, merging into an existing one.
+     */
     private function swap(ProductDesign $design, StockItem $from, StockItem $to, ?User $user): string
     {
-        $map = $design->panel_map ?? [];
-        $inMap = collect($map)->contains(fn ($row) => (int) ($row['sheet_stock_item_id'] ?? 0) === $from->id || (int) ($row['edge_band_stock_item_id'] ?? 0) === $from->id);
+        $parts = $design->parts()->where('stock_item_id', $from->id)->exists();
         $line = $design->bomLines()->where('stock_item_id', $from->id)->first();
-        if (!$line && !$inMap) {
+        if (!$line && !$parts) {
             return self::NO_MATCH;
         }
 
-        $this->designs->changingContent($design, function () use ($design, $from, $to, $line, $map, $inMap) {
-            if ($line) {
-                $target = $design->bomLines()->where('stock_item_id', $to->id)->first();
-                if ($target) {
-                    $target->update(['quantity' => round($target->quantity + $line->quantity, 3)]);
-                    $line->delete();
-                } else {
-                    $line->update(['stock_item_id' => $to->id]);
-                }
-            }
-            if ($inMap) {
-                $design->forceFill(['panel_map' => array_map(function (array $row) use ($from, $to) {
-                    foreach (['sheet_stock_item_id', 'edge_band_stock_item_id'] as $key) {
-                        if ((int) ($row[$key] ?? 0) === $from->id) {
-                            $row[$key] = $to->id;
-                        }
-                    }
+        $this->designs->changingContent($design, function () use ($design, $from, $to, $line, $parts) {
+            if ($parts) {
+                $design->parts()->where('stock_item_id', $from->id)->update(['stock_item_id' => $to->id]);
+                app(\App\Services\Production\CalculatedLines::class)->applyToDesign($design);
 
-                    return $row;
-                }, $map)])->save();
+                return;
+            }
+            $target = $design->bomLines()->where('stock_item_id', $to->id)->first();
+            if ($target) {
+                $target->update(['quantity' => round($target->quantity + $line->quantity, 3)]);
+                $line->delete();
+            } else {
+                $line->update(['stock_item_id' => $to->id]);
             }
         });
 

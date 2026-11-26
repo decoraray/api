@@ -213,8 +213,8 @@ class MaterialRulesTest extends DraftTestCase
         $bom = $this->bomOf($design);
         $this->assertArrayHasKey($this->codes['HIGLOSS16']->id, $bom);
         $this->assertArrayNotHasKey($this->items['body_sheet']->id, $bom);
-        $body = collect($design->panel_map)->firstWhere('panel_material_id', $this->body16()->id);
-        $this->assertSame($this->codes['HIGLOSS16']->id, $body['sheet_stock_item_id']);
+        $this->assertTrue($design->parts()->where('stock_item_id', $this->codes['HIGLOSS16']->id)->exists());
+        $this->assertFalse($design->parts()->where('stock_item_id', $this->items['body_sheet']->id)->exists());
     }
 
     public function test_no_match_uses_the_default_sheet()

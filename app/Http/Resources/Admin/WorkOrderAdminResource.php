@@ -21,6 +21,8 @@ class WorkOrderAdminResource extends JsonResource
             'quantity' => $this->quantity,
             'dimensions' => $this->dimensions,
             'color' => $this->color,
+            'color_id' => $this->color_id,
+            'colour' => \App\Support\Orders\LineColour::present($this->colour),
             'description' => $this->description,
             'stage' => $this->stage?->name,
             'stage_label' => $this->stage?->label(),

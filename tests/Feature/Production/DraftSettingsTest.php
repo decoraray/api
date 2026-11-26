@@ -24,11 +24,13 @@ class DraftSettingsTest extends DraftTestCase
         $this->settings()->materials();
     }
 
-    public function test_a_body_material_without_a_sheet_item_is_reported()
+    public function test_an_inactive_body_sheet_is_reported()
     {
-        $this->settings()->save(['body_panel_material_id' => $this->body16()->id]);
+        $this->settings()->save(['body_sheet_item_id' => $this->body16()->id]);
+        $this->assertSame([], $this->settings()->missing());
 
-        $this->assertSame(['قلم انبار ورق برای «بدنه ۱۶ میل»'], $this->settings()->missing());
+        $this->body16()->update(['active' => false]);
+        $this->assertSame(['ورق بدنه'], $this->settings()->missing());
     }
 
     public function test_configured_settings_are_ready_and_give_materials_and_hardware()
@@ -36,7 +38,7 @@ class DraftSettingsTest extends DraftTestCase
         $this->configureDrafts(['hinge', 'slide']);
 
         $this->assertSame([], $this->settings()->missing());
-        $this->assertSame($this->body16()->id, $this->settings()->materials()->body->id);
+        $this->assertSame($this->items['body_sheet']->id, $this->settings()->materials()->body->id);
         // Roles left unset give no stock item, so no BOM line.
         $this->assertSame(['hinge', 'slide'], array_keys($this->settings()->hardwareItems()));
     }
@@ -48,11 +50,11 @@ class DraftSettingsTest extends DraftTestCase
 
         $validator = Validator::make([
             'hardware' => ['hinge' => $sheet->id],
-            'mapping' => [['panel_material_id' => $this->body16()->id, 'sheet_stock_item_id' => $hinge->id]],
+            'body_sheet_item_id' => $hinge->id,
         ], $this->settings()->rules());
 
         $this->assertTrue($validator->errors()->has('hardware.hinge'));
-        $this->assertTrue($validator->errors()->has('mapping.0.sheet_stock_item_id'));
+        $this->assertTrue($validator->errors()->has('body_sheet_item_id'));
     }
 
     public function test_template_for_a_product_follows_its_categories()

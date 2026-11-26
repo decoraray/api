@@ -2,7 +2,7 @@
 
 namespace App\Services\Production\Drafts\Templates;
 
-use App\Models\PanelMaterial;
+use App\Models\StockItem;
 use App\Services\Production\Drafts\DesignTemplate;
 use App\Services\Production\Drafts\DimensionReading;
 use App\Services\Production\Drafts\DraftException;
@@ -72,7 +72,7 @@ abstract class BaseTemplate implements DesignTemplate
     }
 
     /** A part row; refuses sizes too small to cut. */
-    protected function part(string $name, int $length, int $width, int $count, PanelMaterial $material, int $edgeLength = 0, int $edgeWidth = 0, array $ops = [], ?string $note = null): array
+    protected function part(string $name, int $length, int $width, int $count, StockItem $material, int $edgeLength = 0, int $edgeWidth = 0, array $ops = [], ?string $note = null): array
     {
         if ($length < 30 || $width < 30) {
             throw new DraftException(sprintf('با این ابعاد و تعدادها قطعهٔ «%s» کوچک‌تر از ۳ سانت می‌شود؛ ابعاد یا تعدادها را تغییر دهید.', $name));
@@ -83,7 +83,7 @@ abstract class BaseTemplate implements DesignTemplate
             'length_mm' => $length,
             'width_mm' => $width,
             'count' => $count,
-            'panel_material_id' => $material->id,
+            'stock_item_id' => $material->id,
             'edge_length' => $edgeLength,
             'edge_width' => $edgeWidth,
             'grain_locked' => false,

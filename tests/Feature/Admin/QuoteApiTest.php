@@ -276,4 +276,33 @@ class QuoteApiTest extends TestCase
             $this->assertStringNotContainsString($q->token, json_encode($a->properties));
         }
     }
+
+    public function test_line_colour_defaults_to_the_variation_and_is_carried_to_the_order_and_work_order()
+    {
+        $white = \App\Models\Color::create(['name' => 'سفید']);
+        $walnut = \App\Models\Color::create(['name' => 'گردویی']);
+        $variation = \App\Models\Variation::factory()->create(['color_id' => $white->id]);
+        $h = $this->header('Sales');
+        $lines = [
+            ['variation_id' => $variation->id, 'product_id' => $variation->product_id, 'description' => 'میز', 'quantity' => 1, 'unit_price' => 18000000],
+            ['variation_id' => $variation->id, 'product_id' => $variation->product_id, 'description' => 'میز', 'color_id' => $walnut->id, 'quantity' => 1, 'unit_price' => 18000000],
+        ];
+
+        $r = $this->postJson('/api/v1/admin/quotes', $this->payload(['lines' => $lines]), $h)->assertStatus(201);
+        $quote = Quote::findOrFail($r->json('data.id') ?? $r->json('id'));
+        $this->assertSame([$white->id, $walnut->id], $quote->lines()->orderBy('position')->pluck('color_id')->all());
+        // Same price whatever the colour.
+        $this->assertSame([18000000, 18000000], $quote->lines()->orderBy('position')->pluck('unit_price')->map(fn ($p) => (int) $p)->all());
+
+        $j = $this->getJson("/api/v1/admin/quotes/{$quote->id}", $h)->json('data');
+        $this->assertSame('گردویی', $j['lines'][1]['colour']['name']);
+
+        $this->postJson("/api/v1/admin/quotes/{$quote->id}/payments", ['amount' => 100, 'method' => 'CASH_RECEIVED', 'paid_at' => '2026-11-15'], $h)->assertStatus(201);
+        $order = Order::where('quote_id', $quote->id)->sole();
+        $this->assertSame([$white->id, $walnut->id], $order->items()->orderBy('id')->pluck('color_id')->all());
+        $this->assertEqualsCanonicalizing([$white->id, $walnut->id], \App\Models\WorkOrder::where('order_id', $order->id)->pluck('color_id')->all());
+
+        $this->postJson('/api/v1/admin/quotes', $this->payload(['lines' => [['description' => 'x', 'color_id' => 99999, 'quantity' => 1, 'unit_price' => 1]]]), $h)
+            ->assertStatus(422)->assertJsonValidationErrors('lines.0.color_id');
+    }
 }

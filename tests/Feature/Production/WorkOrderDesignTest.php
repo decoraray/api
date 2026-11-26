@@ -86,7 +86,7 @@ class WorkOrderDesignTest extends CuttingTestCase
 
         $this->putJson($url, ['parts' => array_slice($this->damtv220Parts(), 0, 4)], $headers)
             ->assertStatus(200)->assertJsonPath('customized', true)->assertJsonCount(4, 'parts');
-        $this->putJson($url, ['parts' => [['name' => 'x', 'length_mm' => 100, 'width_mm' => 100, 'count' => 1, 'panel_material_id' => $this->body16()->id, 'edge_length' => 3, 'edge_width' => 0]]], $headers)
+        $this->putJson($url, ['parts' => [['name' => 'x', 'length_mm' => 100, 'width_mm' => 100, 'count' => 1, 'stock_item_id' => $this->body16()->id, 'edge_length' => 3, 'edge_width' => 0]]], $headers)
             ->assertStatus(422)->assertJsonValidationErrors('parts.0.edge_length');
         $this->getJson("/api/v1/admin/work-orders/{$workOrder->id}", $headers)->assertJsonPath('data.customized', true);
 
@@ -97,34 +97,46 @@ class WorkOrderDesignTest extends CuttingTestCase
 
     public function test_editing_materials_marks_customised()
     {
-        [$variation, , , $sheet] = $this->twoSizes();
+        [$variation, , , , $hinge] = $this->twoSizes();
         $workOrder = $this->workOrderFor($variation);
 
-        $this->putJson("/api/v1/admin/work-orders/{$workOrder->id}/materials", ['lines' => [['stock_item_id' => $sheet->id, 'quantity' => 2]]], $this->header('Technic'))
+        $this->putJson("/api/v1/admin/work-orders/{$workOrder->id}/materials", ['lines' => [['stock_item_id' => $hinge->id, 'quantity' => 2]]], $this->header('Technic'))
             ->assertStatus(200);
         $this->assertTrue($workOrder->fresh()->customized);
     }
 
-    public function test_materials_proposed_from_parts_for_two_units()
+    // --- colour ----------------------------------------------------------------------
+
+    public function test_work_order_takes_the_line_colour_and_keeps_it_as_a_label()
     {
-        $workOrder = $this->workOrderFor(null, 2);
-        $headers = $this->header('Technic');
-        $walnut = $this->stock(0, ['code' => 'MDF-16-WAL', 'kind' => 'mdf_sheet', 'unit' => 'sheet']);
-        $hdf = $this->stock(0, ['code' => 'HDF-3-WH', 'kind' => 'mdf_sheet', 'unit' => 'sheet']);
-        $this->putJson("/api/v1/admin/work-orders/{$workOrder->id}/parts", ['parts' => $this->damtv220Parts()], $headers)->assertStatus(200);
-        $url = "/api/v1/admin/work-orders/{$workOrder->id}/parts/bom-lines";
+        [$variation, $big] = $this->twoSizes();
+        $white = \App\Models\Color::create(['name' => 'سفید']);
+        $walnut = \App\Models\Color::create(['name' => 'گردویی']);
+        $variation->update(['color_id' => $white->id]);
+        $order = Order::factory()->create(['status' => OrderStatus::CONFIRMED->value]);
+        $item = Item::create(['title' => 'x', 'slug' => 'x', 'price' => 1, 'quantity' => 1, 'order_id' => $order->id,
+            'product_id' => $variation->product_id, 'variation_id' => $variation->id, 'color_id' => $white->id]);
+        $workOrder = $this->service()->createForOrder($order)[0];
+        $planned = $workOrder->materials()->pluck('planned_quantity', 'stock_item_id')->all();
 
-        $this->postJson($url, [], $headers)->assertStatus(422)->assertJsonValidationErrors('mapping');
-        $this->postJson($url, ['mapping' => [
-            ['panel_material_id' => $this->body16()->id, 'sheet_stock_item_id' => $walnut->id],
-            ['panel_material_id' => $this->back3()->id, 'sheet_stock_item_id' => $hdf->id],
-        ]], $headers)->assertStatus(200)
-            // 5.522 m² × 1.2 ÷ 6.698 m² → 0.99 for two units
-            ->assertJsonPath('data.0.quantity', 0.99)
-            ->assertJsonPath('panel_map.0.sheet_stock_item.code', 'MDF-16-WAL');
+        $this->assertSame($white->id, $workOrder->color_id);
+        $this->getJson("/api/v1/admin/work-orders/{$workOrder->id}/cutting-list", $this->header('Technic'))
+            ->assertJsonPath('work_order.colour.name', 'سفید');
 
-        $this->postJson($url, [], $headers)->assertStatus(200)->assertJsonPath('data.0.quantity', 0.99);
-        $this->assertSame(0, $workOrder->materials()->count());
+        $this->patchJson("/api/v1/admin/work-orders/{$workOrder->id}/colour", ['color_id' => $walnut->id], $this->header('Technic'))
+            ->assertStatus(200)->assertJsonPath('work_order.colour.name', 'گردویی');
+        $fresh = $workOrder->fresh();
+        $this->assertSame([$walnut->id, false], [$fresh->color_id, $fresh->customized]);
+        $this->assertSame($planned, $fresh->materials()->pluck('planned_quantity', 'stock_item_id')->all());
+
+        // Switching design keeps the colour.
+        $small = ProductDesign::where('name', '۱۸۰ سانتی')->firstOrFail();
+        $this->postJson("/api/v1/admin/work-orders/{$workOrder->id}/design", ['design_id' => $small->id], $this->header('Technic'))->assertStatus(200);
+        $this->assertSame($walnut->id, $workOrder->fresh()->color_id);
+
+        $workOrder->forceFill(['state' => \App\Enums\WorkOrderState::DONE])->save();
+        $this->patchJson("/api/v1/admin/work-orders/{$workOrder->id}/colour", ['color_id' => $white->id], $this->header('Technic'))->assertStatus(422);
+        $this->patchJson("/api/v1/admin/work-orders/{$workOrder->id}/colour", ['color_id' => $white->id], $this->header('Sales'))->assertStatus(403);
     }
 
     // --- switching ---------------------------------------------------------------
@@ -177,7 +189,7 @@ class WorkOrderDesignTest extends CuttingTestCase
         $headers = $this->header($viewer);
 
         $this->putJson("/api/v1/admin/work-orders/{$workOrder->id}/parts", ['parts' => []], $headers)->assertStatus(403);
-        $this->postJson("/api/v1/admin/work-orders/{$workOrder->id}/parts/bom-lines", [], $headers)->assertStatus(403);
+        $this->patchJson("/api/v1/admin/work-orders/{$workOrder->id}/colour", ['color_id' => null], $headers)->assertStatus(403);
         $this->postJson("/api/v1/admin/work-orders/{$workOrder->id}/design", ['design_id' => 1], $headers)->assertStatus(403);
         $this->postJson("/api/v1/admin/work-orders/{$workOrder->id}/save-as-design", ['mode' => 'new', 'name' => 'x'], $headers)->assertStatus(403);
     }

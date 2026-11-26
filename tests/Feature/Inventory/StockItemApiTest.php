@@ -311,4 +311,24 @@ class StockItemApiTest extends InventoryTestCase
             ->assertStatus(422);
         $this->assertSame(0, StockMovement::count());
     }
+
+    // --- cutting data on sheets -------------------------------------------------
+
+    public function test_a_sheet_keeps_its_waste_and_default_edge_band()
+    {
+        $headers = $this->header('Warehouse');
+        $band = StockItem::factory()->create(['code' => 'EB-WH-2', 'kind' => 'edge_band', 'unit' => 'meter']);
+        $hinge = StockItem::factory()->create(['code' => 'HNG-01']);
+
+        $this->postJson('/api/v1/admin/stock-items', $this->mdf(), $headers)->assertStatus(201)->assertJsonPath('data.waste_percent', 20);
+        $this->postJson('/api/v1/admin/stock-items', $this->mdf(['code' => 'MDF-16-WH2', 'waste_percent' => 25, 'default_edge_band_id' => $band->id]), $headers)
+            ->assertStatus(201)
+            ->assertJsonPath('data.waste_percent', 25)
+            ->assertJsonPath('data.default_edge_band.code', 'EB-WH-2');
+
+        $this->postJson('/api/v1/admin/stock-items', $this->mdf(['code' => 'X1', 'default_edge_band_id' => $hinge->id]), $headers)
+            ->assertStatus(422)->assertJsonValidationErrors('default_edge_band_id');
+        $this->postJson('/api/v1/admin/stock-items', $this->mdf(['code' => 'X2', 'waste_percent' => 120]), $headers)
+            ->assertStatus(422)->assertJsonValidationErrors('waste_percent');
+    }
 }

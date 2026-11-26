@@ -26,19 +26,27 @@ class WorkOrderMaterialService
     /**
      * Replaces the planned list. The work order is then marked customised.
      *
+     * `$byHand`: staff typed the list. On a work order with parts, sheets and edge band follow the parts, so they may
+     * not be listed and their lines are kept.
+     *
      * @param array<int, array{stock_item_id: int, quantity: float|string, note?: ?string}> $lines
      */
-    public function replacePlan(WorkOrder $workOrder, array $lines): void
+    public function replacePlan(WorkOrder $workOrder, array $lines, bool $byHand = false): void
     {
-        DB::transaction(function () use ($workOrder, $lines) {
+        DB::transaction(function () use ($workOrder, $lines, $byHand) {
             $workOrder = WorkOrder::lockForUpdate()->findOrFail($workOrder->id);
             $this->assertOpen($workOrder, 'materials');
 
-            $existing = $workOrder->materials()->lockForUpdate()->get()->keyBy('stock_item_id');
+            $calculated = $byHand && $workOrder->parts()->exists();
+            if ($calculated) {
+                DesignService::assertNoCalculatedItems($lines);
+            }
+
+            $existing = $workOrder->materials()->with('stockItem')->lockForUpdate()->get()->keyBy('stock_item_id');
             $wanted = collect($lines)->keyBy('stock_item_id');
 
             foreach ($existing as $stockItemId => $material) {
-                if ($wanted->has($stockItemId)) {
+                if ($wanted->has($stockItemId) || ($calculated && CalculatedLines::isCalculatedKind($material->stockItem?->kind))) {
                     continue;
                 }
                 if ($material->reserved_quantity > 0 || $material->consumed_quantity > 0 || $material->wasted_quantity > 0) {

@@ -175,7 +175,7 @@ class DesignDraftApiTest extends DraftTestCase
         $technic = $this->header('Technic');
 
         $response = $this->getJson('/api/v1/admin/design-drafts/settings', $technic)->assertStatus(200)
-            ->assertJsonPath('data.body_panel_material.id', $this->body16()->id)
+            ->assertJsonPath('data.body_sheet.id', $this->items['body_sheet']->id)
             ->assertJsonPath('data.hardware.hinge.id', $this->items['hinge']->id)
             ->assertJsonPath('data.missing', []);
         $this->assertSame('cabinet', $response->json('data.categories.' . $this->cabinets->id));

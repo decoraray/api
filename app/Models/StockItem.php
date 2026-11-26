@@ -27,6 +27,8 @@ class StockItem extends Model
         'length_mm',
         'width_mm',
         'sheet_type',
+        'waste_percent',
+        'default_edge_band_id',
         'reorder_point',
         'active',
         'note',
@@ -40,6 +42,7 @@ class StockItem extends Model
         'reserved' => 'float',
         'reorder_point' => 'float',
         'average_cost' => 'integer',
+        'waste_percent' => 'integer',
         'active' => 'boolean',
     ];
 
@@ -53,9 +56,15 @@ class StockItem extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['code', 'name', 'kind', 'unit', 'thickness_mm', 'color', 'length_mm', 'width_mm', 'sheet_type', 'reorder_point', 'active', 'note'])
+            ->logOnly(['code', 'name', 'kind', 'unit', 'thickness_mm', 'color', 'length_mm', 'width_mm', 'sheet_type', 'waste_percent', 'default_edge_band_id', 'reorder_point', 'active', 'note'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
+    }
+
+    /** For an MDF sheet: the edge band its parts' banded edges use. */
+    public function defaultEdgeBand()
+    {
+        return $this->belongsTo(self::class, 'default_edge_band_id');
     }
 
     public function movements()

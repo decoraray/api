@@ -8,13 +8,13 @@ use App\Models\StockItem;
 use App\Models\User;
 use App\Services\Production\CuttingListService;
 use App\Services\Production\DesignService;
-use App\Services\Production\PanelMapping;
+use App\Services\Production\CalculatedLines;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Makes and remakes draft designs («پیش‌نویس خودکار») from a template: parts from the template, BOM from the parts
- * (sheets and edge band through the draft mapping) plus the template's hardware. Drafts are ordinary designs; they
+ * (sheets and edge band calculated from the parts) plus the template's hardware. Drafts are ordinary designs; they
  * only also keep their template, parameters and a fingerprint of the generated content.
  */
 class DraftDesignService
@@ -173,40 +173,36 @@ class DraftDesignService
         $product = Product::select(['id', 'title', 'description'])->findOrFail($design->product_id);
         $resolved = $this->rules->resolve($product, $template, $params, $parts, $materials, $settings['rules'], $settings['hardware']);
 
-        $used = collect($parts)->pluck('panel_material_id')->unique()->all();
-        $panelMap = collect($settings['mapping'])->whereIn('panel_material_id', $used)
-            ->map(function (array $row) use ($resolved, $materials) {
-                if ($resolved['body_sheet_id'] && (int) $row['panel_material_id'] === $materials->body->id) {
-                    $row['sheet_stock_item_id'] = $resolved['body_sheet_id'];
+        // The rules may pick another body sheet (e.g. «هایگلاس» from the product's words); the back stays.
+        if ($resolved['body_sheet_id'] && $resolved['body_sheet_id'] !== $materials->body->id) {
+            $parts = array_map(function (array $part) use ($resolved, $materials) {
+                if ((int) $part['stock_item_id'] === $materials->body->id) {
+                    $part['stock_item_id'] = $resolved['body_sheet_id'];
                 }
 
-                return $row;
-            })->values()->all();
-        $design->forceFill(['panel_map' => $panelMap])->save();
+                return $part;
+            }, $parts);
+        }
 
         // Hardware and stock-linked adders, for stock items that still exist.
         $extra = $resolved['stock'];
         $existing = StockItem::whereIn('id', array_keys($extra))->pluck('id')->all();
         $extra = array_intersect_key($extra, array_flip($existing));
 
-        $this->designs->changingContent($design, function () use ($design, $parts, $panelMap, $extra, $resolved) {
+        $this->designs->changingContent($design, function () use ($design, $parts, $extra, $resolved) {
             $design->parts()->delete();
             $design->bomLines()->delete();
             foreach (array_values($parts) as $position => $part) {
                 $design->parts()->create(CuttingListService::partAttributes($part, $position));
             }
 
-            $saved = $design->parts()->with('panelMaterial')->get();
-            $lines = $this->cutting->proposeBomLines($saved, PanelMapping::resolve($panelMap, $saved));
-            $quantities = collect($lines)->mapWithKeys(fn ($l) => [$l['stock_item']->id => $l['quantity']])->all();
+            // Hardware and stock-linked adders by hand; sheets and edge band follow from the parts on top.
             foreach ($extra as $stockItemId => $count) {
-                $quantities[$stockItemId] = round(($quantities[$stockItemId] ?? 0) + $count, 3);
-            }
-            foreach ($quantities as $stockItemId => $quantity) {
-                if ($quantity > 0) {
-                    $design->bomLines()->create(['stock_item_id' => $stockItemId, 'quantity' => $quantity]);
+                if ($count > 0) {
+                    $design->bomLines()->create(['stock_item_id' => $stockItemId, 'quantity' => round($count, 3)]);
                 }
             }
+            app(CalculatedLines::class)->applyToDesign($design);
 
             $design->adders()->delete();
             foreach ($resolved['service'] as $adderId => $quantity) {

@@ -22,6 +22,7 @@ class WorkOrderMaterialResource extends JsonResource
                 'unit_label' => $item->unit->label(),
             ],
             'planned_quantity' => $this->planned_quantity,
+            'calculated' => $this->calculated_quantity !== null,
             'reserved_quantity' => $this->reserved_quantity,
             'consumed_quantity' => $this->consumed_quantity,
             'wasted_quantity' => $this->wasted_quantity,

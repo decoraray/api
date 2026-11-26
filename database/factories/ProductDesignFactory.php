@@ -17,7 +17,6 @@ class ProductDesignFactory extends Factory
             'note' => null,
             'is_default' => false,
             'active' => true,
-            'panel_map' => null,
         ];
     }
 

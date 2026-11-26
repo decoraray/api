@@ -4,8 +4,8 @@ namespace App\Services\Production;
 
 use App\Enums\WorkOrderState;
 use App\Models\CuttingLayout;
-use App\Models\PanelMaterial;
 use App\Models\ProductDesign;
+use App\Models\StockItem;
 use App\Models\User;
 use App\Models\WorkOrder;
 use Illuminate\Http\UploadedFile;
@@ -24,7 +24,7 @@ class CuttingLayoutService
     public const DEFAULT_TRIM_MM = 0;
     public const DISK = 'layouts';
 
-    public function __construct(private SheetNesting $nesting)
+    public function __construct(private SheetNesting $nesting, private CuttingListService $cutting)
     {
     }
 
@@ -145,12 +145,12 @@ class CuttingLayoutService
         }
     }
 
-    /** After a panel material's sheet size changed: unapprove the layouts that used it. */
-    public function clearStaleApprovalsForMaterial(PanelMaterial $material): void
+    /** After a sheet item's size changed: unapprove the layouts that used it. */
+    public function clearStaleApprovalsForSheetItem(StockItem $sheet): void
     {
-        $layouts = CuttingLayout::whereNotNull('approved_at')->where(function ($q) use ($material) {
-            $q->whereHas('design.parts', fn ($p) => $p->where('panel_material_id', $material->id))
-                ->orWhereHas('workOrder.parts', fn ($p) => $p->where('panel_material_id', $material->id));
+        $layouts = CuttingLayout::whereNotNull('approved_at')->where(function ($q) use ($sheet) {
+            $q->whereHas('design.parts', fn ($p) => $p->where('stock_item_id', $sheet->id))
+                ->orWhereHas('workOrder.parts', fn ($p) => $p->where('stock_item_id', $sheet->id));
         })->get();
 
         foreach ($layouts as $layout) {
@@ -251,38 +251,40 @@ class CuttingLayoutService
     }
 
     /**
-     * Identifies the parts (as placed: name, size, count, material, grain), the units and the sheet sizes a layout
+     * Identifies the parts (as placed: name, size, count, sheet item, grain), the units and the sheet sizes a layout
      * is made from. Notes, ops and edge banding do not move parts and are left out.
      */
     public function fingerprint(Collection $parts, int $units): string
     {
-        $materials = PanelMaterial::whereIn('id', $parts->pluck('panel_material_id')->unique()->values())
-            ->orderBy('id')->get(['id', 'sheet_length_mm', 'sheet_width_mm'])
-            ->map(fn ($m) => [$m->id, (int) $m->sheet_length_mm, (int) $m->sheet_width_mm])->all();
+        $sheets = StockItem::whereIn('id', $parts->pluck('stock_item_id')->filter()->unique()->values())
+            ->orderBy('id')->get(['id', 'length_mm', 'width_mm'])
+            ->map(fn ($s) => [$s->id, ...$this->cutting->sheetSize($s)])->all();
 
-        $rows = $parts->map(fn ($p) => [(string) $p->name, (int) $p->length_mm, (int) $p->width_mm, (int) $p->count, (int) $p->panel_material_id, (bool) $p->grain_locked])->values()->all();
+        $rows = $parts->map(fn ($p) => [(string) $p->name, (int) $p->length_mm, (int) $p->width_mm, (int) $p->count, (int) $p->stock_item_id, (bool) $p->grain_locked])->values()->all();
 
-        return sha1(json_encode([$rows, $units, $materials]));
+        return sha1(json_encode([$rows, $units, $sheets]));
     }
 
     private function partsOf(ProductDesign|WorkOrder $owner): Collection
     {
-        return $owner->parts()->with('panelMaterial')->orderBy('position')->orderBy('id')->get();
+        return $owner->parts()->with('stockItem')->orderBy('position')->orderBy('id')->get();
     }
 
-    /** SheetNesting input: parts grouped by panel material, counts × units. */
+    /** SheetNesting input: parts grouped by sheet item, counts × units. */
     private function materialsFor(Collection $parts, int $units): array
     {
         $materials = [];
         foreach ($parts->values() as $index => $part) {
-            $material = $part->panelMaterial;
-            $materials[$material->id] ??= [
-                'name' => $material->name,
-                'sheet_length_mm' => (int) $material->sheet_length_mm,
-                'sheet_width_mm' => (int) $material->sheet_width_mm,
+            $sheet = $part->stockItem;
+            [$length, $width] = $this->cutting->sheetSize($sheet);
+            $materials[$sheet->id] ??= [
+                'name' => $sheet->name,
+                'code' => $sheet->code,
+                'sheet_length_mm' => $length,
+                'sheet_width_mm' => $width,
                 'parts' => [],
             ];
-            $materials[$material->id]['parts'][] = [
+            $materials[$sheet->id]['parts'][] = [
                 'index' => $index,
                 'name' => (string) $part->name,
                 'length_mm' => (int) $part->length_mm,
@@ -296,13 +298,14 @@ class CuttingLayoutService
         return $materials;
     }
 
-    /** Sheets with the panel material's name, for drawing. */
+    /** Sheets with their sheet item's name, for drawing. Results made before sheet items keyed them by panel material. */
     private function presentSheets(CuttingLayout $layout): array
     {
-        $names = collect($layout->result['materials'] ?? [])->pluck('name', 'panel_material_id');
+        $key = fn (array $row) => $row['stock_item_id'] ?? $row['panel_material_id'] ?? null;
+        $names = collect($layout->result['materials'] ?? [])->mapWithKeys(fn ($m) => [$key($m) => $m['name'] ?? null]);
 
         return collect($layout->result['sheets'] ?? [])->map(fn (array $sheet) => $sheet + [
-            'panel_material_name' => $names[$sheet['panel_material_id']] ?? null,
+            'sheet_name' => $names[$key($sheet)] ?? null,
         ])->values()->all();
     }
 }

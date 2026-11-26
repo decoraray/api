@@ -5,7 +5,6 @@ namespace Tests\Feature\Production;
 use App\Models\Color;
 use App\Models\Item;
 use App\Models\Order;
-use App\Models\PanelMaterial;
 use App\Models\Product;
 use App\Models\StockItem;
 use App\Models\Variation;
@@ -33,7 +32,7 @@ class ProductDesignMigrationTest extends TestCase
     {
         DB::table('product_parts')->insert($attributes + [
             'position' => 0, 'name' => 'بغل', 'length_mm' => 500, 'width_mm' => 380, 'count' => 2,
-            'panel_material_id' => PanelMaterial::firstOrFail()->id, 'edge_length' => 0, 'edge_width' => 0,
+            'panel_material_id' => DB::table('panel_materials')->value('id'), 'edge_length' => 0, 'edge_width' => 0,
             'grain_locked' => false, 'ops' => '[]', 'note' => null, 'created_at' => now(), 'updated_at' => now(),
         ]);
     }

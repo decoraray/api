@@ -26,7 +26,7 @@ class WorkOrderDesignService
     ) {
     }
 
-    /** Copies the line's design: parts per unit, BOM × quantity, name and mapping. Does nothing if already filled. */
+    /** Copies the line's design: parts per unit, BOM × quantity, name and colour. Does nothing if already filled. */
     public function fill(WorkOrder $workOrder, ?Item $item = null): void
     {
         if ($workOrder->materials()->exists() || $workOrder->parts()->exists()) {
@@ -75,10 +75,13 @@ class WorkOrderDesignService
             $workOrder = WorkOrder::lockForUpdate()->findOrFail($workOrder->id);
             $this->assertOpen($workOrder);
 
+            $hadParts = $workOrder->parts()->exists();
             $workOrder->parts()->delete();
             foreach (array_values($parts) as $position => $part) {
                 $workOrder->parts()->create(CuttingListService::partAttributes($part, $position));
             }
+            // Sheets and edge band follow the parts; refuses when that would undercut what is reserved or used.
+            app(CalculatedLines::class)->applyToWorkOrder($workOrder, $hadParts);
             $workOrder->forceFill(['customized' => true])->save();
 
             return $workOrder->refresh();
@@ -86,25 +89,7 @@ class WorkOrderDesignService
     }
 
     /**
-     * Proposed material lines for the whole work order from its parts. A mapping sent with the request replaces
-     * the work order's saved one. Nothing else is saved.
-     *
-     * @return array<int, array{stock_item: \App\Models\StockItem, quantity: float}>
-     */
-    public function proposeFromParts(WorkOrder $workOrder, ?array $mapping): array
-    {
-        if ($mapping !== null) {
-            $workOrder->forceFill(['panel_map' => PanelMapping::normalize($mapping)])->save();
-        }
-
-        $parts = $workOrder->parts()->with('panelMaterial')->get();
-        $resolved = PanelMapping::resolve($workOrder->panel_map, $parts);
-
-        return $this->cutting->proposeBomLines($parts, $resolved, max(1, (int) $workOrder->quantity));
-    }
-
-    /**
-     * Keeps the work order's parts, mapping and per-unit materials as a design: a new one, or over an existing one.
+     * Keeps the work order's parts, per-unit hand-entered materials and adders as a design: a new one, or over an existing one.
      * For a custom line the target product is given by id or created as a one-off product from a title.
      *
      * @param array{mode: string, name?: ?string, design_id?: ?int, product_id?: ?int, new_product_title?: ?string} $data
@@ -126,14 +111,14 @@ class WorkOrderDesignService
                 if (!$design || ($expected && $design->product_id !== (int) $expected)) {
                     throw ValidationException::withMessages(['design_id' => ['طرحی از همین محصول را برای جایگزینی انتخاب کنید.']]);
                 }
-                $design->forceFill(['panel_map' => $workOrder->panel_map, 'source_work_order_id' => $workOrder->id])->save();
+                $design->forceFill(['source_work_order_id' => $workOrder->id])->save();
             } else {
                 $product = $this->targetProduct($workOrder, $catalogProductId, $data);
                 $design = $this->designs->create($product, [
                     'name' => $data['name'],
                     'dimensions' => $workOrder->dimensions ? mb_substr($workOrder->dimensions, 0, 50) : null,
                 ], $user);
-                $design->forceFill(['panel_map' => $workOrder->panel_map, 'source_work_order_id' => $workOrder->id])->save();
+                $design->forceFill(['source_work_order_id' => $workOrder->id])->save();
             }
 
             // Overwriting with different parts or BOM removes the design's approval badge.
@@ -143,9 +128,10 @@ class WorkOrderDesignService
                 $this->designs->copyParts($workOrder->parts()->get(), $design);
                 app(CostAdderService::class)->saveToDesign($workOrder, $design);
 
+                // The share calculated from the parts is calculated again on the design; the rest is per unit.
                 $quantity = max(1, (int) $workOrder->quantity);
                 foreach ($workOrder->materials()->get() as $material) {
-                    $perUnit = round($material->planned_quantity / $quantity, 3);
+                    $perUnit = round(($material->planned_quantity - (float) $material->calculated_quantity) / $quantity, 3);
                     if ($perUnit > 0) {
                         $design->bomLines()->create([
                             'stock_item_id' => $material->stock_item_id,
@@ -154,6 +140,7 @@ class WorkOrderDesignService
                         ]);
                     }
                 }
+                app(CalculatedLines::class)->applyToDesign($design);
             });
             $design->refresh();
 
@@ -213,7 +200,7 @@ class WorkOrderDesignService
     private function copyDesign(WorkOrder $workOrder, ?ProductDesign $design): void
     {
         if (!$design) {
-            $workOrder->forceFill(['design_id' => null, 'design_name' => null, 'design_approved' => false, 'design_draft' => false, 'panel_map' => null, 'customized' => false])->save();
+            $workOrder->forceFill(['design_id' => null, 'design_name' => null, 'design_approved' => false, 'design_draft' => false, 'customized' => false])->save();
 
             return;
         }
@@ -223,6 +210,7 @@ class WorkOrderDesignService
             $workOrder->materials()->create([
                 'stock_item_id' => $line->stock_item_id,
                 'planned_quantity' => round($line->quantity * $workOrder->quantity, 3),
+                'calculated_quantity' => $line->calculated_quantity === null ? null : round($line->calculated_quantity * $workOrder->quantity, 3),
                 'note' => $line->note,
             ]);
         }
@@ -234,7 +222,6 @@ class WorkOrderDesignService
             // Whether the design was approved when this work order copied it.
             'design_approved' => $design->isApproved(),
             'design_draft' => $design->isDraft(),
-            'panel_map' => $design->panel_map,
             'customized' => false,
         ])->save();
     }

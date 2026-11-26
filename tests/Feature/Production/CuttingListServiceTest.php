@@ -3,7 +3,6 @@
 namespace Tests\Feature\Production;
 
 use App\Enums\CuttingOp;
-use App\Models\PanelMaterial;
 use App\Models\Product;
 use App\Models\ProductPart;
 use App\Models\Variation;
@@ -12,18 +11,16 @@ use Illuminate\Support\Facades\Schema;
 
 class CuttingListServiceTest extends CuttingTestCase
 {
-    public function test_schema_and_seeded_panel_materials()
+    public function test_schema()
     {
-        $this->assertTrue(Schema::hasColumns('panel_materials', ['name', 'thickness_mm', 'sheet_length_mm', 'sheet_width_mm', 'waste_percent', 'active']));
         $this->assertTrue(Schema::hasColumns('product_parts', [
             'design_id', 'position', 'name', 'length_mm', 'width_mm', 'count',
-            'panel_material_id', 'edge_length', 'edge_width', 'grain_locked', 'ops', 'note',
+            'stock_item_id', 'edge_length', 'edge_width', 'grain_locked', 'ops', 'note',
         ]));
+        $this->assertTrue(Schema::hasColumns('stock_items', ['waste_percent', 'default_edge_band_id']));
+        $this->assertTrue(Schema::hasColumns('bom_lines', ['calculated_quantity']));
         $this->assertTrue(Schema::hasIndex('product_parts', ['design_id', 'position']));
         $this->assertFalse(Schema::hasColumn('product_parts', 'product_id'));
-
-        $this->assertSame([16.0, 20, 3660, 1830], [$this->body16()->thickness_mm, $this->body16()->waste_percent, $this->body16()->sheet_length_mm, $this->body16()->sheet_width_mm]);
-        $this->assertSame([3.0, 10, 3660, 1830], [$this->back3()->thickness_mm, $this->back3()->waste_percent, $this->back3()->sheet_length_mm, $this->back3()->sheet_width_mm]);
     }
 
     public function test_cutting_op_options_and_ops_cast_round_trip()
@@ -44,7 +41,8 @@ class CuttingListServiceTest extends CuttingTestCase
 
         [$body, $back] = $this->cutting()->summary($parts);
 
-        $this->assertSame('بدنه ۱۶ میل', $body['panel_material']['name']);
+        $this->assertSame(['MDF-16-WAL', 20, 3660, 1830], [$body['sheet']['code'], $body['sheet']['waste_percent'], $body['sheet']['sheet_length_mm'], $body['sheet']['sheet_width_mm']]);
+        $this->assertNull($body['edge_band']);
         $this->assertSame(13, $body['pieces']);
         $this->assertSame(2.761, $body['area_m2']);
         $this->assertSame(0.5, $body['sheets']);
@@ -84,8 +82,7 @@ class CuttingListServiceTest extends CuttingTestCase
 
     public function test_fit_warnings()
     {
-        $material = PanelMaterial::factory()->create();
-        $part = fn ($l, $w) => new ProductPart(['name' => 'قطعه', 'length_mm' => $l, 'width_mm' => $w, 'count' => 1, 'panel_material_id' => $material->id]);
+        $part = fn ($l, $w) => new ProductPart(['name' => 'قطعه', 'length_mm' => $l, 'width_mm' => $w, 'count' => 1, 'stock_item_id' => $this->body16()->id]);
         $parts = collect([$part(2000, 400), $part(400, 2000), $part(2100, 400), $part(1000, 450)]);
 
         foreach (['200*40*40', '200×40×40', '۲۰۰ x ۴۰ x ۴۰', '40*200*40'] as $dimensions) {
@@ -100,53 +97,46 @@ class CuttingListServiceTest extends CuttingTestCase
         }
     }
 
-    public function test_bom_proposal_for_damtv220()
+    public function test_calculated_lines_for_damtv220_take_the_band_from_the_sheet()
     {
         $parts = $this->design($this->damtv220())->parts()->get();
-        $walnut = $this->stock(0, ['code' => 'MDF-16-WAL', 'kind' => 'mdf_sheet', 'unit' => 'sheet']);
-        $band = $this->stock(0, ['code' => 'EB-WAL-2', 'kind' => 'edge_band', 'unit' => 'meter']);
-        $hdf = $this->stock(0, ['code' => 'HDF-3-WH', 'kind' => 'mdf_sheet', 'unit' => 'sheet']);
+        $this->edgeBand();
 
-        $lines = $this->cutting()->proposeBomLines($parts, [
-            $this->body16()->id => ['sheet' => $walnut, 'edge_band' => $band],
-            $this->back3()->id => ['sheet' => $hdf, 'edge_band' => $band],
-        ]);
+        $lines = $this->cutting()->calculatedLines($parts);
 
         $this->assertSame([['MDF-16-WAL', 0.5], ['EB-WAL-2', 2.6], ['HDF-3-WH', 0.07]],
-            array_map(fn ($l) => [$l['stock_item']->code, $l['quantity']], $lines));
+            array_map(fn ($l) => [$l['stock_item']->code, $l['quantity']], array_values($lines)));
     }
 
-    public function test_bom_proposal_uses_the_sheet_items_own_size()
-    {
-        $parts = $this->design($this->damtv220())->parts()->get();
-        $small = $this->stock(0, ['kind' => 'mdf_sheet', 'unit' => 'sheet', 'length_mm' => 2440, 'width_mm' => 1220]);
-        $hdf = $this->stock(0, ['kind' => 'mdf_sheet', 'unit' => 'sheet']);
-
-        $lines = $this->cutting()->proposeBomLines($parts, [
-            $this->body16()->id => ['sheet' => $small, 'edge_band' => null],
-            $this->back3()->id => ['sheet' => $hdf, 'edge_band' => null],
-        ]);
-
-        // 2.761102 m² × 1.2 ÷ (2.44 × 1.22) = 1.113 → 1.12
-        $this->assertSame([1.12, 0.07], array_column($lines, 'quantity'));
-    }
-
-    public function test_bom_proposal_sums_lines_sharing_a_stock_item()
+    public function test_a_sheet_without_size_is_taken_as_3660_by_1830_and_its_own_size_wins()
     {
         $design = $this->design(Product::factory()->create());
-        $doors = PanelMaterial::factory()->create(['name' => 'بدنه ۱۶ میل — درب']);
-        ProductPart::factory()->create(['design_id' => $design->id, 'panel_material_id' => $this->body16()->id, 'length_mm' => 970, 'width_mm' => 400, 'count' => 1, 'edge_length' => 1]);
-        ProductPart::factory()->create(['design_id' => $design->id, 'panel_material_id' => $doors->id, 'length_mm' => 470, 'width_mm' => 400, 'count' => 2, 'edge_length' => 2, 'edge_width' => 2]);
-        $parts = $design->parts()->get();
-        $sheet = $this->stock(0, ['kind' => 'mdf_sheet', 'unit' => 'sheet']);
-        $band = $this->stock(0, ['kind' => 'edge_band', 'unit' => 'meter']);
+        $small = $this->stock(0, ['kind' => 'mdf_sheet', 'unit' => 'sheet', 'thickness_mm' => 16, 'length_mm' => 2440, 'width_mm' => 1220, 'waste_percent' => 20]);
+        $plain = $this->stock(0, ['kind' => 'mdf_sheet', 'unit' => 'sheet', 'thickness_mm' => 16, 'waste_percent' => 20]);
+        foreach ([$small, $plain] as $sheet) {
+            foreach ($this->damtv220Parts() as $i => $p) {
+                if ($p['stock_item_id'] === $this->body16()->id) {
+                    ProductPart::create(['stock_item_id' => $sheet->id, 'design_id' => $design->id, 'position' => $i] + $p);
+                }
+            }
+        }
 
-        $lines = $this->cutting()->proposeBomLines($parts, [
-            $this->body16()->id => ['sheet' => $sheet, 'edge_band' => $band],
-            $doors->id => ['sheet' => $sheet, 'edge_band' => $band],
-        ]);
+        $lines = $this->cutting()->calculatedLines($design->parts()->get());
 
-        // sheets: 0.388 m² → 0.07 and 0.376 m² → 0.07; band: 1.0 m and 2 × (2 × 0.5 + 2 × 0.43) = 3.72 → 3.8
-        $this->assertSame([[$sheet->id, 0.14], [$band->id, 4.8]], array_map(fn ($l) => [$l['stock_item']->id, $l['quantity']], $lines));
+        // 2.761102 m² × 1.2 ÷ (2.44 × 1.22) = 1.113 → 1.12; on the standard size 0.50
+        $this->assertSame([$small->id => 1.12, $plain->id => 0.5], array_map(fn ($l) => $l['quantity'], $lines));
+    }
+
+    public function test_lines_of_parts_sharing_a_sheet_are_summed()
+    {
+        $design = $this->design(Product::factory()->create());
+        $band = $this->edgeBand();
+        ProductPart::factory()->create(['design_id' => $design->id, 'stock_item_id' => $this->body16()->id, 'length_mm' => 970, 'width_mm' => 400, 'count' => 1, 'edge_length' => 1]);
+        ProductPart::factory()->create(['design_id' => $design->id, 'stock_item_id' => $this->body16()->id, 'length_mm' => 470, 'width_mm' => 400, 'count' => 2, 'edge_length' => 2, 'edge_width' => 2]);
+
+        $lines = $this->cutting()->calculatedLines($design->parts()->get());
+
+        // 0.764 m² × 1.2 ÷ 6.6978 = 0.1369 → 0.14; band 1.0 m + 2 × (2 × 0.5 + 2 × 0.43) = 4.72 → 4.8
+        $this->assertSame([[$this->body16()->id, 0.14], [$band->id, 4.8]], array_map(fn ($l) => [$l['stock_item']->id, $l['quantity']], array_values($lines)));
     }
 }

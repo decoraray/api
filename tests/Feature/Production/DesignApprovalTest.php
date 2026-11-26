@@ -49,9 +49,8 @@ class DesignApprovalTest extends CuttingTestCase
     {
         $design = $this->approved($this->damtv220Design());
         $technic = $this->header('Technic');
-        // What the editor sends back: the parts as read, with the material as an id.
-        $parts = collect($this->getJson("/api/v1/admin/designs/{$design->id}/cutting-list", $technic)->json('data'))
-            ->map(fn ($p) => ['panel_material_id' => $p['panel_material']['id']] + $p)->all();
+        // What the editor sends back: the parts as read (each carries its sheet's stock_item_id).
+        $parts = $this->getJson("/api/v1/admin/designs/{$design->id}/cutting-list", $technic)->json('data');
 
         // Saving the same parts again (e.g. pressing save without a change) keeps the approval.
         $this->putJson("/api/v1/admin/designs/{$design->id}/cutting-list", ['parts' => $parts], $technic)->assertStatus(200);
@@ -106,8 +105,11 @@ class DesignApprovalTest extends CuttingTestCase
     private function damtv220Design(?Variation $variation = null): ProductDesign
     {
         $product = $this->damtv220($variation?->product);
+        $design = ProductDesign::where('product_id', $product->id)->where('is_default', true)->firstOrFail();
+        // As saved through the editor: the sheet lines follow the parts.
+        app(\App\Services\Production\CalculatedLines::class)->applyToDesign($design);
 
-        return ProductDesign::where('product_id', $product->id)->where('is_default', true)->firstOrFail();
+        return $design;
     }
 
     private function approved(ProductDesign $design): ProductDesign

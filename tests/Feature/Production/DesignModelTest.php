@@ -13,15 +13,14 @@ use App\Services\Production\DesignResolver;
 
 class DesignModelTest extends ProductionTestCase
 {
-    public function test_relations_and_panel_map_cast()
+    public function test_relations()
     {
-        $design = ProductDesign::factory()->create(['panel_map' => [['panel_material_id' => 1, 'sheet_stock_item_id' => 2, 'edge_band_stock_item_id' => null]]]);
+        $design = ProductDesign::factory()->create();
         ProductPart::factory()->create(['design_id' => $design->id, 'position' => 1, 'name' => 'دوم']);
         ProductPart::factory()->create(['design_id' => $design->id, 'position' => 0, 'name' => 'اول']);
         BomLine::create(['design_id' => $design->id, 'stock_item_id' => StockItem::factory()->create()->id, 'quantity' => 2]);
 
         $fresh = $design->fresh();
-        $this->assertSame(2, $fresh->panel_map[0]['sheet_stock_item_id']);
         $this->assertSame(['اول', 'دوم'], $fresh->parts->pluck('name')->all());
         $this->assertSame(1, $fresh->bomLines->count());
         $this->assertTrue($fresh->product->designs->contains($design));

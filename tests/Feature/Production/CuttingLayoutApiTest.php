@@ -161,11 +161,11 @@ class CuttingLayoutApiTest extends CuttingTestCase
         $id = $this->generate($design)->json('data.id');
         $this->postJson("/api/v1/admin/layouts/{$id}/approval", [], $this->header('SuperAdmin'));
 
-        $material = $this->body16();
-        $this->putJson("/api/v1/admin/panel-materials/{$material->id}", [
-            'name' => $material->name, 'thickness_mm' => $material->thickness_mm, 'sheet_length_mm' => 2800,
-            'sheet_width_mm' => 2070, 'waste_percent' => $material->waste_percent, 'active' => true,
-        ], $this->header('Technic'))->assertStatus(200);
+        $sheet = $this->body16();
+        $this->putJson("/api/v1/admin/stock-items/{$sheet->id}", [
+            'code' => $sheet->code, 'name' => $sheet->name, 'kind' => 'mdf_sheet', 'unit' => 'sheet', 'thickness_mm' => 16,
+            'length_mm' => 2800, 'width_mm' => 2070,
+        ], $this->header('SuperAdmin'))->assertStatus(200);
 
         $this->getJson("/api/v1/admin/layouts/{$id}", $this->header('Technic'))->assertJsonPath('data.outdated', true);
         $this->assertNull(CuttingLayout::find($id)->approved_at);

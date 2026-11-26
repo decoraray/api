@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 /** One material a work order needs: what was planned, what is held for it, what it used and wasted. */
 class WorkOrderMaterial extends Model
 {
-    protected $fillable = ['work_order_id', 'stock_item_id', 'planned_quantity', 'reserved_quantity', 'consumed_quantity', 'wasted_quantity', 'note'];
+    protected $fillable = ['work_order_id', 'stock_item_id', 'planned_quantity', 'calculated_quantity', 'reserved_quantity', 'consumed_quantity', 'wasted_quantity', 'note'];
 
     protected $casts = [
         'planned_quantity' => 'float',
+        'calculated_quantity' => 'float',
         'reserved_quantity' => 'float',
         'consumed_quantity' => 'float',
         'wasted_quantity' => 'float',

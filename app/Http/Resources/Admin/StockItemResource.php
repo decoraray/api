@@ -24,6 +24,11 @@ class StockItemResource extends JsonResource
             'length_mm' => $this->length_mm,
             'width_mm' => $this->width_mm,
             'sheet_type' => $this->sheet_type,
+            'waste_percent' => $this->waste_percent,
+            'default_edge_band_id' => $this->default_edge_band_id,
+            'default_edge_band' => $this->default_edge_band_id && $this->defaultEdgeBand
+                ? ['id' => $this->defaultEdgeBand->id, 'code' => $this->defaultEdgeBand->code, 'name' => $this->defaultEdgeBand->name]
+                : null,
             'quantity' => $this->quantity,
             'reserved' => $this->reserved,
             'available' => $this->available,

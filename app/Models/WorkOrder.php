@@ -23,6 +23,7 @@ class WorkOrder extends Model
         'quantity',
         'dimensions',
         'color',
+        'color_id',
         'description',
         'stage',
         'state',
@@ -30,7 +31,6 @@ class WorkOrder extends Model
         'finished_at',
         'design_id',
         'design_name',
-        'panel_map',
         'customized',
     ];
 
@@ -39,7 +39,6 @@ class WorkOrder extends Model
         'state' => WorkOrderState::class,
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
-        'panel_map' => 'array',
         'customized' => 'boolean',
         'design_approved' => 'boolean',
         'design_draft' => 'boolean',
@@ -56,6 +55,12 @@ class WorkOrder extends Model
             ->logOnly(['stage', 'state'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
+    }
+
+    /** The colour chosen from the Colours list; a label only. `color` is the free text kept beside it. */
+    public function colour()
+    {
+        return $this->belongsTo(Color::class, 'color_id');
     }
 
     public function order()
