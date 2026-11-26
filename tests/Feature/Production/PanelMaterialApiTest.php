@@ -12,8 +12,8 @@ class PanelMaterialApiTest extends CuttingTestCase
         foreach (['Sales', 'Technic'] as $role) {
             $this->getJson('/api/v1/admin/panel-materials', $this->header($role))
                 ->assertStatus(200)
-                ->assertJsonCount(2, 'data')
-                ->assertJsonPath('data.0.name', 'پشت‌بند ۳ میل');
+                ->assertJsonCount(8, 'data')
+                ->assertJsonPath('data.0.name', 'سه میل رنگی');
         }
 
         $this->getJson('/api/v1/admin/panel-materials', $this->header('Warehouse'))->assertStatus(403);
@@ -34,7 +34,7 @@ class PanelMaterialApiTest extends CuttingTestCase
             ->assertJsonPath('data.waste_percent', 15)
             ->assertJsonPath('data.active', false);
 
-        $this->getJson('/api/v1/admin/panel-materials?active=1', $headers)->assertJsonCount(2, 'data');
+        $this->getJson('/api/v1/admin/panel-materials?active=1', $headers)->assertJsonCount(8, 'data');
 
         $this->postJson('/api/v1/admin/panel-materials', ['name' => 'بدنه ۸ میل', 'thickness_mm' => 8], $headers)
             ->assertStatus(422)->assertJsonValidationErrors('name');
@@ -65,6 +65,6 @@ class PanelMaterialApiTest extends CuttingTestCase
         $this->postJson('/api/v1/admin/panel-materials', ['name' => 'x', 'thickness_mm' => 8], $headers)->assertStatus(403);
         $this->putJson("/api/v1/admin/panel-materials/{$material->id}", ['name' => 'x', 'thickness_mm' => 8], $headers)->assertStatus(403);
         $this->deleteJson("/api/v1/admin/panel-materials/{$material->id}", [], $headers)->assertStatus(403);
-        $this->assertSame('بدنه ۱۶ میل', $material->fresh()->name);
+        $this->assertSame('ام دی اف رنگی', $material->fresh()->name);
     }
 }

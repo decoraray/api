@@ -28,7 +28,7 @@ class DraftSettingsTest extends DraftTestCase
     {
         $this->settings()->save(['body_panel_material_id' => $this->body16()->id]);
 
-        $this->assertSame(['قلم انبار ورق برای «بدنه ۱۶ میل»'], $this->settings()->missing());
+        $this->assertSame(['قلم انبار ورق برای «ام دی اف رنگی»'], $this->settings()->missing());
     }
 
     public function test_configured_settings_are_ready_and_give_materials_and_hardware()

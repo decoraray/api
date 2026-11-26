@@ -18,12 +18,12 @@ abstract class CuttingTestCase extends MaterialTestCase
 
     protected function body16(): PanelMaterial
     {
-        return PanelMaterial::where('name', 'بدنه ۱۶ میل')->firstOrFail();
+        return PanelMaterial::where('name', 'ام دی اف رنگی')->firstOrFail();
     }
 
     protected function back3(): PanelMaterial
     {
-        return PanelMaterial::where('name', 'پشت‌بند ۳ میل')->firstOrFail();
+        return PanelMaterial::where('name', 'سه میل سفید')->firstOrFail();
     }
 
     /** The DAMTV220 TV unit from the workshop drawing, as an API payload (mm). */

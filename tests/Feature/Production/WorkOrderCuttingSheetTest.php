@@ -20,7 +20,7 @@ class WorkOrderCuttingSheetTest extends CuttingTestCase
             ->assertJsonPath('design.name', 'استاندارد')
             ->assertJsonPath('customized', false)
             ->assertJsonCount(2, 'groups')
-            ->assertJsonPath('groups.0.panel_material.name', 'بدنه ۱۶ میل')
+            ->assertJsonPath('groups.0.panel_material.name', 'ام دی اف رنگی')
             ->assertJsonPath('groups.0.parts.2.name', 'درب ها')
             ->assertJsonPath('groups.0.parts.2.count', 8)
             ->assertJsonPath('parts.2.count', 4)

@@ -35,7 +35,7 @@ class CuttingListApiTest extends CuttingTestCase
             ->assertJsonPath('data.2.grain_locked', true)
             ->assertJsonPath('data.1.ops', ['edge_fold', 'cnc'])
             ->assertJsonPath('data.0.note', 'لبه خم ۱۰ سانت')
-            ->assertJsonPath('data.6.panel_material.name', 'پشت‌بند ۳ میل')
+            ->assertJsonPath('data.6.panel_material.name', 'سه میل سفید')
             ->assertJsonPath('summary.0.area_m2', 2.761)
             ->assertJsonPath('summary.0.sheets', 0.5)
             ->assertJsonPath('summary.0.edge_m', 2.6)

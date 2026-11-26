@@ -44,7 +44,7 @@ class CuttingListServiceTest extends CuttingTestCase
 
         [$body, $back] = $this->cutting()->summary($parts);
 
-        $this->assertSame('بدنه ۱۶ میل', $body['panel_material']['name']);
+        $this->assertSame('ام دی اف رنگی', $body['panel_material']['name']);
         $this->assertSame(13, $body['pieces']);
         $this->assertSame(2.761, $body['area_m2']);
         $this->assertSame(0.5, $body['sheets']);

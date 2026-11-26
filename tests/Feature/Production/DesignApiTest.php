@@ -90,7 +90,7 @@ class DesignApiTest extends CuttingTestCase
 
         $this->postJson($url, [], $headers)->assertStatus(422)->assertJsonValidationErrors('mapping');
         $this->postJson($url, ['mapping' => [['panel_material_id' => $this->body16()->id, 'sheet_stock_item_id' => $walnut->id]]], $headers)
-            ->assertStatus(422)->assertJsonFragment(['mapping' => ['قلم ورق برای «پشت‌بند ۳ میل» انتخاب نشده است.']]);
+            ->assertStatus(422)->assertJsonFragment(['mapping' => ['قلم ورق برای «سه میل سفید» انتخاب نشده است.']]);
 
         $this->postJson($url, ['mapping' => [
             ['panel_material_id' => $this->body16()->id, 'sheet_stock_item_id' => $walnut->id, 'edge_band_stock_item_id' => $band->id],

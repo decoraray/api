@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/** A board thickness parts are cut from (e.g. «بدنه ۱۶ میل»), with the sheet size and waste used for estimates. */
+/** A board thickness parts are cut from (e.g. «ام دی اف رنگی»), with the sheet size and waste used for estimates. */
 class PanelMaterial extends Model
 {
     use HasFactory;

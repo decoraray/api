@@ -73,7 +73,7 @@ class CuttingListBomLinesTest extends CuttingTestCase
             ['panel_material_id' => $this->body16()->id, 'sheet_stock_item_id' => $sheet->id],
         ]], $this->header('Technic'))->assertStatus(422)->assertJsonValidationErrors('mapping');
 
-        $this->assertStringContainsString('پشت‌بند ۳ میل', $r->json('errors.mapping.0'));
+        $this->assertStringContainsString('سه میل سفید', $r->json('errors.mapping.0'));
     }
 
     public function test_requires_bom_manage()
