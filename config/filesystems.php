@@ -63,6 +63,15 @@ return [
             'throw' => false,
         ],
 
+        // Reference images of order lines. Like layouts, a subfolder of the receipts volume; served only
+        // through the signed order-line-image-file route.
+        'order-line-images' => [
+            'driver' => 'local',
+            'root' => storage_path('app/receipts/order-line-images'),
+            'visibility' => 'private',
+            'throw' => false,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

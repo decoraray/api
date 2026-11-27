@@ -38,7 +38,7 @@ class OrderShowAdminResource extends JsonResource
             'discount_amount' => $this->when($request->user()?->can('prices.view'), $this->discount_amount),
             'paid' => $this->when($request->user()?->can('prices.view'), fn () => (int) $this->payments->where('status', 'paid')->sum('amount')),
             'remaining' => $this->when($request->user()?->can('prices.view'), fn () => max(0, (int) $this->total - (int) $this->discount_amount - (int) $this->payments->where('status', 'paid')->sum('amount'))),
-            'items' => $this->items ? AdminOrderItemResource::collection($this->items) : null,
+            'items' => $this->items ? AdminOrderItemResource::collection($this->items->loadMissing('images')) : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'payments' => $this->when($request->user()?->can('prices.view'), $this->payments ? PaymentShowAdminResource::collection($this->payments->loadMissing('attachments', 'voidedBy')) : null),

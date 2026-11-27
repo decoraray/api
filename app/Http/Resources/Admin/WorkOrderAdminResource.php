@@ -24,6 +24,8 @@ class WorkOrderAdminResource extends JsonResource
             'color_id' => $this->color_id,
             'colour' => \App\Support\Orders\LineColour::present($this->colour),
             'description' => $this->description,
+            // The order line's reference photos/sketches; only on the single work order (not the list).
+            'images' => $this->whenLoaded('logs', fn () => $this->item?->images->map(fn ($i) => $i->toPayload())->values() ?? []),
             'stage' => $this->stage?->name,
             'stage_label' => $this->stage?->label(),
             'state' => $this->state->value,

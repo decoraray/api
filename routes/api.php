@@ -93,6 +93,10 @@ Route::prefix('v1')
         Route::get('admin/payment-receipts/{attachment}/file', 'Admin\\PaymentReceiptController@file')
             ->middleware(['signed:relative', 'throttle:120,1'])->name('payment-receipt-file');
 
+        // order line reference image: same scheme (links only in admin order and work order responses)
+        Route::get('admin/order-line-images/{image}/file', 'Admin\\OrderLineImageController@file')
+            ->middleware(['signed:relative', 'throttle:120,1'])->name('order-line-image-file');
+
         // verify payment
         Route::post('/payment-verify', 'PaymentController@verify')->name('payment-verify');
 
@@ -311,6 +315,8 @@ Route::prefix('v1')
                     // orders.create
                     Route::middleware('permission:orders.create')->group(function () {
                         Route::post('orders', 'OrderController@store');
+                        // uploaded first, attached to a line when the order is saved
+                        Route::post('order-line-images', 'OrderLineImageController@store');
                         Route::get('orders-customer', 'OrderController@customerLookup');
                         Route::get('orders-options', 'OrderController@options');
                     });

@@ -84,8 +84,11 @@ class OrderCreationService
                 'channel' => $channel,
             ]);
 
+            $images = app(OrderLineImages::class);
+            $images->assertAvailable($lines, $staff);
+
             foreach ($lines as $line) {
-                Item::create([
+                $item = Item::create([
                     'title' => $line['title'],
                     'slug' => $line['slug'],
                     'order_id' => $order->id,
@@ -100,6 +103,7 @@ class OrderCreationService
                     'color_id' => $line['color_id'],
                     'design_id' => $line['design_id'],
                 ]);
+                $images->attach($item, $line['image_ids']);
             }
 
             if ($payment) {
@@ -180,6 +184,7 @@ class OrderCreationService
                 'color' => $row['color'] ?? null,
                 'color_id' => \App\Support\Orders\LineColour::resolve($row['color_id'] ?? null, $variation?->id),
                 'design_id' => $designId,
+                'image_ids' => array_map('intval', array_values($row['image_ids'] ?? [])),
             ];
         }
 
