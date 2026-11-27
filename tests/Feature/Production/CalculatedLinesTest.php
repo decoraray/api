@@ -172,4 +172,84 @@ class CalculatedLinesTest extends CuttingTestCase
         $this->putJson($url, ['lines' => [['stock_item_id' => $hinge->id, 'quantity' => 4]]], $this->header('Technic'))->assertStatus(200);
         $this->assertEqualsCanonicalizing([$this->body16()->id, $hinge->id], $workOrder->materials()->pluck('stock_item_id')->all());
     }
+
+    /** PUT a sheet item with some fields changed, as the admin stock-item form sends it. */
+    private function editSheet(\App\Models\StockItem $sheet, array $over)
+    {
+        $payload = $over + $sheet->only(['code', 'name', 'thickness_mm', 'color', 'length_mm', 'width_mm', 'sheet_type', 'waste_percent', 'default_edge_band_id', 'active'])
+            + ['kind' => 'mdf_sheet', 'unit' => 'sheet'];
+
+        return $this->putJson("/api/v1/admin/stock-items/{$sheet->id}", $payload, $this->header('SuperAdmin'));
+    }
+
+    private function sheetLine($design, \App\Models\StockItem $sheet): float
+    {
+        return (float) $design->bomLines()->where('stock_item_id', $sheet->id)->value('quantity');
+    }
+
+    public function test_resizing_a_sheet_recalculates_the_designs_cut_from_it()
+    {
+        $design = $this->design(\App\Models\Product::factory()->create());
+        $hinge = $this->stock(0, ['code' => 'HNG-01']);
+        $this->putParts($design, $this->damtv220Parts())->assertStatus(200);
+        BomLine::create(['design_id' => $design->id, 'stock_item_id' => $hinge->id, 'quantity' => 4]);
+        $design->forceFill(['approved_at' => now()])->save();
+        $this->assertSame(0.5, $this->sheetLine($design, $this->body16()));
+
+        // High-gloss board: 122 × 280 cm.
+        $this->editSheet($this->body16(), ['length_mm' => 2800, 'width_mm' => 1220])->assertStatus(200);
+
+        // The same parts saved now give the same quantity.
+        $fresh = $this->design(\App\Models\Product::factory()->create());
+        $this->putParts($fresh, $this->damtv220Parts())->assertStatus(200);
+        $expected = $this->sheetLine($fresh, $this->body16());
+        $this->assertGreaterThan(0.5, $expected);
+        $this->assertSame($expected, $this->sheetLine($design, $this->body16()));
+        // The back sheet, the hand-added hinge and the approval are untouched.
+        $this->assertSame(0.07, $this->sheetLine($design, $this->back3()));
+        $this->assertSame(4.0, $this->sheetLine($design, $hinge));
+        $this->assertNotNull($design->fresh()->approved_at);
+    }
+
+    public function test_changing_waste_recalculates_and_a_draft_stays_untouched()
+    {
+        $design = $this->design(\App\Models\Product::factory()->create());
+        $this->putParts($design, $this->damtv220Parts())->assertStatus(200);
+        $designs = app(\App\Services\Production\DesignService::class);
+        $design->forceFill(['draft_hash' => $designs->contentHash($design)])->save();
+        $edited = $this->design(\App\Models\Product::factory()->create());
+        $this->putParts($edited, $this->damtv220Parts())->assertStatus(200);
+        $edited->forceFill(['draft_hash' => 'edited-by-hand'])->save();
+
+        $this->editSheet($this->body16(), ['waste_percent' => 10])->assertStatus(200);
+
+        // 2.761 m² × 1.1 ÷ 6.698 m² = 0.46 sheet.
+        $this->assertSame(0.46, $this->sheetLine($design, $this->body16()));
+        $this->assertSame($designs->contentHash($design), $design->fresh()->draft_hash);
+        $this->assertSame('edited-by-hand', $edited->fresh()->draft_hash);
+    }
+
+    public function test_editing_only_the_name_recalculates_nothing()
+    {
+        $design = $this->design(\App\Models\Product::factory()->create());
+        $this->putParts($design, $this->damtv220Parts())->assertStatus(200);
+        $line = $design->bomLines()->where('stock_item_id', $this->body16()->id)->first();
+        $line->update(['quantity' => 0.9, 'calculated_quantity' => 0.9]); // stale on purpose: a recalculation would bring it back to 0.5
+
+        $this->editSheet($this->body16(), ['name' => 'ام دی اف هایگلاس'])->assertStatus(200);
+
+        $this->assertSame(0.9, (float) $line->fresh()->quantity);
+    }
+
+    public function test_the_catch_up_command_recalculates_from_the_current_size()
+    {
+        $design = $this->design(\App\Models\Product::factory()->create());
+        $this->putParts($design, $this->damtv220Parts())->assertStatus(200);
+        // Resized before editing recalculated anything.
+        $this->body16()->update(['waste_percent' => 10]);
+
+        $this->artisan('designs:recalculate-sheets', ['codes' => ['MDF-16-WAL']])->assertSuccessful();
+
+        $this->assertSame(0.46, $this->sheetLine($design, $this->body16()));
+    }
 }

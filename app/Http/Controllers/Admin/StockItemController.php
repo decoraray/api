@@ -74,10 +74,15 @@ class StockItemController extends Controller
     {
         $stockItem->fill($request->validated());
         $resized = $stockItem->isDirty(['length_mm', 'width_mm']);
+        $recalculate = $stockItem->isDirty(\App\Services\Production\CalculatedLines::SHEET_FIELDS);
         $stockItem->save();
         // Layouts laid out on the old sheet size no longer match; they lose their approval.
         if ($resized) {
             app(\App\Services\Production\CuttingLayoutService::class)->clearStaleApprovalsForSheetItem($stockItem);
+        }
+        // Designs cut from this sheet need new sheet and edge band quantities (and so a new cost).
+        if ($recalculate) {
+            app(\App\Services\Production\CalculatedLines::class)->recalculateDesignsUsing($stockItem);
         }
 
         return new StockItemResource($stockItem);

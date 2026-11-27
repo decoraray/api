@@ -4,8 +4,10 @@ namespace App\Services\Production;
 
 use App\Enums\StockItemKind;
 use App\Models\ProductDesign;
+use App\Models\StockItem;
 use App\Models\WorkOrder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
@@ -29,6 +31,37 @@ class CalculatedLines
     {
         $lines = $this->cutting->calculatedLines($design->parts()->get());
         $this->apply($design->bomLines(), 'quantity', $lines, $hadParts, false);
+    }
+
+    /** Sheet fields the calculated lines depend on: editing one recalculates the designs cut from that sheet. */
+    public const SHEET_FIELDS = ['unit', 'length_mm', 'width_mm', 'waste_percent', 'default_edge_band_id'];
+
+    /**
+     * Recalculates the lines of every design with parts on this sheet, after its size, waste or edge band changed.
+     * The parts stay the same, so approvals stay; a draft nobody edited keeps counting as untouched.
+     * Work orders keep their material lists: they may already hold reserved or consumed stock.
+     *
+     * @return int how many designs were recalculated
+     */
+    public function recalculateDesignsUsing(StockItem $sheet): int
+    {
+        $designs = app(DesignService::class);
+        $count = 0;
+        ProductDesign::whereHas('parts', fn ($q) => $q->where('stock_item_id', $sheet->id))
+            ->chunkById(100, function ($chunk) use ($designs, &$count) {
+                foreach ($chunk as $design) {
+                    DB::transaction(function () use ($design, $designs) {
+                        $untouched = $design->draft_hash !== null && $design->draft_hash === $designs->contentHash($design);
+                        $this->applyToDesign($design);
+                        if ($untouched) {
+                            DB::table('product_designs')->where('id', $design->id)->update(['draft_hash' => $designs->contentHash($design)]);
+                        }
+                    });
+                    $count++;
+                }
+            });
+
+        return $count;
     }
 
     /** Refuses with 422 when a line would fall below what is already reserved, consumed or wasted. */
