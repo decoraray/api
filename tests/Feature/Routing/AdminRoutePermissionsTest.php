@@ -23,11 +23,13 @@ class AdminRoutePermissionsTest extends TestCase
         'GET api/v1/admin/payment-receipts/{attachment}/file',
         // Uploaded cutting layout file, same scheme.
         'GET api/v1/admin/layouts/{layout}/file',
+        // Order line reference image, same scheme.
+        'GET api/v1/admin/order-line-images/{image}/file',
     ];
 
     public function test_receipt_file_route_requires_a_signature()
     {
-        foreach (['payment-receipt-file', 'cutting-layout-file'] as $name) {
+        foreach (['payment-receipt-file', 'cutting-layout-file', 'order-line-image-file'] as $name) {
             $route = Route::getRoutes()->getByName($name);
             $this->assertNotNull($route, $name);
             $this->assertContains('signed:relative', $route->gatherMiddleware());

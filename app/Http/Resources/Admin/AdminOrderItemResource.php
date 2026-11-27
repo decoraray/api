@@ -30,6 +30,8 @@ class AdminOrderItemResource extends JsonResource
             'product_id' => $this->product?->id,
             'variation_id' => $this->variation_id,
             'design' => $this->design ? ['id' => $this->design->id, 'name' => $this->design->name] : null,
+            // Staff-only reference photos/sketches; `image` above is the catalog thumbnail.
+            'images' => $this->images->map(fn ($i) => $i->toPayload())->values(),
         ];
     }
 }

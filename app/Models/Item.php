@@ -51,6 +51,12 @@ class Item extends Model
         return $this->belongsTo(Variation::class);
     }
 
+    /** Reference photos/sketches attached by staff. */
+    public function images()
+    {
+        return $this->hasMany(OrderItemImage::class)->orderBy('position')->orderBy('id');
+    }
+
     public function design()
     {
         return $this->belongsTo(ProductDesign::class, 'design_id');
