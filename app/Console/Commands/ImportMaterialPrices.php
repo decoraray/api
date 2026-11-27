@@ -36,6 +36,8 @@ class ImportMaterialPrices extends Command
         ['code' => 'MDF16-COL', 'name' => 'ام دی اف رنگی ۱۶ میل', 'kind' => 'mdf_sheet', 'unit' => 'sheet', 'thickness_mm' => 16, 'price' => 2900000, 'per' => 'm2', 'replaces' => ['DFT-MDF16']],
         ['code' => 'MDF16-RAW1', 'name' => 'ام دی اف یک روخام ۱۶ میل', 'kind' => 'mdf_sheet', 'unit' => 'sheet', 'thickness_mm' => 16, 'price' => 2500000, 'per' => 'm2'],
         ['code' => 'MDF16-RAW2', 'name' => 'ام دی اف دو روخام ۱۶ میل', 'kind' => 'mdf_sheet', 'unit' => 'sheet', 'thickness_mm' => 16, 'price' => 2000000, 'per' => 'm2'],
+        // Natural veneer on MDF: two-sided raw MDF (2,000,000) plus veneer on one face (3,500,000) per m².
+        ['code' => 'MDF16-VENEER', 'name' => 'ام دی اف روکش طبیعی ۱۶ میل', 'kind' => 'mdf_sheet', 'unit' => 'sheet', 'thickness_mm' => 16, 'price' => 5500000, 'per' => 'm2'],
         ['code' => 'NEOPAN16', 'name' => 'نئوپان ۱۶ میل', 'kind' => 'mdf_sheet', 'unit' => 'sheet', 'thickness_mm' => 16, 'price' => 1700000, 'per' => 'm2'],
         ['code' => 'HIGLOSS16', 'name' => 'هایگلاس ۱۶ میل', 'kind' => 'mdf_sheet', 'unit' => 'sheet', 'thickness_mm' => 16, 'price' => 4500000, 'per' => 'm2'],
         ['code' => 'HDF3', 'name' => 'سه میل', 'kind' => 'mdf_sheet', 'unit' => 'sheet', 'thickness_mm' => 3, 'price' => 800000, 'per' => 'm2', 'replaces' => ['DFT-HDF3']],
@@ -64,7 +66,6 @@ class ImportMaterialPrices extends Command
         ['name' => 'دستمزد رنگ متوسط', 'group' => 'colour', 'basis' => 'service', 'unit' => 'piece', 'unit_cost' => 5000000, 'replaces' => ['رنگ اکریلیک']],
         ['name' => 'دستمزد رنگ بزرگ', 'group' => 'colour', 'basis' => 'service', 'unit' => 'piece', 'unit_cost' => 8000000, 'replaces' => ['رنگ خاص (مطابق نمونه)']],
         ['name' => 'روکش وکیوم', 'group' => 'vacuum', 'basis' => 'service', 'unit' => 'square_metre', 'unit_cost' => 900000, 'replaces' => ['پرس وکیوم']],
-        ['name' => 'روکش چوب طبیعی', 'group' => 'vacuum', 'basis' => 'service', 'unit' => 'square_metre', 'unit_cost' => 3500000],
         ['name' => 'یراق گونیا و پیچ', 'group' => 'misc', 'basis' => 'service', 'unit' => 'piece', 'unit_cost' => 3000, 'replaces' => ['گیره و پیچ تنظیم']],
         ['name' => 'ریل ۲۵', 'group' => 'rail', 'basis' => 'stock', 'stock' => 'RAIL-25', 'length_cm' => 25],
         ['name' => 'ریل ۳۰', 'group' => 'rail', 'basis' => 'stock', 'stock' => 'RAIL-30', 'length_cm' => 30],
