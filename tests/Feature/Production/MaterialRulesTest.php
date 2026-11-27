@@ -35,7 +35,7 @@ class MaterialRulesTest extends DraftTestCase
     /** The workshop price list's items and adders, so the default rules resolve as on production. */
     private function catalog(): void
     {
-        foreach (['HIGLOSS16' => 'هایگلاس ۱۶ میل', 'NEOPAN16' => 'نئوپان ۱۶ میل', 'MDF16-RAW1' => 'ام دی اف یک روخام', 'MDF16-RAW2' => 'ام دی اف دو روخام'] as $code => $name) {
+        foreach (['HIGLOSS16' => 'هایگلاس ۱۶ میل', 'NEOPAN16' => 'نئوپان ۱۶ میل', 'MDF16-RAW1' => 'ام دی اف یک روخام', 'MDF16-RAW2' => 'ام دی اف دو روخام', 'MDF16-VENEER' => 'ام دی اف روکش طبیعی'] as $code => $name) {
             $this->codes[$code] = StockItem::factory()->mdf()->create(['code' => $code, 'name' => $name]);
         }
         foreach (['LEG-METAL' => 'پایه فلزی', 'HINGE-GLASS' => 'لولا شیشه', 'HANDLE-2H' => 'دستگیره دو سوراخ', 'MAGNET' => 'مگنت', 'LED-HIDDEN' => 'نور مخفی', 'HANGER-ROD' => 'لوله آویز لباس'] as $code => $name) {
@@ -248,6 +248,18 @@ class MaterialRulesTest extends DraftTestCase
         // «دستگیره فلزی» is not metal legs, and bare «چوب طبیعی» is not veneer.
         $this->assertArrayNotHasKey('روکش چوب طبیعی', $this->serviceAddersOf($design));
         $this->assertArrayNotHasKey($this->codes['MDF16-RAW2']->id, $bom);
+    }
+
+    public function test_veneer_is_cut_from_the_veneered_sheet_with_no_adder()
+    {
+        $design = $this->draft('low_unit', 'میز تلویزیون روکش چوب گردو', self::LOW);
+
+        $bom = $this->bomOf($design);
+        $this->assertArrayHasKey($this->codes['MDF16-VENEER']->id, $bom);
+        $this->assertArrayNotHasKey($this->items['body_sheet']->id, $bom);
+        $this->assertArrayNotHasKey($this->codes['MDF16-RAW2']->id, $bom);
+        // Not vacuum, and the veneer is in the sheet's price.
+        $this->assertSame([], array_intersect(['روکش وکیوم', 'روکش چوب طبیعی'], array_keys($this->serviceAddersOf($design))));
     }
 
     public function test_no_handles_and_a_magnet_per_door()

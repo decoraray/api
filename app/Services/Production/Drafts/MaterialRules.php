@@ -39,8 +39,9 @@ class MaterialRules
         $sheets = [
             [['هایگلاس', 'های گلاس', 'براق'], 'HIGLOSS16'],
             [['نئوپان'], 'NEOPAN16'],
-            // Veneer only; bare «چوب طبیعی» is solid wood, which has no stock item yet.
-            [['روکش چوب', 'ونیر'], 'MDF16-RAW2'],
+            // Veneer only; bare «چوب طبیعی» is solid wood, which has no stock item yet. Veneered MDF is a sheet of its
+            // own, priced with its veneer, so its waste covers the veneer too; it is not a vacuum job.
+            [['روکش چوب', 'ونیر'], 'MDF16-VENEER'],
             [['ممبران'], 'MDF16-RAW1'],
             [$colourWords, 'MDF16-RAW2'],
         ];
@@ -52,7 +53,6 @@ class MaterialRules
             ['handle', $noHandle, null],
         ];
         $adders = [
-            ['روکش چوب طبیعی', ['روکش چوب', 'ونیر'], [], 'panel_area_m2', 1],
             // Vacuum cover is a cost on the fronts; the body sheet stays as it is.
             ['روکش وکیوم', ['وکیوم', 'ممبران'], [], 'front_area_m2', 1],
             [null, $colourWords, [], null, 1],
