@@ -17,10 +17,7 @@ class DesignService
 {
     public const STANDARD = 'استاندارد';
 
-    /**
-     * A new design, blank or a copy of another design of the same product. A product's first design becomes its
-     * default unless it is made a variation's default instead.
-     */
+    /** A new design, blank or a copy of another design of the same product. A product's first design becomes its default. */
     public function create(Product $product, array $data, ?User $user): ProductDesign
     {
         return DB::transaction(function () use ($product, $data, $user) {
@@ -53,14 +50,13 @@ class DesignService
                 }
             }
 
-            $makeDefault = $data['is_default'] ?? ($isFirst && empty($data['variation_id']));
-            $this->setDefaults($design, (bool) $makeDefault, $data['variation_id'] ?? null, array_key_exists('variation_id', $data));
+            $this->setDefault($design, (bool) ($data['is_default'] ?? $isFirst));
 
             return $design->refresh();
         });
     }
 
-    /** Name, dimensions, note, active and default flags. Deactivating clears both defaults. */
+    /** Name, dimensions, note, active and default flags. Deactivating clears the default and the variations' links. */
     public function update(ProductDesign $design, array $data): ProductDesign
     {
         return DB::transaction(function () use ($design, $data) {
@@ -75,22 +71,18 @@ class DesignService
 
             if (!$design->active) {
                 $design->is_default = false;
-                $design->variation_id = null;
-                if (!empty($data['is_default']) || !empty($data['variation_id'])) {
+                if (!empty($data['is_default'])) {
                     throw ValidationException::withMessages(['active' => ['طرح غیرفعال نمی‌تواند پیش‌فرض باشد.']]);
                 }
                 $design->save();
+                // Their variations fall back to the product default. One by one, so each change is audited.
+                $design->variations()->get()->each->update(['design_id' => null]);
 
                 return $design->refresh();
             }
 
             $design->save();
-            $this->setDefaults(
-                $design,
-                array_key_exists('is_default', $data) ? (bool) $data['is_default'] : $design->is_default,
-                array_key_exists('variation_id', $data) ? $data['variation_id'] : $design->variation_id,
-                true,
-            );
+            $this->setDefault($design, array_key_exists('is_default', $data) ? (bool) $data['is_default'] : $design->is_default);
 
             return $design->refresh();
         });
@@ -248,13 +240,13 @@ class DesignService
     }
 
     /**
-     * The design the old product-level routes read and write: the variation's default, else the product's.
+     * The design the old product-level routes read and write: the variation's design, else the product default.
      * With `create`, a missing one is made: «استاندارد» for the product, or one named after the variation.
      */
     public function defaultFor(Product $product, ?int $variationId, bool $create = false): ?ProductDesign
     {
         $design = $variationId
-            ? ProductDesign::where('product_id', $product->id)->where('variation_id', $variationId)->first()
+            ? $product->variations()->find($variationId)?->design
             : ProductDesign::where('product_id', $product->id)->where('is_default', true)->first();
 
         if ($design || !$create) {
@@ -268,7 +260,12 @@ class DesignService
                 $name .= ' #' . $variationId;
             }
 
-            return $this->create($product, ['name' => mb_substr($name, 0, 100), 'variation_id' => $variationId, 'is_default' => false], null);
+            return DB::transaction(function () use ($product, $variation, $name) {
+                $design = $this->create($product, ['name' => mb_substr($name, 0, 100), 'is_default' => false], null);
+                $variation->update(['design_id' => $design->id]);
+
+                return $design;
+            });
         }
 
         $name = self::STANDARD;
@@ -310,27 +307,14 @@ class DesignService
         }
     }
 
-    /**
-     * Makes `design` the product default and/or a variation's default, clearing whoever held them.
-     * Call inside a transaction that holds the product's design rows.
-     */
-    private function setDefaults(ProductDesign $design, bool $productDefault, ?int $variationId, bool $setVariation): void
+    /** Sets whether `design` is the product default. Call inside a transaction that holds the product's design rows. */
+    private function setDefault(ProductDesign $design, bool $default): void
     {
-        if ($setVariation && $variationId) {
-            if (!$design->product->variations()->whereKey($variationId)->exists()) {
-                throw ValidationException::withMessages(['variation_id' => ['تنوع باید از همین محصول باشد.']]);
-            }
-            ProductDesign::where('variation_id', $variationId)->where('id', '<>', $design->id)->update(['variation_id' => null]);
-        }
-
-        if ($productDefault) {
+        if ($default) {
             ProductDesign::where('product_id', $design->product_id)->where('id', '<>', $design->id)->where('is_default', true)->update(['is_default' => false]);
         }
 
-        $design->is_default = $productDefault;
-        if ($setVariation) {
-            $design->variation_id = $variationId ?: null;
-        }
+        $design->is_default = $default;
         $design->save();
     }
 

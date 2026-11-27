@@ -48,6 +48,8 @@ class VariationShowAdminResource extends JsonResource
                 'name' => $this->material->name,
                 'slug' => $this->material->slug,
             ] : null,
+            'design_id' => $this->design_id,
+            'design' => $this->design ? ['id' => $this->design->id, 'name' => $this->design->name] : null,
             'sample' => $firstColor && $firstColor->sample ? $firstColor->path : null,
             'stock' => $this->stock,
             'active' => $this->active,

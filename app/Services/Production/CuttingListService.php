@@ -126,7 +126,7 @@ class CuttingListService
      *
      * @return array<int, array{stock_item: StockItem, quantity: float}>
      */
-    public function calculatedLines(Collection $parts, int $multiplier = 1): array
+    public function calculatedLines(Collection $parts, int $multiplier = 1, ?Collection $sheets = null): array
     {
         $lines = [];
         $add = function (StockItem $item, float $quantity) use (&$lines) {
@@ -134,7 +134,7 @@ class CuttingListService
             $lines[$item->id]['quantity'] = round($lines[$item->id]['quantity'] + $quantity, 3);
         };
 
-        foreach ($this->groups($parts, $multiplier) as $group) {
+        foreach ($this->groups($parts, $multiplier, $sheets) as $group) {
             $sheet = $group['sheet'];
             $add($sheet, $this->sheetQuantity($sheet, $group['area_mm2']));
 
@@ -215,20 +215,22 @@ class CuttingListService
             : [self::SHEET_LENGTH_MM, self::SHEET_WIDTH_MM];
     }
 
-    /** Eager-loads each part's sheet and its edge band (works on saved and unsaved parts). */
-    public function loadSheets(Collection $parts): void
+    /**
+     * Eager-loads each part's sheet and its edge band (works on saved and unsaved parts). `$sheets`, stock items with
+     * their default edge band keyed by id, avoids the query.
+     */
+    public function loadSheets(Collection $parts, ?Collection $sheets = null): void
     {
-        $ids = $parts->pluck('stock_item_id')->filter()->unique();
-        $sheets = StockItem::with('defaultEdgeBand')->whereIn('id', $ids)->get()->keyBy('id');
+        $sheets ??= StockItem::with('defaultEdgeBand')->whereIn('id', $parts->pluck('stock_item_id')->filter()->unique())->get()->keyBy('id');
         foreach ($parts as $part) {
             $part->setRelation('stockItem', $sheets->get($part->stock_item_id));
         }
     }
 
     /** Parts grouped by sheet item with integer totals, keyed by stock item id in order of first use. */
-    private function groups(Collection $parts, int $multiplier): Collection
+    private function groups(Collection $parts, int $multiplier, ?Collection $sheets = null): Collection
     {
-        $this->loadSheets($parts);
+        $this->loadSheets($parts, $sheets);
         $groups = collect();
         foreach ($parts as $part) {
             if (!$part->stockItem) {

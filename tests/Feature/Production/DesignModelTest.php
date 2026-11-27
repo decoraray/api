@@ -40,7 +40,7 @@ class DesignModelTest extends ProductionTestCase
         $this->assertNull($resolve(null, $productId, $variation->id));
         ProductDesign::factory()->create(['product_id' => $productId, 'name' => 'پیش‌فرض', 'is_default' => true]);
         $this->assertSame('پیش‌فرض', $resolve(null, $productId, $variation->id));
-        ProductDesign::factory()->create(['product_id' => $productId, 'name' => 'تنوع', 'variation_id' => $variation->id]);
+        $variation->update(['design_id' => ProductDesign::factory()->create(['product_id' => $productId, 'name' => 'تنوع'])->id]);
         $this->assertSame('تنوع', $resolve(null, $productId, $variation->id));
 
         $chosen = ProductDesign::factory()->create(['product_id' => $productId, 'name' => 'انتخابی', 'active' => false]);

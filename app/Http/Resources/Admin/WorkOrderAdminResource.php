@@ -35,6 +35,8 @@ class WorkOrderAdminResource extends JsonResource
             'created_at' => $this->created_at,
             'design_id' => $this->design_id,
             'design_name' => $this->design_name,
+            // Set when the parts were cut from this storefront material's sheets, not the design's own.
+            'material_name' => $this->material_name,
             'customized' => (bool) $this->customized,
             // Built from a design that was approved when copied (the badge is not shown once customised).
             'design_approved' => (bool) $this->design_approved,

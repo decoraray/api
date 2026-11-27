@@ -32,7 +32,8 @@ class SuggestedPriceApiTest extends CuttingTestCase
     {
         $p = Product::factory()->create($product + ['title' => $title, 'active' => true]);
         $v = Variation::factory()->create(['product_id' => $p->id, 'price' => $price, 'active' => true]);
-        $design = ProductDesign::factory()->create(['product_id' => $p->id, 'variation_id' => $v->id]);
+        $design = ProductDesign::factory()->create(['product_id' => $p->id]);
+        $v->update(['design_id' => $design->id]);
         if ($cost > 0) {
             $design->bomLines()->create(['stock_item_id' => $this->hinges($cost)->id, 'quantity' => 4]);
         }
@@ -66,22 +67,24 @@ class SuggestedPriceApiTest extends CuttingTestCase
         $this->putJson($url, ['price_multiplier' => 2.5], $viewer)->assertStatus(403);
     }
 
-    public function test_calculate_gives_the_live_suggestion_and_the_margin_for_a_default()
+    public function test_calculate_gives_the_live_suggestion_and_the_variations_built_from_the_design()
     {
-        $design = $this->defaulted('DAMTV220', 7_000_000, 0);
-        $hinge = $this->hinges(3_500_000);
+        $design = $this->defaulted('DAMTV220', 7_000_000, 3_500_000);
+        $hinge = $design->bomLines()->first()->stockItem;
         $body = ['parts' => [], 'lines' => [['stock_item_id' => $hinge->id, 'quantity' => 4]], 'adders' => []];
 
         $this->postJson("/api/v1/admin/designs/{$design->id}/calculate", $body, $this->header('SuperAdmin'))->assertStatus(200)
             ->assertJsonPath('costs.total', 3_500_000)
             ->assertJsonPath('costs.suggested_price', 7_350_000)
             ->assertJsonPath('costs.price_multiplier', 2.1)
-            ->assertJsonPath('costs.current_price', 7_000_000)
-            ->assertJsonPath('costs.margin', 50)
-            ->assertJsonPath('costs.incomplete', false);
+            ->assertJsonPath('costs.incomplete', false)
+            ->assertJsonPath('costs.variations.0.price', 7_000_000)
+            ->assertJsonPath('costs.variations.0.suggested_price', 7_350_000)
+            ->assertJsonPath('costs.variations.0.margin', 50)
+            ->assertJsonCount(1, 'costs.variations');
 
-        // Nothing was saved: the design still has no lines.
-        $this->assertSame(0, $design->bomLines()->count());
+        // Nothing was saved: the design still has its one line.
+        $this->assertSame(1, $design->bomLines()->count());
     }
 
     public function test_calculate_without_a_variation_or_a_price()
@@ -92,13 +95,12 @@ class SuggestedPriceApiTest extends CuttingTestCase
         $plain = ProductDesign::factory()->create();
         $r = $this->postJson("/api/v1/admin/designs/{$plain->id}/calculate", $body, $this->header('SuperAdmin'))->assertStatus(200)
             ->assertJsonPath('costs.suggested_price', 2_100_000);
-        $this->assertArrayNotHasKey('current_price', $r->json('costs'));
-        $this->assertArrayNotHasKey('margin', $r->json('costs'));
+        $this->assertSame([], $r->json('costs.variations'));
 
-        $unpriced = $this->defaulted('UNPRICED', 0, 0);
-        $r = $this->postJson("/api/v1/admin/designs/{$unpriced->id}/calculate", $body, $this->header('SuperAdmin'))->assertStatus(200)
-            ->assertJsonPath('costs.current_price', 0);
-        $this->assertArrayNotHasKey('margin', $r->json('costs'));
+        $unpriced = $this->defaulted('UNPRICED', 0, 1_000_000);
+        $this->postJson("/api/v1/admin/designs/{$unpriced->id}/calculate", $body, $this->header('SuperAdmin'))->assertStatus(200)
+            ->assertJsonPath('costs.variations.0.price', null)
+            ->assertJsonPath('costs.variations.0.margin', null);
     }
 
     public function test_an_item_never_received_marks_the_costs_incomplete()

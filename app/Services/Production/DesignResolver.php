@@ -4,11 +4,12 @@ namespace App\Services\Production;
 
 use App\Models\Item;
 use App\Models\ProductDesign;
+use App\Models\Variation;
 use Illuminate\Validation\ValidationException;
 
 /**
  * The one place that decides which design an order line is built from: the line's chosen design, else its
- * variation's default design, else its product's default design, else none.
+ * variation's design, else its product's default design, else none.
  */
 class DesignResolver
 {
@@ -19,7 +20,7 @@ class DesignResolver
             return $design;
         }
 
-        if ($variationId && ($design = ProductDesign::where('variation_id', $variationId)->first())) {
+        if ($variationId && ($design = Variation::with('design')->find($variationId)?->design)) {
             return $design;
         }
 

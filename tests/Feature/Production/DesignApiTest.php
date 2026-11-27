@@ -70,13 +70,19 @@ class DesignApiTest extends CuttingTestCase
         $b = ProductDesign::factory()->create(['product_id' => $variation->product_id, 'name' => 'گردویی']);
         $headers = $this->header('Technic');
 
-        $this->putJson("/api/v1/admin/designs/{$b->id}", ['variation_id' => $variation->id], $headers)
-            ->assertStatus(200)->assertJsonPath('data.variation_id', $variation->id);
-        $this->putJson("/api/v1/admin/designs/{$b->id}", ['is_default' => true], $headers)->assertStatus(200);
+        $variation->update(['design_id' => $b->id]);
+        $url = "/api/v1/admin/designs/{$b->id}";
+
+        $this->putJson($url, ['name' => 'گردویی'], $headers)
+            ->assertStatus(200)->assertJsonPath('data.variation_ids', [$variation->id]);
+        $this->putJson($url, ['is_default' => true], $headers)->assertStatus(200);
         $this->assertFalse($a->fresh()->is_default);
 
-        $this->putJson("/api/v1/admin/designs/{$a->id}", ['variation_id' => Variation::factory()->create()->id], $headers)
-            ->assertStatus(422)->assertJsonValidationErrors('variation_id');
+        // A variation with no design of its own is built from the default; the old design field is ignored.
+        $plain = Variation::factory()->create(['product_id' => $variation->product_id]);
+        $this->putJson("/api/v1/admin/designs/{$a->id}", ['variation_id' => $plain->id], $headers)->assertStatus(200)
+            ->assertJsonPath('data.variation_ids', []);
+        $this->getJson($url, $headers)->assertJsonPath('data.variation_ids', [$variation->id, $plain->id]);
     }
 
     public function test_calculate_shows_unsaved_figures_and_saves_nothing()

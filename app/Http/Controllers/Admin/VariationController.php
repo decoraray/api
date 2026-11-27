@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Color;
 use App\Models\Product;
+use App\Models\ProductDesign;
+use Illuminate\Validation\ValidationException;
 use App\Models\Variation;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -14,7 +16,7 @@ class VariationController extends Controller
 {
     public function index()
     {
-        $variations = Variation::with(['colors', 'color', 'material', 'product'])
+        $variations = Variation::with(['colors', 'color', 'material', 'design', 'product'])
             ->orderBy('id', 'desc')
             ->paginate(20);
 
@@ -23,7 +25,7 @@ class VariationController extends Controller
 
     public function show(Variation $variation)
     {
-        $variation->load(['colors', 'color', 'material', 'product']);
+        $variation->load(['colors', 'color', 'material', 'design', 'product']);
 
         return new VariationShowAdminResource($variation);
     }
@@ -52,7 +54,22 @@ class VariationController extends Controller
             }
         }
 
+        // Designs are checked before anything is deleted.
+        foreach ($variations as $index => $variation) {
+            if (is_array($variation) && array_key_exists('design_id', $variation)) {
+                $this->designInput($variation['design_id'], $product->id, "{$index}.design_id");
+            }
+        }
+
         $canWholesale = (bool) $request->user()?->can('prices.wholesale');
+
+        // Saving replaces the variations, so each keeps its design when the request does not send one.
+        $existing = $product->variations()->with('colors')->get();
+        $designById = $existing->pluck('design_id', 'id')->all();
+        $designByKey = [];
+        foreach ($existing as $old) {
+            $designByKey[$this->variationKey($old->size, $old->colors->pluck('name')->all(), $old->material_id)] ??= $old->design_id;
+        }
 
         // Without prices.wholesale, carry wholesale prices over to matching variations.
         $preserved = [];
@@ -83,6 +100,9 @@ class VariationController extends Controller
                 'product_id' => $product->id,
                 'color_id' => $colorIds[0], // Keep for backward compatibility, but use colors relationship
                 'material_id' => $materialId,
+                'design_id' => array_key_exists('design_id', $variationData)
+                    ? $this->designInput($variationData['design_id'], $product->id, 'design_id')
+                    : ($designById[$variationData['id'] ?? 0] ?? $designByKey[$this->variationKey($size, $variationData['colors'], $materialId)] ?? null),
                 'size' => $size,
                 'stock' => $variationData['stock'] ?? 0,
                 'weight' => $variationData['weight'] ?? null,
@@ -99,7 +119,7 @@ class VariationController extends Controller
         // Update product average price
         $product->updateAveragePrice();
 
-        $product->load(['variations.colors', 'variations.color', 'variations.material']);
+        $product->load(['variations.colors', 'variations.color', 'variations.material', 'variations.design']);
 
         return new ProductShowAdminResource($product);
     }
@@ -127,11 +147,14 @@ class VariationController extends Controller
             $colorIds[] = $color->id;
         }
 
+        $designId = $this->designInput($request->input('design_id'), (int) $request->product_id, 'design_id');
+
         $variation = new Variation();
 
         $variation->product_id = $request->product_id;
         $variation->color_id = $legacyColorId; // Keep for backward compatibility
         $variation->material_id = $materialId;
+        $variation->design_id = $designId;
         $variation->size = $size;
         $variation->stock = $request->stock;
         $variation->weight = $request->weight;
@@ -172,6 +195,14 @@ class VariationController extends Controller
             $updateData['size'] = null;
         }
 
+        $productId = (int) ($updateData['product_id'] ?? $variation->product_id);
+        if ($request->exists('design_id')) {
+            $updateData['design_id'] = $this->designInput($request->input('design_id'), $productId, 'design_id');
+        } elseif ($productId !== (int) $variation->product_id) {
+            // A design belongs to one product.
+            $updateData['design_id'] = null;
+        }
+
         // Update variation fields
         $variation->update($updateData);
 
@@ -201,6 +232,23 @@ class VariationController extends Controller
         \App\Support\DeleteGuard::variation($variation);
         $variation->delete();
         return response()->json(null, 204);
+    }
+
+    /** A design to set on a variation: blank clears it; otherwise an active design of the variation's product. */
+    private function designInput($value, int $productId, string $field): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (!is_numeric($value) || (int) $value < 1) {
+            throw ValidationException::withMessages([$field => ['طرح ساخت انتخاب‌شده وجود ندارد.']]);
+        }
+        $design = ProductDesign::find((int) $value);
+        if (!$design || !$design->active || $design->product_id !== $productId) {
+            throw ValidationException::withMessages([$field => ['طرح ساخت باید یک طرح فعال از همین محصول باشد.']]);
+        }
+
+        return $design->id;
     }
 
     /** Digits normalised, blank/null clears. */

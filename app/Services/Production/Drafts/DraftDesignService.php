@@ -37,7 +37,7 @@ class DraftDesignService
     /**
      * A new draft design of a product.
      *
-     * @param array{name: string, is_default?: bool, variation_id?: ?int, guessed?: bool, source_dimensions?: ?string} $options
+     * @param array{name: string, is_default?: bool, guessed?: bool, source_dimensions?: ?string} $options
      */
     public function generate(Product $product, DesignTemplate $template, array $params, array $options, ?User $user = null): ProductDesign
     {
@@ -51,7 +51,6 @@ class DraftDesignService
                 'dimensions' => $this->dimensions($template, $params),
                 'note' => 'پیش‌نویس خودکار از الگوی «' . $template->name() . '»؛ پیش از ساخت بررسی شود.',
                 'is_default' => $options['is_default'] ?? null,
-                'variation_id' => $options['variation_id'] ?? null,
             ], fn ($v) => $v !== null), $user);
 
             $this->fill($design, $template, $params, $parts, $materials, [

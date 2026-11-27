@@ -17,7 +17,7 @@ class ProductDesign extends Model
     use LogsActivity;
 
     protected $fillable = [
-        'product_id', 'variation_id', 'name', 'dimensions', 'note', 'is_default', 'active',
+        'product_id', 'name', 'dimensions', 'note', 'is_default', 'active',
         'source_work_order_id', 'created_by', 'approved_at', 'approved_by',
         'draft_template', 'draft_params', 'draft_hash',
     ];
@@ -54,7 +54,7 @@ class ProductDesign extends Model
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logOnly(['name', 'dimensions', 'note', 'is_default', 'variation_id', 'active', 'approved_at'])
+            ->logOnly(['name', 'dimensions', 'note', 'is_default', 'active', 'approved_at'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
     }
@@ -64,9 +64,26 @@ class ProductDesign extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function variation()
+    /** Variations that name this design as theirs. */
+    public function variations()
     {
-        return $this->belongsTo(Variation::class);
+        return $this->hasMany(Variation::class, 'design_id')->orderBy('id');
+    }
+
+    /**
+     * Every variation built from this design: those naming it and, for the product's default design, those naming
+     * none.
+     */
+    public function builtVariations()
+    {
+        return Variation::where('product_id', $this->product_id)
+            ->where(function ($q) {
+                $q->where('design_id', $this->id);
+                if ($this->is_default) {
+                    $q->orWhereNull('design_id');
+                }
+            })
+            ->orderBy('id');
     }
 
     public function layouts()

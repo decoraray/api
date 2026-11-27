@@ -56,7 +56,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        $product->load(['variations.colors', 'variations.color', 'variations.material']);
+        $product->load(['variations.colors', 'variations.color', 'variations.material', 'variations.design']);
         return new ProductShowAdminResource($product);
     }
 

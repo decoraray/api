@@ -30,6 +30,12 @@ class DesignEstimate
         return $this->compute($lines, $adders, $stock, $unitCosts);
     }
 
+    /** costs() with the stock items and adder unit costs already loaded, both keyed by id. */
+    public function costsUsing(array $lines, array $adders, Collection $stock, Collection $unitCosts): array
+    {
+        return $this->compute($lines, $adders, $stock, $unitCosts);
+    }
+
     /**
      * The saved costs of many designs with four queries, for reports.
      *

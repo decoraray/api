@@ -212,6 +212,8 @@ Route::prefix('v1')
                         Route::get('orders/{order:uuid}/costs', 'OrderCostController@show');
                         Route::get('reports/order-profit', 'OrderCostController@report');
                         Route::get('reports/suggested-prices', 'SuggestedPriceController@index');
+                        Route::get('variations/{variation}/cost', 'VariationCostController@show');
+                        Route::get('products/{product}/variation-costs', 'VariationCostController@product');
                         Route::get('costing/settings', 'OrderCostController@settings');
                     });
 
@@ -240,6 +242,11 @@ Route::prefix('v1')
                         Route::get('products/{product}/designs', 'DesignController@index');
                         Route::get('designs/{design}/sheet', 'DesignController@sheet');
                         Route::get('designs/{design}/sheet/image', 'DesignController@sheetImage');
+                    });
+
+                    // catalog.edit + costs.view
+                    Route::middleware(['permission:catalog.edit', 'permission:costs.view'])->group(function () {
+                        Route::post('variations/{variation}/apply-suggested-price', 'VariationCostController@apply');
                     });
 
                     // catalog.view + prices.view (must precede products/{product} in the route list)
@@ -418,6 +425,7 @@ Route::prefix('v1')
 
                     // bom.manage
                     Route::middleware('permission:bom.manage')->group(function () {
+                        Route::put('materials/{material}/sheets', 'MaterialController@sheets');
                         Route::put('products/{product}/bom', 'BomController@update');
                         Route::put('products/{product}/cutting-list', 'CuttingListController@update');
                         Route::post('products/{product}/designs', 'DesignController@store');

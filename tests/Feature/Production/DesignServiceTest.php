@@ -52,35 +52,27 @@ class DesignServiceTest extends CuttingTestCase
         $this->designs()->create($other, ['name' => 'x', 'copy_from_design_id' => $source->id], null);
     }
 
-    public function test_one_product_default_and_one_default_per_variation()
+    public function test_one_product_default()
     {
-        $variation = Variation::factory()->create();
-        $product = $variation->product;
+        $product = Variation::factory()->create()->product;
         $a = $this->designs()->create($product, ['name' => 'الف'], null);
         $b = $this->designs()->create($product, ['name' => 'ب'], null);
+        $this->assertSame([true, false], [$a->fresh()->is_default, $b->fresh()->is_default]);
 
         $this->designs()->update($b, ['is_default' => true]);
         $this->assertSame([false, true], [$a->fresh()->is_default, $b->fresh()->is_default]);
-
-        $this->designs()->update($a, ['variation_id' => $variation->id]);
-        $this->designs()->update($b, ['variation_id' => $variation->id]);
-        $this->assertNull($a->fresh()->variation_id);
-        $this->assertSame($variation->id, $b->fresh()->variation_id);
-
-        $foreign = Variation::factory()->create();
-        $this->expectException(ValidationException::class);
-        $this->designs()->update($a, ['variation_id' => $foreign->id]);
     }
 
     public function test_deactivating_clears_defaults()
     {
         $variation = Variation::factory()->create();
-        $design = $this->designs()->create($variation->product, ['name' => 'الف', 'is_default' => true, 'variation_id' => $variation->id], null);
+        $design = $this->designs()->create($variation->product, ['name' => 'الف', 'is_default' => true], null);
+        $variation->update(['design_id' => $design->id]);
 
         $this->designs()->update($design, ['active' => false]);
 
         $design->refresh();
-        $this->assertSame([false, false, null], [$design->active, $design->is_default, $design->variation_id]);
+        $this->assertSame([false, false, null], [$design->active, $design->is_default, $variation->fresh()->design_id]);
 
         $this->expectException(ValidationException::class);
         $this->designs()->update($design, ['active' => false, 'is_default' => true]);

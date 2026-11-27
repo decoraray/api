@@ -77,9 +77,9 @@ class SeedDesignDraftsTest extends DraftTestCase
         $designs = ProductDesign::where('product_id', $product->id)->get()->keyBy('name');
         $this->assertSame(['160*50*40', '180*50*40'], $designs->keys()->sort()->values()->all());
         $this->assertTrue($designs['160*50*40']->is_default);
-        $this->assertNull($designs['160*50*40']->variation_id);
+        $this->assertSame(0, $designs['160*50*40']->variations()->count());
         $this->assertFalse($designs['180*50*40']->is_default);
-        $this->assertSame($v180white->id, $designs['180*50*40']->variation_id);
+        $this->assertSame([$v180white->id], $designs['180*50*40']->variations()->pluck('id')->all());
         // Each size draft is built from its own width.
         $this->assertSame(1796, $designs['180*50*40']->parts()->where('name', 'پشت‌بند')->value('length_mm'));
         $this->assertSame(1596, $designs['160*50*40']->parts()->where('name', 'پشت‌بند')->value('length_mm'));
