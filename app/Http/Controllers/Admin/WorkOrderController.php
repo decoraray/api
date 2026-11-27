@@ -59,7 +59,7 @@ class WorkOrderController extends Controller
 
     public function show(WorkOrder $workOrder)
     {
-        return new WorkOrderAdminResource($workOrder->load('order.user', 'logs.user'));
+        return new WorkOrderAdminResource($workOrder->load('order.user', 'logs.user', 'item.images'));
     }
 
     /** Creates the missing work orders of an order (orders confirmed before work orders existed). */
@@ -80,13 +80,13 @@ class WorkOrderController extends Controller
             $request->validated('note'),
         );
 
-        return new WorkOrderAdminResource($workOrder->load('order.user', 'logs.user'));
+        return new WorkOrderAdminResource($workOrder->load('order.user', 'logs.user', 'item.images'));
     }
 
     public function complete(WorkOrder $workOrder, WorkOrderService $service)
     {
         $workOrder = $service->complete($workOrder);
 
-        return new WorkOrderAdminResource($workOrder->load('order.user', 'logs.user'));
+        return new WorkOrderAdminResource($workOrder->load('order.user', 'logs.user', 'item.images'));
     }
 }

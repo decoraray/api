@@ -36,6 +36,8 @@ class StoreOrderRequest extends FormRequest
             'lines.*.color' => ['nullable', 'string', 'max:255'],
             'lines.*.color_id' => ['nullable', 'integer', \Illuminate\Validation\Rule::exists('colors', 'id')],
             'lines.*.design_id' => ['nullable', 'integer'],
+            'lines.*.image_ids' => ['nullable', 'array', 'max:' . \App\Models\OrderItemImage::MAX_PER_LINE],
+            'lines.*.image_ids.*' => ['integer'],
 
             'address' => ['required', 'string', 'max:1000'],
             'city' => ['nullable', 'string', 'max:255'],
