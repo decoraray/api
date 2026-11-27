@@ -111,13 +111,15 @@ class DraftSeeder
             if (!$dryRun) {
                 DB::transaction(function () use ($product, $template, $plan) {
                     foreach ($plan['designs'] as $design) {
-                        $this->drafts->generate($product, $template, $template->suggest($design['reading']), [
+                        $made = $this->drafts->generate($product, $template, $template->suggest($design['reading']), [
                             'name' => $design['name'],
                             'is_default' => $design['default'],
-                            'variation_id' => $design['variation_id'],
                             'guessed' => $design['reading']->guessed,
                             'source_dimensions' => $design['source'],
                         ]);
+                        if ($design['variation_id']) {
+                            $product->variations()->whereKey($design['variation_id'])->update(['design_id' => $made->id]);
+                        }
                     }
                 });
             }

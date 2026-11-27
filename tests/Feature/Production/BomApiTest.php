@@ -97,11 +97,11 @@ class BomApiTest extends MaterialTestCase
 
         $this->putJson($url, ['lines' => [['stock_item_id' => $sheet->id, 'quantity' => 1]]], $this->header('Technic'))->assertStatus(200);
         $standard = \App\Models\ProductDesign::where('product_id', $variation->product_id)->sole();
-        $this->assertSame(['استاندارد', true, null], [$standard->name, $standard->is_default, $standard->variation_id]);
+        $this->assertSame(['استاندارد', true, null], [$standard->name, $standard->is_default, $variation->fresh()->design_id]);
 
         $this->putJson($url, ['variation_id' => $variation->id, 'lines' => [['stock_item_id' => $sheet->id, 'quantity' => 2]]], $this->header('Technic'))
             ->assertStatus(200)->assertJsonPath('source', 'variation');
-        $own = \App\Models\ProductDesign::where('variation_id', $variation->id)->sole();
+        $own = $variation->fresh()->design;
         $this->assertFalse($own->is_default);
         $this->assertSame([1.0], $standard->bomLines()->pluck('quantity')->all());
     }

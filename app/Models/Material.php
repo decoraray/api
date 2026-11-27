@@ -26,10 +26,21 @@ class Material extends Model
 
     public function getActivitylogOptions(): LogOptions
     {
+        // The sheets are not fillable (they need bom.manage), so they are logged by name.
         return LogOptions::defaults()
-            ->logFillable()
+            ->logOnly(['name', 'slug', 'description', 'active', 'body_sheet_item_id', 'front_sheet_item_id'])
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs();
+    }
+
+    public function bodySheet()
+    {
+        return $this->belongsTo(StockItem::class, 'body_sheet_item_id');
+    }
+
+    public function frontSheet()
+    {
+        return $this->belongsTo(StockItem::class, 'front_sheet_item_id');
     }
 
     public function products()

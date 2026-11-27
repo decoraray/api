@@ -11,6 +11,7 @@ use App\Models\ProductPart;
 use App\Services\Production\CalculatedLines;
 use App\Services\Production\DesignEstimate;
 use App\Services\Costing\SuggestedPrice;
+use App\Services\Costing\VariationEstimate;
 use App\Support\Production\Present;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -212,14 +213,12 @@ class DesignController extends Controller
                 'incomplete' => $costs['missing'] !== [],
                 'missing' => $costs['missing'],
             ];
-            // A variation's default design is compared with what that variation sells for.
-            if ($design->variation_id && ($variation = $design->variation()->first())) {
-                $price = (int) $variation->price;
-                $body['costs']['current_price'] = $price;
-                if ($price > 0) {
-                    $body['costs']['margin'] = SuggestedPrice::margin($price, $costs['total']);
-                }
-            }
+            // What each variation built from the saved design costs in its own material, against what it sells for.
+            $built = $design->builtVariations()->with('color:id,name')->get();
+            $estimates = app(VariationEstimate::class)->forVariations($built, $design);
+            $body['costs']['variations'] = $built->map(fn ($v) => [
+                'variation' => ['id' => $v->id, 'size' => $v->size, 'color' => $v->color?->name],
+            ] + array_diff_key($estimates[$v->id], array_flip(['variation_id', 'design'])))->values();
         }
 
         return response()->json($body);
@@ -311,7 +310,6 @@ class DesignController extends Controller
             'dimensions' => ['nullable', 'string', 'max:50'],
             'note' => ['nullable', 'string', 'max:500'],
             'is_default' => ['sometimes', 'boolean'],
-            'variation_id' => ['nullable', 'integer', Rule::exists('variations', 'id')->where('product_id', $product->id)],
         ];
     }
 

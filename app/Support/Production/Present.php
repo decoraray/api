@@ -45,7 +45,8 @@ class Present
             'dimensions' => $design->dimensions,
             'note' => $design->note,
             'is_default' => $design->is_default,
-            'variation_id' => $design->variation_id,
+            // The variations built from this design: those naming it and, for the default, those naming none.
+            'variation_ids' => $design->builtVariations()->pluck('id')->all(),
             'active' => $design->active,
             'approved' => $design->isApproved(),
             'approved_at' => $design->approved_at?->toIso8601String(),

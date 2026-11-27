@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\StockItemKind;
 use App\Models\Material;
+use App\Models\StockItem;
+use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\CreateMaterialRequest;
@@ -16,9 +19,9 @@ class MaterialController extends Controller
      */
     public function index()
     {
-        $materials = Material::orderBy('created_at', 'desc')->paginate(15);
+        $materials = Material::with(['bodySheet', 'frontSheet'])->orderBy('created_at', 'desc')->paginate(15);
 
-        return response()->json($materials);
+        return response()->json($materials->through(fn (Material $material) => $this->present($material)));
     }
 
     /**
@@ -54,7 +57,25 @@ class MaterialController extends Controller
      */
     public function show(Material $material)
     {
-        return response()->json($material);
+        return response()->json($this->present($material));
+    }
+
+    /** The stock sheets the material stands for: variations in it are built and costed from them (bom.manage). */
+    public function sheets(Request $request, Material $material)
+    {
+        $sheet = Rule::exists('stock_items', 'id')->where('kind', StockItemKind::MDF_SHEET->value)->where('active', true);
+        $data = $request->validate([
+            'body_sheet_item_id' => ['present', 'nullable', 'integer', $sheet, 'required_with:front_sheet_item_id'],
+            'front_sheet_item_id' => ['present', 'nullable', 'integer', $sheet],
+        ], [
+            'body_sheet_item_id.required_with' => 'برای ورق درب‌ها، ورق بدنه هم لازم است.',
+            'body_sheet_item_id.exists' => 'ورق بدنه باید یک ورق MDF فعال باشد.',
+            'front_sheet_item_id.exists' => 'ورق درب‌ها باید یک ورق MDF فعال باشد.',
+        ]);
+
+        $material->forceFill($data)->save();
+
+        return response()->json($this->present($material->fresh()));
     }
 
     /**
@@ -89,6 +110,16 @@ class MaterialController extends Controller
         $material->update($request->all());
 
         return response()->json($material);
+    }
+
+    /** The material with each sheet as {id, code, name}: never the stock item itself, which carries its cost. */
+    private function present(Material $material): array
+    {
+        $sheet = fn (?StockItem $item) => $item ? ['id' => $item->id, 'code' => $item->code, 'name' => $item->name] : null;
+        $body = $material->bodySheet;
+        $front = $material->frontSheet;
+
+        return $material->withoutRelations()->toArray() + ['body_sheet' => $sheet($body), 'front_sheet' => $sheet($front)];
     }
 
     /**

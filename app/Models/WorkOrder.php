@@ -31,6 +31,7 @@ class WorkOrder extends Model
         'finished_at',
         'design_id',
         'design_name',
+        'material_name',
         'customized',
     ];
 

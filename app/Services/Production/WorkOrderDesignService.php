@@ -23,6 +23,7 @@ class WorkOrderDesignService
         private DesignResolver $resolver,
         private DesignService $designs,
         private CuttingListService $cutting,
+        private MaterialBuild $build,
     ) {
     }
 
@@ -33,7 +34,8 @@ class WorkOrderDesignService
             return;
         }
 
-        $this->copyDesign($workOrder, $this->resolver->forItem($item ?? $workOrder->item));
+        $item ??= $workOrder->item;
+        $this->copyDesign($workOrder, $this->resolver->forItem($item), $item);
     }
 
     /** Swaps the work order to another design before anything was reserved or used. */
@@ -62,7 +64,7 @@ class WorkOrderDesignService
             $workOrder->materials()->delete();
             // Adders copied from the old design give way to the new design's; ones added by hand stay.
             $workOrder->adders()->where('from_design', true)->get()->each->delete();
-            $this->copyDesign($workOrder, $design);
+            $this->copyDesign($workOrder, $design, $workOrder->item);
 
             return $workOrder->refresh();
         });
@@ -197,28 +199,43 @@ class WorkOrderDesignService
         return $product;
     }
 
-    private function copyDesign(WorkOrder $workOrder, ?ProductDesign $design): void
+    /** Copies the design onto the work order, built in the material of the line's variation when it has sheets. */
+    private function copyDesign(WorkOrder $workOrder, ?ProductDesign $design, ?Item $item): void
     {
         if (!$design) {
-            $workOrder->forceFill(['design_id' => null, 'design_name' => null, 'design_approved' => false, 'design_draft' => false, 'customized' => false])->save();
+            $workOrder->forceFill(['design_id' => null, 'design_name' => null, 'material_name' => null, 'design_approved' => false, 'design_draft' => false, 'customized' => false])->save();
 
             return;
         }
 
-        $this->designs->copyParts($design->parts()->get(), $workOrder);
+        $parts = $design->parts()->get();
+        $material = $item?->variation?->material;
+        // A design without parts has nothing to cut from another sheet: its hand-written lines are copied as they are.
+        $inMaterial = $material?->body_sheet_item_id && $parts->isNotEmpty();
+
+        $this->designs->copyParts($inMaterial ? $this->build->parts($parts, $material) : $parts, $workOrder);
         foreach ($design->bomLines()->get() as $line) {
+            // In a material, only what was added by hand is copied; sheets and edge band follow from the new parts.
+            $quantity = $inMaterial ? round($line->quantity - (float) $line->calculated_quantity, 3) : $line->quantity;
+            if ($quantity <= 0) {
+                continue;
+            }
             $workOrder->materials()->create([
                 'stock_item_id' => $line->stock_item_id,
-                'planned_quantity' => round($line->quantity * $workOrder->quantity, 3),
-                'calculated_quantity' => $line->calculated_quantity === null ? null : round($line->calculated_quantity * $workOrder->quantity, 3),
+                'planned_quantity' => round($quantity * $workOrder->quantity, 3),
+                'calculated_quantity' => $inMaterial || $line->calculated_quantity === null ? null : round($line->calculated_quantity * $workOrder->quantity, 3),
                 'note' => $line->note,
             ]);
+        }
+        if ($inMaterial) {
+            app(CalculatedLines::class)->applyToWorkOrder($workOrder, true);
         }
         app(CostAdderService::class)->copyToWorkOrder($design, $workOrder);
 
         $workOrder->forceFill([
             'design_id' => $design->id,
             'design_name' => $design->name,
+            'material_name' => $inMaterial ? $material->name : null,
             // Whether the design was approved when this work order copied it.
             'design_approved' => $design->isApproved(),
             'design_draft' => $design->isDraft(),

@@ -22,6 +22,7 @@ class Variation extends Model
         'product_id',
         'color_id',
         'material_id',
+        'design_id',
         'size',
         'stock',
         'weight',
@@ -51,6 +52,12 @@ class Variation extends Model
     public function colors()
     {
         return $this->belongsToMany(Color::class, 'color_variation');
+    }
+
+    /** The design the variation is built from; null means the product's default design. */
+    public function design()
+    {
+        return $this->belongsTo(ProductDesign::class, 'design_id');
     }
 
     public function material()

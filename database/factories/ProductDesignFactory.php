@@ -11,7 +11,6 @@ class ProductDesignFactory extends Factory
     {
         return [
             'product_id' => Product::factory(),
-            'variation_id' => null,
             'name' => 'طرح ' . $this->faker->unique()->numberBetween(1, 1000000),
             'dimensions' => null,
             'note' => null,

@@ -28,6 +28,12 @@ class ProductDesignMigrationTest extends TestCase
         return require database_path('migrations/2026_12_03_000000_create_product_designs.php');
     }
 
+    /** The later variations migration dropped the column this one creates, so it is undone first. */
+    private function undoLaterMigrations(): void
+    {
+        (require database_path('migrations/2026_12_19_000000_connect_variations_to_designs.php'))->down();
+    }
+
     private function part(array $attributes): void
     {
         DB::table('product_parts')->insert($attributes + [
@@ -54,6 +60,7 @@ class ProductDesignMigrationTest extends TestCase
 
     public function test_old_lists_become_designs_and_work_orders_keep_their_parts()
     {
+        $this->undoLaterMigrations();
         $this->migration()->down();
         $this->assertFalse(Schema::hasTable('product_designs'));
         $this->assertTrue(Schema::hasColumn('bom_lines', 'product_id'));
@@ -116,6 +123,7 @@ class ProductDesignMigrationTest extends TestCase
 
     public function test_down_restores_default_designs_as_product_and_variation_rows()
     {
+        $this->undoLaterMigrations();
         $product = Product::factory()->create();
         $variation = Variation::factory()->create(['product_id' => $product->id]);
         $sheet = StockItem::factory()->create();
